@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #002e56;
+  --sky-blue: #79bde9;
+  --white: #fff;
+}
+
+body {
+  color: var(--navy);
+  background: var(--white);
+  min-height: 100dvh;
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}

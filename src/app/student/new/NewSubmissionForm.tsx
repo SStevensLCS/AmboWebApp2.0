@@ -19,7 +19,7 @@ export function NewSubmissionForm({ userId }: { userId: string }) {
   const [error, setError] = useState("");
 
   const [service_date, setService_date] = useState(today);
-  const [service_type, setService_type] = useState(SERVICE_TYPES[0]);
+  const [service_type, setService_type] = useState<(typeof SERVICE_TYPES)[number]>(SERVICE_TYPES[0]);
   const [credits, setCredits] = useState("");
   const [hours, setHours] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -116,7 +116,7 @@ export function NewSubmissionForm({ userId }: { userId: string }) {
         </label>
         <select
           value={service_type}
-          onChange={(e) => setService_type(e.target.value)}
+          onChange={(e) => setService_type(e.target.value as (typeof SERVICE_TYPES)[number])}
           className="w-full px-4 py-2 rounded-lg border border-navy/20 text-navy"
         >
           {SERVICE_TYPES.map((t) => (

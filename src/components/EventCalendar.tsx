@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type EventDetails = {
     id: string;
@@ -20,14 +19,17 @@ export function EventCalendar({
     onEventClick: (e: EventDetails) => void;
 }) {
     const [events, setEvents] = useState<EventDetails[]>([]);
-    const supabase = createClient();
 
     const fetchEvents = async () => {
-        const { data } = await supabase
-            .from("events")
-            .select("*")
-            .order("start_time", { ascending: true });
-        if (data) setEvents(data);
+        try {
+            const res = await fetch("/api/events");
+            if (res.ok) {
+                const data = await res.json();
+                setEvents(data.events || []);
+            }
+        } catch (e) {
+            console.error("Failed to fetch events", e);
+        }
     };
 
     useEffect(() => {

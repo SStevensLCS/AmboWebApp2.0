@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { NewSubmissionForm } from "./NewSubmissionForm";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function NewSubmissionPage() {
   const session = await getSession();
@@ -17,11 +17,13 @@ export default async function NewSubmissionPage() {
   if (!profile) redirect("/login");
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-navy">New Submission</h1>
-      <p className="text-navy/70 text-sm">
-        Submitting as {profile.first_name} {profile.last_name}
-      </p>
+    <div className="space-y-3 animate-fade-in">
+      <div>
+        <h1 className="text-xl tracking-wide">Log Service</h1>
+        <p className="text-[var(--text-tertiary)] text-sm">
+          {profile.first_name} {profile.last_name}
+        </p>
+      </div>
       <NewSubmissionForm userId={profile.id} />
     </div>
   );

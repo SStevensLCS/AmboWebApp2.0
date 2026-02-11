@@ -3,19 +3,328 @@
 @tailwind utilities;
 
 :root {
-  --navy: #002e56;
-  --sky-blue: #79bde9;
-  --white: #fff;
+  --bg: #ffffff;
+  --bg-secondary: #fafafa;
+  --border: #e5e5e5;
+  --border-light: #f0f0f0;
+  --text-primary: #111111;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --accent: #111111;
+  --success: #22c55e;
+  --success-bg: #f0fdf4;
+  --warning: #eab308;
+  --warning-bg: #fefce8;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
 }
 
 body {
-  color: var(--navy);
-  background: var(--white);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 100;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  background: var(--bg);
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong,
+b {
+  font-weight: 200;
+  letter-spacing: 0.04em;
+}
+
+/* Force thinnest everywhere */
+.font-bold,
+.font-semibold,
+.font-medium,
+.font-normal {
+  font-weight: 100 !important;
+}
+
+@layer components {
+
+  /* Panels */
+  .glass-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .glass-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+  }
+
+  .glass-card:hover {
+    border-color: var(--text-tertiary);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Nav */
+  .glass-nav {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .glass-header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Inputs */
+  .glass-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 10px 14px;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 100;
+    transition: border-color 0.2s ease;
+    outline: none;
+  }
+
+  .glass-input::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  .glass-input:focus {
+    border-color: var(--text-primary);
+  }
+
+  .glass-input option {
+    background: var(--bg);
+    color: var(--text-primary);
+  }
+
+  /* Buttons */
+  .glass-btn-primary {
+    background: var(--text-primary);
+    color: var(--bg);
+    font-weight: 200;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+  }
+
+  .glass-btn-primary:hover {
+    opacity: 0.85;
+  }
+
+  .glass-btn-primary:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .glass-btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-weight: 200;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+  }
+
+  .glass-btn-secondary:hover {
+    border-color: var(--text-primary);
+  }
+
+  /* Status badges */
+  .badge-approved {
+    background: var(--success-bg);
+    color: var(--success);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 200;
+  }
+
+  .badge-denied {
+    background: var(--danger-bg);
+    color: var(--danger);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 200;
+  }
+
+  .badge-pending {
+    background: var(--warning-bg);
+    color: var(--warning);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 200;
+  }
+
+  /* Table */
+  .glass-table {
+    width: 100%;
+    font-size: 0.9rem;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .glass-table thead {
+    position: sticky;
+    top: 0;
+  }
+
+  .glass-table th {
+    padding: 10px 12px;
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 200;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .glass-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-weight: 100;
+  }
+
+  .glass-table tbody tr {
+    transition: background 0.15s ease;
+  }
+
+  .glass-table tbody tr:hover {
+    background: var(--bg-secondary);
+  }
+
+  /* Chat bubbles */
+  .chat-bubble-user {
+    background: var(--text-primary);
+    color: var(--bg);
+    border-radius: 16px 16px 4px 16px;
+    padding: 10px 14px;
+    max-width: 80%;
+    font-size: 0.95rem;
+    font-weight: 200;
+    line-height: 1.5;
+    animation: slideInRight 0.25s ease;
+  }
+
+  .chat-bubble-ai {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 16px 16px 16px 4px;
+    padding: 10px 14px;
+    max-width: 85%;
+    font-size: 0.95rem;
+    font-weight: 100;
+    line-height: 1.5;
+    animation: slideInLeft 0.25s ease;
+  }
+
+  .chat-input-bar {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
 }
 
 @layer utilities {
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
+
+  .text-accent {
+    color: var(--accent);
+  }
+
+  .glow-accent {
+    /* No glow in light theme */
+  }
+}
+
+/* Animations */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
 }

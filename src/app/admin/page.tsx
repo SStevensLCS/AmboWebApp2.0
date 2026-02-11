@@ -1,9 +1,9 @@
-import { AdminTabs } from "./AdminTabs";
+import AdminTabs from "./AdminTabs";
 
-export default function AdminDashboardPage() {
+export default function AdminPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-navy">Admin Dashboard</h1>
+    <div className="space-y-4 animate-fade-in">
+      <h1 className="text-2xl tracking-wide">Dashboard</h1>
       <AdminTabs />
     </div>
   );

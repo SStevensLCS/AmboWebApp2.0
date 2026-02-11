@@ -1,21 +1,31 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import "./globals.css";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Ambassador Portal",
-  description: "Student Ambassador service hours and tour credits",
+  description: "Ambassador service tracking",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Ambo",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen bg-white text-navy">
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

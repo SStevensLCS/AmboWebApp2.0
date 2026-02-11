@@ -1,63 +1,48 @@
 "use client";
 
-import { useState } from "react";
-import { SubmissionsControl } from "./SubmissionsControl";
-import { UserControl } from "./UserControl";
+import { useState, useEffect } from "react";
 
 type Tab = "submissions" | "users";
 
-export function AdminTabs() {
-  const [tab, setTab] = useState<Tab>("submissions");
+export default function AdminTabs() {
+  const [activeTab, setActiveTab] = useState<Tab>("submissions");
+  const [SubmissionsControl, setSubmissionsControl] = useState<any>(null);
+  const [UserControl, setUserControl] = useState<any>(null);
+
+  useEffect(() => {
+    import("./SubmissionsControl").then((m) =>
+      setSubmissionsControl(() => m.SubmissionsControl)
+    );
+    import("./UserControl").then((m) => setUserControl(() => m.UserControl));
+  }, []);
 
   return (
-    <div>
-      <div className="flex border-b border-navy/20 mb-4">
+    <div className="space-y-4">
+      <div className="flex gap-1 border border-[var(--border)] rounded-lg p-1 w-fit">
         <button
-          type="button"
-          onClick={() => setTab("submissions")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-            tab === "submissions"
-              ? "border-navy text-navy"
-              : "border-transparent text-navy/70"
-          }`}
+          onClick={() => setActiveTab("submissions")}
+          className={`px-4 py-1.5 rounded-md text-sm transition-all ${activeTab === "submissions"
+            ? "bg-[var(--text-primary)] text-white"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
         >
           Submissions
         </button>
         <button
-          type="button"
-          onClick={() => setTab("users")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-            tab === "users"
-              ? "border-navy text-navy"
-              : "border-transparent text-navy/70"
-          }`}
+          onClick={() => setActiveTab("users")}
+          className={`px-4 py-1.5 rounded-md text-sm transition-all ${activeTab === "users"
+            ? "bg-[var(--text-primary)] text-white"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
         >
           Users
         </button>
       </div>
-      {tab === "submissions" && <SubmissionsControl />}
-      {tab === "users" && <UserControl />}
+
+      {activeTab === "submissions" && SubmissionsControl && (
+        <SubmissionsControl />
+      )}
+      {activeTab === "users" && UserControl && <UserControl />}
     </div>
   );
 }
-
-//test
-//test2
-//test3
-//test4
-//test5
-//test6
-//test7
-//test8
-//test9
-//test10
-//test11
-//test12
-//test13
-//test14
-//test15
-//test16
-//test17
-//test18
-//test19
-//test20

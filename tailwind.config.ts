@@ -11,6 +11,16 @@ const config: Config = {
       colors: {
         navy: "#002e56",
         "sky-blue": "#79bde9",
+        "dark-bg": "#0a0f1c",
+        "dark-surface": "#111827",
+        accent: "#79bde9",
+      },
+      fontFamily: {
+        sans: ["Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
+      },
+      letterSpacing: {
+        wide: "0.025em",
+        wider: "0.05em",
       },
     },
   },

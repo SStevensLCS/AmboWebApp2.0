@@ -95,52 +95,60 @@ export function SubmissionsControl() {
     }
   };
 
-  if (loading) return <p className="text-navy/70">Loading…</p>;
+  if (loading)
+    return (
+      <div className="flex items-center gap-2 text-[var(--text-tertiary)] py-8">
+        <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+        Loading…
+      </div>
+    );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-navy">CSV upload:</span>
-        <form onSubmit={onCsvSubmit} className="flex items-center gap-2 flex-wrap">
-          <input
-            type="file"
-            accept=".csv,.txt"
-            className="text-sm text-navy/80"
-          />
-          <button
-            type="submit"
-            className="py-1.5 px-3 rounded-lg bg-navy text-white text-sm"
-          >
-            Upload
-          </button>
-        </form>
-        {csvError && <p className="text-red-600 text-sm">{csvError}</p>}
-        {csvSuccess && <p className="text-green-700 text-sm">{csvSuccess}</p>}
+      <div className="glass-card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-[var(--text-secondary)]">CSV upload:</span>
+          <form onSubmit={onCsvSubmit} className="flex items-center gap-2 flex-wrap">
+            <input
+              type="file"
+              accept=".csv,.txt"
+              className="text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-accent/15 file:text-accent file:cursor-pointer hover:file:bg-accent/25 file:transition-colors"
+            />
+            <button
+              type="submit"
+              className="glass-btn-primary py-1.5 px-4 text-sm"
+            >
+              Upload
+            </button>
+          </form>
+        </div>
+        {csvError && <p className="text-red-400 text-sm mt-2">{csvError}</p>}
+        {csvSuccess && <p className="text-emerald-400 text-sm mt-2">{csvSuccess}</p>}
+        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+          CSV columns: user_id, service_date, service_type, credits, hours,
+          feedback, status (optional)
+        </p>
       </div>
-      <p className="text-xs text-navy/60">
-        CSV columns: user_id, service_date, service_type, credits, hours,
-        feedback, status (optional)
-      </p>
 
-      <div className="overflow-x-auto -mx-4">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="border-b border-navy/20 text-left text-navy/70">
-              <th className="py-2 px-2">Student</th>
-              <th className="py-2 px-2">Date</th>
-              <th className="py-2 px-2">Type</th>
-              <th className="py-2 px-2">Hours</th>
-              <th className="py-2 px-2">Credits</th>
-              <th className="py-2 px-2">Status</th>
-              <th className="py-2 px-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-navy/10">
-                {editing === row.id ? (
-                  <>
-                    <td colSpan={7} className="py-2 px-2">
+      <div className="glass-panel overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="glass-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Hours</th>
+                <th>Credits</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  {editing === row.id ? (
+                    <td colSpan={7} className="py-3 px-3">
                       <div className="flex flex-wrap gap-2 items-center">
                         <input
                           type="date"
@@ -148,14 +156,14 @@ export function SubmissionsControl() {
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, service_date: e.target.value }))
                           }
-                          className="px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-auto text-sm"
                         />
                         <select
                           value={editForm.service_type ?? ""}
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, service_type: e.target.value }))
                           }
-                          className="px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-auto text-sm"
                         >
                           {SERVICE_TYPES.map((t) => (
                             <option key={t} value={t}>
@@ -174,7 +182,7 @@ export function SubmissionsControl() {
                             }))
                           }
                           placeholder="Hours"
-                          className="w-20 px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-20 text-sm"
                         />
                         <input
                           type="number"
@@ -187,14 +195,14 @@ export function SubmissionsControl() {
                             }))
                           }
                           placeholder="Credits"
-                          className="w-20 px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-20 text-sm"
                         />
                         <select
                           value={editForm.status ?? ""}
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, status: e.target.value }))
                           }
-                          className="px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-auto text-sm"
                         >
                           <option value="Pending">Pending</option>
                           <option value="Approved">Approved</option>
@@ -203,62 +211,62 @@ export function SubmissionsControl() {
                         <button
                           type="button"
                           onClick={saveEdit}
-                          className="py-1 px-2 rounded bg-navy text-white text-sm"
+                          className="glass-btn-primary py-1.5 px-3 text-sm"
                         >
                           Save
                         </button>
                         <button
                           type="button"
                           onClick={cancelEdit}
-                          className="py-1 px-2 rounded border border-navy text-navy text-sm"
+                          className="glass-btn-secondary py-1.5 px-3 text-sm"
                         >
                           Cancel
                         </button>
                       </div>
                     </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="py-2 px-2">
-                      {row.users
-                        ? `${row.users.first_name} ${row.users.last_name}`
-                        : row.user_id}
-                    </td>
-                    <td className="py-2 px-2">{row.service_date}</td>
-                    <td className="py-2 px-2">{row.service_type}</td>
-                    <td className="py-2 px-2">{Number(row.hours)}</td>
-                    <td className="py-2 px-2">{Number(row.credits)}</td>
-                    <td className="py-2 px-2">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs ${
-                          row.status === "Approved"
-                            ? "bg-green-100 text-green-800"
-                            : row.status === "Denied"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(row)}
-                        className="text-sky-blue text-sm"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  ) : (
+                    <>
+                      <td>
+                        {row.users
+                          ? `${row.users.first_name} ${row.users.last_name}`
+                          : row.user_id}
+                      </td>
+                      <td>{row.service_date}</td>
+                      <td>{row.service_type}</td>
+                      <td>{Number(row.hours)}</td>
+                      <td>{Number(row.credits)}</td>
+                      <td>
+                        <span
+                          className={
+                            row.status === "Approved"
+                              ? "badge-approved"
+                              : row.status === "Denied"
+                                ? "badge-denied"
+                                : "badge-pending"
+                          }
+                        >
+                          {row.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(row)}
+                          className="text-accent text-sm hover:text-accent/80 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       {rows.length === 0 && (
-        <p className="text-navy/70 text-sm">No submissions.</p>
+        <p className="text-[var(--text-tertiary)] text-sm">No submissions.</p>
       )}
     </div>
   );

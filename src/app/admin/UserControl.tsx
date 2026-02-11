@@ -117,38 +117,53 @@ export function UserControl() {
     }
   };
 
-  if (loading) return <p className="text-navy/70">Loading…</p>;
+  if (loading)
+    return (
+      <div className="flex items-center gap-2 text-[var(--text-tertiary)] py-8">
+        <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+        Loading…
+      </div>
+    );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setShowAdd(!showAdd)}
-          className="py-1.5 px-3 rounded-lg bg-navy text-white text-sm"
-        >
-          Add user
-        </button>
-        <form onSubmit={onCsvSubmit} className="flex items-center gap-2 flex-wrap">
-          <input type="file" accept=".csv,.txt" className="text-sm text-navy/80" />
-          <button type="submit" className="py-1.5 px-3 rounded-lg bg-navy text-white text-sm">
-            CSV upload
+      <div className="glass-card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowAdd(!showAdd)}
+            className="glass-btn-primary py-1.5 px-4 text-sm"
+          >
+            Add user
           </button>
-        </form>
-        {csvError && <p className="text-red-600 text-sm">{csvError}</p>}
-        {csvSuccess && <p className="text-green-700 text-sm">{csvSuccess}</p>}
+          <form onSubmit={onCsvSubmit} className="flex items-center gap-2 flex-wrap">
+            <input
+              type="file"
+              accept=".csv,.txt"
+              className="text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-accent/15 file:text-accent file:cursor-pointer hover:file:bg-accent/25 file:transition-colors"
+            />
+            <button
+              type="submit"
+              className="glass-btn-secondary py-1.5 px-4 text-sm"
+            >
+              CSV upload
+            </button>
+          </form>
+        </div>
+        {csvError && <p className="text-red-400 text-sm mt-2">{csvError}</p>}
+        {csvSuccess && <p className="text-emerald-400 text-sm mt-2">{csvSuccess}</p>}
+        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+          CSV columns: first_name, last_name, phone (10 digits), email, role
+          (optional)
+        </p>
       </div>
-      <p className="text-xs text-navy/60">
-        CSV columns: first_name, last_name, phone (10 digits), email, role
-        (optional)
-      </p>
 
       {showAdd && (
         <form
           onSubmit={onAddSubmit}
-          className="p-4 rounded-lg border border-navy/20 space-y-2"
+          className="glass-card p-5 space-y-3"
         >
-          <h3 className="font-medium text-navy">New user</h3>
+          <h3 className="font-medium text-[var(--text-primary)]/90">New user</h3>
           <input
             type="text"
             placeholder="First name"
@@ -156,7 +171,7 @@ export function UserControl() {
             onChange={(e) =>
               setAddForm((f) => ({ ...f, first_name: e.target.value }))
             }
-            className="w-full px-3 py-2 border rounded text-navy text-sm"
+            className="glass-input text-sm"
             required
           />
           <input
@@ -166,7 +181,7 @@ export function UserControl() {
             onChange={(e) =>
               setAddForm((f) => ({ ...f, last_name: e.target.value }))
             }
-            className="w-full px-3 py-2 border rounded text-navy text-sm"
+            className="glass-input text-sm"
             required
           />
           <input
@@ -176,7 +191,7 @@ export function UserControl() {
             onChange={(e) =>
               setAddForm((f) => ({ ...f, phone: e.target.value }))
             }
-            className="w-full px-3 py-2 border rounded text-navy text-sm"
+            className="glass-input text-sm"
             required
           />
           <input
@@ -186,7 +201,7 @@ export function UserControl() {
             onChange={(e) =>
               setAddForm((f) => ({ ...f, email: e.target.value }))
             }
-            className="w-full px-3 py-2 border rounded text-navy text-sm"
+            className="glass-input text-sm"
             required
           />
           <select
@@ -194,23 +209,23 @@ export function UserControl() {
             onChange={(e) =>
               setAddForm((f) => ({ ...f, role: e.target.value }))
             }
-            className="w-full px-3 py-2 border rounded text-navy text-sm"
+            className="glass-input text-sm"
           >
             <option value="student">Student</option>
             <option value="admin">Admin</option>
           </select>
-          {addError && <p className="text-red-600 text-sm">{addError}</p>}
+          {addError && <p className="text-red-400 text-sm">{addError}</p>}
           <div className="flex gap-2">
             <button
               type="submit"
-              className="py-1.5 px-3 rounded bg-navy text-white text-sm"
+              className="glass-btn-primary py-1.5 px-4 text-sm"
             >
               Add
             </button>
             <button
               type="button"
               onClick={() => setShowAdd(false)}
-              className="py-1.5 px-3 rounded border border-navy text-navy text-sm"
+              className="glass-btn-secondary py-1.5 px-4 text-sm"
             >
               Cancel
             </button>
@@ -218,23 +233,23 @@ export function UserControl() {
         </form>
       )}
 
-      <div className="overflow-x-auto -mx-4">
-        <table className="w-full min-w-[520px] text-sm">
-          <thead>
-            <tr className="border-b border-navy/20 text-left text-navy/70">
-              <th className="py-2 px-2">Name</th>
-              <th className="py-2 px-2">Phone</th>
-              <th className="py-2 px-2">Email</th>
-              <th className="py-2 px-2">Role</th>
-              <th className="py-2 px-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-navy/10">
-                {editing === row.id ? (
-                  <>
-                    <td colSpan={5} className="py-2 px-2">
+      <div className="glass-panel overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="glass-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  {editing === row.id ? (
+                    <td colSpan={5} className="py-3 px-3">
                       <div className="flex flex-wrap gap-2 items-center">
                         <input
                           type="text"
@@ -243,7 +258,7 @@ export function UserControl() {
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, first_name: e.target.value }))
                           }
-                          className="w-24 px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-24 text-sm"
                         />
                         <input
                           type="text"
@@ -252,7 +267,7 @@ export function UserControl() {
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, last_name: e.target.value }))
                           }
-                          className="w-24 px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-24 text-sm"
                         />
                         <input
                           type="tel"
@@ -261,7 +276,7 @@ export function UserControl() {
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, phone: e.target.value }))
                           }
-                          className="w-28 px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-28 text-sm"
                         />
                         <input
                           type="email"
@@ -270,14 +285,14 @@ export function UserControl() {
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, email: e.target.value }))
                           }
-                          className="min-w-[140px] px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 min-w-[140px] text-sm"
                         />
                         <select
                           value={editForm.role ?? ""}
                           onChange={(e) =>
                             setEditForm((f) => ({ ...f, role: e.target.value }))
                           }
-                          className="px-2 py-1 border rounded text-navy"
+                          className="glass-input py-1.5 px-2 w-auto text-sm"
                         >
                           <option value="student">Student</option>
                           <option value="admin">Admin</option>
@@ -285,45 +300,45 @@ export function UserControl() {
                         <button
                           type="button"
                           onClick={saveEdit}
-                          className="py-1 px-2 rounded bg-navy text-white text-sm"
+                          className="glass-btn-primary py-1.5 px-3 text-sm"
                         >
                           Save
                         </button>
                         <button
                           type="button"
                           onClick={cancelEdit}
-                          className="py-1 px-2 rounded border border-navy text-navy text-sm"
+                          className="glass-btn-secondary py-1.5 px-3 text-sm"
                         >
                           Cancel
                         </button>
                       </div>
                     </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="py-2 px-2">
-                      {row.first_name} {row.last_name}
-                    </td>
-                    <td className="py-2 px-2">{row.phone}</td>
-                    <td className="py-2 px-2">{row.email}</td>
-                    <td className="py-2 px-2">{row.role}</td>
-                    <td className="py-2 px-2">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(row)}
-                        className="text-sky-blue text-sm"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  ) : (
+                    <>
+                      <td>
+                        {row.first_name} {row.last_name}
+                      </td>
+                      <td>{row.phone}</td>
+                      <td>{row.email}</td>
+                      <td className="capitalize">{row.role}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(row)}
+                          className="text-accent text-sm hover:text-accent/80 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-      {rows.length === 0 && <p className="text-navy/70 text-sm">No users.</p>}
+      {rows.length === 0 && <p className="text-[var(--text-tertiary)] text-sm">No users.</p>}
     </div>
   );
 }

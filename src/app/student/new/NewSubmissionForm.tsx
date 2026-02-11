@@ -2,34 +2,46 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SERVICE_TYPES } from "@/lib/types";
-
-const today = new Date().toISOString().slice(0, 10);
 
 export function NewSubmissionForm({ userId }: { userId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [summary, setSummary] = useState<{
-    service_date: string;
-    service_type: string;
-    credits: number;
-    hours: number;
-  } | null>(null);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const [service_date, setService_date] = useState(today);
-  const [service_type, setService_type] = useState<(typeof SERVICE_TYPES)[number]>(SERVICE_TYPES[0]);
-  const [credits, setCredits] = useState("");
-  const [hours, setHours] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [form, setForm] = useState({
+    event_title: "",
+    hours: "",
+    tour_credits: "",
+    notes: "",
+  });
+
+  const update = (key: string, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const creditsNum = parseFloat(credits) || 0;
-    const hoursNum = parseFloat(hours) || 0;
+
+    const hours = parseFloat(form.hours);
+    const credits = parseInt(form.tour_credits, 10);
+
+    if (!form.event_title.trim()) {
+      setError("Event title is required.");
+      setLoading(false);
+      return;
+    }
+    if (isNaN(hours) || hours <= 0) {
+      setError("Please enter valid hours.");
+      setLoading(false);
+      return;
+    }
+    if (isNaN(credits) || credits < 0) {
+      setError("Tour credits must be a whole number.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/submissions", {
@@ -37,159 +49,125 @@ export function NewSubmissionForm({ userId }: { userId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
-          service_date,
-          service_type,
-          credits: creditsNum,
-          hours: hoursNum,
-          feedback: feedback.trim() || null,
+          service_type: form.event_title.trim(),
+          hours,
+          credits,
+          service_date: new Date().toISOString().split("T")[0],
+          feedback: form.notes.trim() || null,
         }),
       });
 
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        setError(d.error || "Failed to submit.");
-        setLoading(false);
-        return;
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Submission failed.");
+      } else {
+        setSuccess(true);
       }
-
-      setSummary({ service_date, service_type, credits: creditsNum, hours: hoursNum });
-      setSuccess(true);
     } catch {
-      setError("Something went wrong.");
+      setError("Network error. Please try again.");
     }
+
     setLoading(false);
   };
 
-  if (success && summary) {
+  if (success) {
     return (
-      <div className="rounded-xl bg-navy/5 border border-navy/10 p-4 space-y-2">
-        <h2 className="font-semibold text-navy">Submission received</h2>
-        <p className="text-sm text-navy/80">
-          Date: {summary.service_date} · {summary.service_type}
+      <div className="glass-panel p-6 space-y-4 text-center animate-fade-in">
+        <p className="text-lg">Submitted ✓</p>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Your service hours have been logged.
         </p>
-        <p className="text-sm text-navy/80">
-          Hours: {summary.hours} · Tour credits: {summary.credits}
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/student/history")}
-          className="mt-4 py-2 px-4 rounded-lg bg-navy text-white"
-        >
-          View history
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setSuccess(false);
-            setSummary(null);
-            setCredits("");
-            setHours("");
-            setFeedback("");
-            setService_date(today);
-          }}
-          className="ml-2 py-2 px-4 rounded-lg border border-navy text-navy"
-        >
-          Add another
-        </button>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => {
+              setSuccess(false);
+              setForm({ event_title: "", hours: "", tour_credits: "", notes: "" });
+            }}
+            className="glass-btn-primary py-2 px-4 text-sm"
+          >
+            Log Another
+          </button>
+          <button
+            onClick={() => router.push("/student/history")}
+            className="glass-btn-secondary py-2 px-4 text-sm"
+          >
+            View History
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="glass-panel p-5 space-y-4 animate-fade-in">
       <div>
-        <label className="block text-sm font-medium text-navy mb-1">
-          Service Date
+        <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
+          Event Title
         </label>
         <input
-          type="date"
-          value={service_date}
-          onChange={(e) => setService_date(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg border border-navy/20 text-navy"
+          type="text"
+          value={form.event_title}
+          onChange={(e) => update("event_title", e.target.value)}
+          placeholder="e.g. Family Tour, Campus Preview Day"
+          className="glass-input"
           required
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-navy mb-1">
-          Service Type
-        </label>
-        <select
-          value={service_type}
-          onChange={(e) => setService_type(e.target.value as (typeof SERVICE_TYPES)[number])}
-          className="w-full px-4 py-2 rounded-lg border border-navy/20 text-navy"
-        >
-          {SERVICE_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
+            Hours Served
+          </label>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            value={form.hours}
+            onChange={(e) => update("hours", e.target.value)}
+            placeholder="2"
+            className="glass-input"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
+            Tour Credits
+          </label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            value={form.tour_credits}
+            onChange={(e) => update("tour_credits", e.target.value)}
+            placeholder="1"
+            className="glass-input"
+            required
+          />
+        </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-navy mb-1">
-          Tour Credits
-        </label>
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          value={credits}
-          onChange={(e) => setCredits(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg border border-navy/20 text-navy"
-          required
-        />
-        <p className="text-xs text-navy/60 mt-1">
-          NOTE: Family tours are 1, Campus Preview Day is 1, & anything else is 0
-          unless specified.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-navy mb-1">
-          Hours Served
-        </label>
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg border border-navy/20 text-navy"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-navy mb-1">
-          Feedback
+        <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
+          Notes / Feedback
         </label>
         <textarea
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          value={form.notes}
+          onChange={(e) => update("notes", e.target.value)}
+          placeholder="How did the event go?"
           rows={3}
-          className="w-full px-4 py-2 rounded-lg border border-navy/20 text-navy resize-none"
-          placeholder="Optional"
+          className="glass-input resize-none"
         />
-        <p className="text-xs text-navy/60 mt-1">
-          NOTE: If you had any strange, negative, or positive interactions,
-          please provide that here.
-        </p>
       </div>
 
-      {error && (
-        <p className="text-red-600 text-sm" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 rounded-lg bg-navy text-white font-medium disabled:opacity-60"
+        className="glass-btn-primary w-full"
       >
-        {loading ? "Submitting…" : "Submit"}
+        {loading ? "Submitting..." : "Submit"}
       </button>
     </form>
   );

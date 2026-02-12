@@ -2,16 +2,17 @@ import Link from "next/link";
 import { AdminEventsContent } from "./AdminEventsContent";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 
 export default async function AdminEventsPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSession();
 
-    if (!user) {
+    if (!session || session.role !== "admin") {
         redirect("/login");
     }
+
+    const userId = session.userId;
 
     return (
         <div className="space-y-6">
@@ -27,7 +28,7 @@ export default async function AdminEventsPage() {
                     </Link>
                 </Button>
             </div>
-            <AdminEventsContent userId={user.id} />
+            <AdminEventsContent userId={userId} />
         </div>
     );
 }

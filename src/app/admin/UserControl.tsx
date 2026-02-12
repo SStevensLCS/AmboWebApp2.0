@@ -1,6 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Upload, Plus, UserPlus, Check, X, AlertCircle } from "lucide-react";
 
 type UserRow = {
   id: string;
@@ -19,6 +35,7 @@ export function UserControl() {
   const [editForm, setEditForm] = useState<Partial<UserRow>>({});
   const [csvError, setCsvError] = useState("");
   const [csvSuccess, setCsvSuccess] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const [addForm, setAddForm] = useState({
     first_name: "",
@@ -95,10 +112,13 @@ export function UserControl() {
     e.preventDefault();
     setCsvError("");
     setCsvSuccess("");
+    setUploading(true);
+
     const input = (e.target as HTMLFormElement).querySelector('input[type="file"]') as HTMLInputElement;
     const file = input?.files?.[0];
     if (!file) {
       setCsvError("Choose a file.");
+      setUploading(false);
       return;
     }
     const formData = new FormData();
@@ -115,230 +135,280 @@ export function UserControl() {
     } else {
       setCsvError(data.error || "Upload failed.");
     }
+    setUploading(false);
   };
 
   if (loading)
     return (
-      <div className="flex items-center gap-2 text-[var(--text-tertiary)] py-8">
-        <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-        Loading…
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
       </div>
     );
 
   return (
     <div className="space-y-4">
-      <div className="glass-card p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setShowAdd(!showAdd)}
-            className="glass-btn-primary py-1.5 px-4 text-sm"
-          >
-            Add user
-          </button>
-          <form onSubmit={onCsvSubmit} className="flex items-center gap-2 flex-wrap">
-            <input
-              type="file"
-              accept=".csv,.txt"
-              className="text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-accent/15 file:text-accent file:cursor-pointer hover:file:bg-accent/25 file:transition-colors"
-            />
-            <button
-              type="submit"
-              className="glass-btn-secondary py-1.5 px-4 text-sm"
-            >
-              CSV upload
-            </button>
-          </form>
-        </div>
-        {csvError && <p className="text-red-400 text-sm mt-2">{csvError}</p>}
-        {csvSuccess && <p className="text-emerald-400 text-sm mt-2">{csvSuccess}</p>}
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">
-          CSV columns: first_name, last_name, phone (10 digits), email, role
-          (optional)
-        </p>
-      </div>
+      {/* Actions Bar */}
+      <Card>
+        <CardContent className="p-4 flex flex-wrap items-center gap-4">
+          <Button onClick={() => setShowAdd(!showAdd)} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            {showAdd ? "Close Form" : "Add User"}
+          </Button>
 
-      {showAdd && (
-        <form
-          onSubmit={onAddSubmit}
-          className="glass-card p-5 space-y-3"
-        >
-          <h3 className="font-medium text-[var(--text-primary)]/90">New user</h3>
-          <input
-            type="text"
-            placeholder="First name"
-            value={addForm.first_name}
-            onChange={(e) =>
-              setAddForm((f) => ({ ...f, first_name: e.target.value }))
-            }
-            className="glass-input text-sm"
-            required
-          />
-          <input
-            type="text"
-            placeholder="Last name"
-            value={addForm.last_name}
-            onChange={(e) =>
-              setAddForm((f) => ({ ...f, last_name: e.target.value }))
-            }
-            className="glass-input text-sm"
-            required
-          />
-          <input
-            type="tel"
-            placeholder="10-digit phone"
-            value={addForm.phone}
-            onChange={(e) =>
-              setAddForm((f) => ({ ...f, phone: e.target.value }))
-            }
-            className="glass-input text-sm"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={addForm.email}
-            onChange={(e) =>
-              setAddForm((f) => ({ ...f, email: e.target.value }))
-            }
-            className="glass-input text-sm"
-            required
-          />
-          <select
-            value={addForm.role}
-            onChange={(e) =>
-              setAddForm((f) => ({ ...f, role: e.target.value }))
-            }
-            className="glass-input text-sm"
-          >
-            <option value="student">Student</option>
-            <option value="admin">Admin</option>
-          </select>
-          {addError && <p className="text-red-400 text-sm">{addError}</p>}
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="glass-btn-primary py-1.5 px-4 text-sm"
-            >
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAdd(false)}
-              className="glass-btn-secondary py-1.5 px-4 text-sm"
-            >
-              Cancel
-            </button>
+          <div className="flex-1 min-w-[200px]">
+            <form onSubmit={onCsvSubmit} className="flex items-center gap-2">
+              <Input type="file" accept=".csv,.txt" className="max-w-[250px]" disabled={uploading} />
+              <Button type="submit" variant="secondary" disabled={uploading}>
+                {uploading ? "Uploading..." : "CSV Upload"}
+              </Button>
+            </form>
           </div>
-        </form>
+        </CardContent>
+        {(csvError || csvSuccess) && (
+          <CardFooter className="pt-0 pb-4 block">
+            {csvError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{csvError}</AlertDescription>
+              </Alert>
+            )}
+            {csvSuccess && (
+              <Alert className="bg-green-50 text-green-800 border-green-200">
+                <Check className="h-4 w-4 text-green-600" />
+                <AlertDescription>{csvSuccess}</AlertDescription>
+              </Alert>
+            )}
+          </CardFooter>
+        )}
+      </Card>
+
+      {/* Add User Form */}
+      {showAdd && (
+        <Card className="animate-in slide-in-from-top-4 fade-in duration-200">
+          <CardHeader>
+            <CardTitle>New User</CardTitle>
+            <CardDescription>Add a new student or admin manually.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onAddSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  placeholder="First Name"
+                  value={addForm.first_name}
+                  onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))}
+                  required
+                />
+                <Input
+                  placeholder="Last Name"
+                  value={addForm.last_name}
+                  onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  type="tel"
+                  placeholder="10-digit Phone"
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))}
+                  required
+                />
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <select
+                value={addForm.role}
+                onChange={(e) => setAddForm((f) => ({ ...f, role: e.target.value }))}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="student">Student</option>
+                <option value="admin">Admin</option>
+              </select>
+
+              {addError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{addError}</AlertDescription>
+                </Alert>
+              )}
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
+                <Button type="submit">Add User</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="glass-panel overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="glass-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  {editing === row.id ? (
-                    <td colSpan={5} className="py-3 px-3">
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <input
-                          type="text"
+      {/* Desktop Table */}
+      <Card className="hidden sm:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id}>
+                {editing === row.id ? (
+                  <>
+                    <TableCell colSpan={5}>
+                      <div className="flex items-center gap-2 w-full">
+                        <Input
                           placeholder="First"
                           value={editForm.first_name ?? ""}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, first_name: e.target.value }))
-                          }
-                          className="glass-input py-1.5 px-2 w-24 text-sm"
+                          onChange={(e) => setEditForm((f) => ({ ...f, first_name: e.target.value }))}
+                          className="w-24 h-8"
                         />
-                        <input
-                          type="text"
+                        <Input
                           placeholder="Last"
                           value={editForm.last_name ?? ""}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, last_name: e.target.value }))
-                          }
-                          className="glass-input py-1.5 px-2 w-24 text-sm"
+                          onChange={(e) => setEditForm((f) => ({ ...f, last_name: e.target.value }))}
+                          className="w-24 h-8"
                         />
-                        <input
-                          type="tel"
+                        <Input
                           placeholder="Phone"
                           value={editForm.phone ?? ""}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, phone: e.target.value }))
-                          }
-                          className="glass-input py-1.5 px-2 w-28 text-sm"
+                          onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                          className="w-28 h-8"
                         />
-                        <input
-                          type="email"
+                        <Input
                           placeholder="Email"
                           value={editForm.email ?? ""}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, email: e.target.value }))
-                          }
-                          className="glass-input py-1.5 px-2 min-w-[140px] text-sm"
+                          onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                          className="min-w-[140px] h-8"
                         />
                         <select
                           value={editForm.role ?? ""}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, role: e.target.value }))
-                          }
-                          className="glass-input py-1.5 px-2 w-auto text-sm"
+                          onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
+                          className="h-8 w-[100px] border rounded-md text-sm px-2"
                         >
                           <option value="student">Student</option>
                           <option value="admin">Admin</option>
                         </select>
-                        <button
-                          type="button"
-                          onClick={saveEdit}
-                          className="glass-btn-primary py-1.5 px-3 text-sm"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEdit}
-                          className="glass-btn-secondary py-1.5 px-3 text-sm"
-                        >
-                          Cancel
-                        </button>
+                        <Button size="sm" onClick={saveEdit} className="h-8 w-8 p-0">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" onClick={cancelEdit} variant="ghost" className="h-8 w-8 p-0">
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </td>
-                  ) : (
-                    <>
-                      <td>
-                        {row.first_name} {row.last_name}
-                      </td>
-                      <td>{row.phone}</td>
-                      <td>{row.email}</td>
-                      <td className="capitalize">{row.role}</td>
-                      <td>
-                        <button
-                          type="button"
-                          onClick={() => startEdit(row)}
-                          className="text-accent text-sm hover:text-accent/80 transition-colors"
-                        >
-                          Edit
-                        </button>
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </TableCell>
+                  </>
+                ) : (
+                  <>
+                    <TableCell className="font-medium">
+                      {row.first_name} {row.last_name}
+                    </TableCell>
+                    <TableCell>{row.phone}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={row.role === "admin" ? "default" : "secondary"}>
+                        {row.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => startEdit(row)}>
+                        Edit
+                      </Button>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            ))}
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                  No users found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Mobile Feed */}
+      <div className="sm:hidden space-y-4">
+        {rows.map((row) => (
+          <Card key={row.id}>
+            {editing === row.id ? (
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="First"
+                    value={editForm.first_name ?? ""}
+                    onChange={(e) => setEditForm((f) => ({ ...f, first_name: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Last"
+                    value={editForm.last_name ?? ""}
+                    onChange={(e) => setEditForm((f) => ({ ...f, last_name: e.target.value }))}
+                  />
+                </div>
+                <Input
+                  placeholder="Phone"
+                  value={editForm.phone ?? ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                />
+                <Input
+                  placeholder="Email"
+                  value={editForm.email ?? ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                />
+                <select
+                  value={editForm.role ?? ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="student">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <div className="flex gap-2">
+                  <Button onClick={saveEdit} className="flex-1">Save</Button>
+                  <Button onClick={cancelEdit} variant="outline" className="flex-1">Cancel</Button>
+                </div>
+              </CardContent>
+            ) : (
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-semibold">
+                    {row.first_name} {row.last_name}
+                  </div>
+                  <Badge variant={row.role === "admin" ? "default" : "secondary"}>
+                    {row.role}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 gap-y-1 text-sm text-muted-foreground mb-4">
+                  <div>{row.phone}</div>
+                  <div className="truncate">{row.email}</div>
+                </div>
+                <div className="flex justify-end">
+                  <Button variant="outline" size="sm" onClick={() => startEdit(row)}>
+                    Edit User
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        ))}
+        {rows.length === 0 && (
+          <div className="p-8 text-center text-muted-foreground text-sm border rounded-lg bg-card">
+            No users found.
+          </div>
+        )}
       </div>
-      {rows.length === 0 && <p className="text-[var(--text-tertiary)] text-sm">No users.</p>}
     </div>
   );
 }

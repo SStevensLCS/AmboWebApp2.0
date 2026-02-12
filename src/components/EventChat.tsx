@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Send, Bot, Sparkles, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ChatMessage = {
     role: "user" | "ai";
@@ -41,9 +48,12 @@ export function EventChat({
         { role: string; content: string }[]
     >([]);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        }
     }, [messages]);
 
     const handleSend = async () => {
@@ -185,44 +195,84 @@ export function EventChat({
     };
 
     return (
-        <div className="glass-panel p-0 h-[420px] flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((m, i) => (
-                    <div
-                        key={i}
-                        className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                        <div className={m.role === "user" ? "chat-bubble-user" : "chat-bubble-ai"}>
-                            {m.content}
-                        </div>
+        <Card className="h-[400px] sm:h-[450px] lg:h-[500px] flex flex-col shadow-sm">
+            <CardHeader className="p-4 py-3 border-b bg-muted/20">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                    AI Assistant
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 p-0 overflow-hidden relative">
+                <ScrollArea className="h-full p-4" ref={scrollContainerRef}>
+                    <div className="space-y-4">
+                        {messages.map((m, i) => (
+                            <div
+                                key={i}
+                                className={cn(
+                                    "flex gap-3",
+                                    m.role === "user" ? "flex-row-reverse" : "flex-row"
+                                )}
+                            >
+                                <Avatar className={cn("h-8 w-8 shrink-0", m.role === "user" ? "hidden" : "block")}>
+                                    <AvatarFallback className="bg-purple-100 text-purple-600">
+                                        <Bot className="w-4 h-4" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div
+                                    className={cn(
+                                        "rounded-2xl px-4 py-2.5 max-w-[85%] text-sm shadow-sm",
+                                        m.role === "user"
+                                            ? "bg-primary text-primary-foreground rounded-tr-sm"
+                                            : "bg-muted text-foreground rounded-tl-sm border"
+                                    )}
+                                >
+                                    {m.content.split("\n").map((line, j) => (
+                                        <p key={j} className={cn(j > 0 && "mt-1")}>
+                                            {line}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                        {loading && (
+                            <div className="flex gap-3">
+                                <Avatar className="h-8 w-8 shrink-0">
+                                    <AvatarFallback className="bg-purple-100 text-purple-600">
+                                        <Bot className="w-4 h-4" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="bg-muted text-foreground rounded-2xl rounded-tl-sm px-4 py-3 border shadow-sm flex items-center gap-1.5 h-10">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.3s]" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.15s]" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" />
+                                </div>
+                            </div>
+                        )}
+                        <div ref={bottomRef} className="h-px w-full" />
                     </div>
-                ))}
-                {loading && (
-                    <div className="flex justify-start">
-                        <div className="chat-bubble-ai text-sm" style={{ opacity: 0.5 }}>
-                            ...
-                        </div>
-                    </div>
-                )}
-                <div ref={bottomRef} />
-            </div>
-            <div className="border-t border-[var(--border)] p-3 flex gap-2">
-                <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Describe your event..."
-                    className="glass-input text-sm"
-                    disabled={loading}
-                />
-                <button
-                    onClick={handleSend}
-                    disabled={loading || !input.trim()}
-                    className="glass-btn-primary py-2 px-4 text-sm"
+                </ScrollArea>
+            </CardContent>
+            <CardFooter className="p-3 bg-background border-t">
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSend();
+                    }}
+                    className="flex gap-2 w-full"
                 >
-                    →
-                </button>
-            </div>
-        </div>
+                    <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Type a message..."
+                        className="flex-1"
+                        disabled={loading}
+                    />
+                    <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+                        <Send className="w-4 h-4" />
+                        <span className="sr-only">Send</span>
+                    </Button>
+                </form>
+            </CardFooter>
+        </Card>
     );
 }

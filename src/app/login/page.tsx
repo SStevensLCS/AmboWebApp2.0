@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [phone, setPhone] = useState("");
@@ -36,40 +42,58 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
-      <div className="w-full max-w-sm animate-fade-in">
-        <h1 className="text-3xl tracking-wide text-center mb-8">
-          Ambassador Portal
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-2">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(555) 123-4567"
-              className="glass-input"
-              required
-            />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/40">
+      <Card className="w-full max-w-sm shadow-lg">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-2 shadow-md">
+            <svg
+              className="w-6 h-6 text-primary-foreground"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+            </svg>
           </div>
+          <CardTitle className="text-2xl font-bold">Ambassador Portal</CardTitle>
+          <CardDescription>Sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="bg-background"
+              />
+            </div>
 
-          {error && (
-            <p className="text-sm text-[var(--danger)]">{error}</p>
-          )}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="glass-btn-primary w-full"
-          >
-            {loading ? "..." : "Sign In"}
-          </button>
-        </form>
-      </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

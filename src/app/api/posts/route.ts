@@ -10,46 +10,58 @@ export async function GET() {
 
     const supabase = createAdminClient();
     const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("start_time", { ascending: true });
+        .from("posts")
+        .select(`
+            *,
+            users (
+                first_name,
+                last_name
+            ),
+            comments (count)
+        `)
+        .order("created_at", { ascending: false });
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json({ events: data || [] });
+
+    return NextResponse.json({ posts: data || [] });
 }
 
 export async function POST(req: Request) {
     const session = await getSession();
-    if (!session || session.role !== "admin") {
+    if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    const { title, description, start_time, end_time, location, type } = body;
+    const { content } = body;
 
-    if (!title || !start_time || !end_time) {
+    if (!content || !content.trim()) {
         return NextResponse.json(
-            { error: "Missing required fields" },
+            { error: "Content is required" },
             { status: 400 }
         );
     }
 
     const supabase = createAdminClient();
-    const { error } = await supabase.from("events").insert({
-        title,
-        description: description || null,
-        start_time,
-        end_time,
-        location: location || "TBD",
-        type: type || "Event",
-        created_by: session.userId,
-        uniform: body.uniform || "Ambassador Polo with Navy Pants.",
-    });
+    const { data, error } = await supabase
+        .from("posts")
+        .insert({
+            user_id: session.userId,
+            content: content.trim(),
+        })
+        .select(`
+            *,
+            users (
+                first_name,
+                last_name
+            )
+        `)
+        .single();
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ post: data });
 }

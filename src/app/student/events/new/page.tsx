@@ -17,10 +17,10 @@ export default async function NewSubmissionPage() {
   if (!profile) redirect("/login");
 
   return (
-    <div className="space-y-3 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <div>
-        <h1 className="text-xl tracking-wide">Log Service</h1>
-        <p className="text-[var(--text-tertiary)] text-sm">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Log Service</h1>
+        <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
           {profile.first_name} {profile.last_name}
         </p>
       </div>

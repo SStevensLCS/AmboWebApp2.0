@@ -7,8 +7,11 @@ export default async function StudentEventsPage() {
     if (!session || session.role !== "student") redirect("/");
 
     return (
-        <div className="space-y-4 animate-fade-in pb-20">
-            <h1 className="text-xl tracking-wide">Upcoming Events</h1>
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight">Events</h1>
+                <p className="text-muted-foreground">View upcoming events and RSVP.</p>
+            </div>
             <StudentEventsContent userId={session.userId} />
         </div>
     );

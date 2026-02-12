@@ -1,6 +1,8 @@
-import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -9,44 +11,39 @@ export default async function AdminLayout({
 }) {
   const session = await getSession();
 
-  if (!session) redirect("/login");
-  if (session.role !== "admin") redirect("/");
+  if (!session || session.role !== "admin") {
+    redirect("/login");
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <header className="glass-header py-3 px-4 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-6">
-          <Link
-            href="/admin"
-            className="text-xl tracking-wide hover:opacity-60 transition-opacity"
-          >
-            Admin
-          </Link>
-          <nav className="flex gap-4">
-            <Link
-              href="/admin"
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/admin/events"
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-            >
-              Events
-            </Link>
-          </nav>
+    <div className="min-h-screen bg-muted/40 pb-safe-bottom">
+      {/* Top Navigation */}
+      <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background px-4 sm:px-6 shadow-sm">
+        <div className="flex w-full items-center justify-between mx-auto max-w-5xl">
+          <div className="flex items-center gap-6">
+            <h1 className="text-lg font-bold tracking-tight">Ambassador Portal</h1>
+            <nav className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/admin">Dashboard</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/admin/events">Events</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/admin/posts">Posts</Link>
+              </Button>
+            </nav>
+          </div>
+          <form action="/api/auth/signout" method="post">
+            <Button variant="ghost" size="icon" title="Sign Out">
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">Sign Out</span>
+            </Button>
+          </form>
         </div>
-        <form action="/api/auth/signout" method="post">
-          <button
-            type="submit"
-            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            Sign out
-          </button>
-        </form>
       </header>
-      <main className="flex-1 p-4 max-w-4xl mx-auto w-full">{children}</main>
+
+      <main className="mx-auto max-w-5xl p-4 sm:p-6">{children}</main>
     </div>
   );
 }

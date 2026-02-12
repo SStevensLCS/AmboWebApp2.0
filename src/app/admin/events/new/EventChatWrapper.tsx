@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export function EventChatWrapper({ userId }: { userId: string }) {
     const router = useRouter();
@@ -14,6 +21,7 @@ export function EventChatWrapper({ userId }: { userId: string }) {
         start_time: "",
         end_time: "",
         max_rsvps: "",
+        uniform: "Ambassador Polo with Navy Pants.",
     });
 
     const update = (key: string, value: string) =>
@@ -59,6 +67,7 @@ export function EventChatWrapper({ userId }: { userId: string }) {
                     description: form.notes.trim() || null,
                     start_time: start.toISOString(),
                     end_time: end.toISOString(),
+                    uniform: form.uniform.trim(),
                 }),
             });
 
@@ -77,100 +86,108 @@ export function EventChatWrapper({ userId }: { userId: string }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="glass-panel p-5 space-y-4 animate-fade-in">
-            <div>
-                <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
-                    Event Title
-                </label>
-                <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => update("title", e.target.value)}
-                    placeholder="e.g. Campus Tour, Open House"
-                    className="glass-input"
-                    required
-                />
-            </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Event Details</CardTitle>
+                <CardDescription>Enter the essential details for the new event.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Event Title <span className="text-red-500">*</span></Label>
+                        <Input
+                            id="title"
+                            value={form.title}
+                            onChange={(e) => update("title", e.target.value)}
+                            placeholder="e.g. Campus Tour, Open House"
+                            required
+                        />
+                    </div>
 
-            <div>
-                <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
-                    Event Notes
-                </label>
-                <textarea
-                    value={form.notes}
-                    onChange={(e) => update("notes", e.target.value)}
-                    placeholder="Details about the event..."
-                    rows={3}
-                    className="glass-input resize-none"
-                />
-            </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Event Notes</Label>
+                        <Textarea
+                            id="notes"
+                            value={form.notes}
+                            onChange={(e) => update("notes", e.target.value)}
+                            placeholder="Details about the event..."
+                            className="min-h-[100px]"
+                        />
+                    </div>
 
-            <div className="grid grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
-                        Start Time
-                    </label>
-                    <input
-                        type="datetime-local"
-                        value={form.start_time}
-                        onChange={(e) => {
-                            const newStart = e.target.value;
-                            // Calculate new end time (start + 1 hour)
-                            if (newStart) {
-                                const startDate = new Date(newStart);
-                                const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-                                // Format to YYYY-MM-DDTHH:mm for local datetime input
-                                // We need to handle timezone offset to get local time string in ISO-like format
-                                const off = endDate.getTimezoneOffset() * 60000;
-                                const localISOTime = (new Date(endDate.getTime() - off)).toISOString().slice(0, 16);
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="start_time">Start Time <span className="text-red-500">*</span></Label>
+                            <Input
+                                id="start_time"
+                                type="datetime-local"
+                                value={form.start_time}
+                                onChange={(e) => {
+                                    const newStart = e.target.value;
+                                    if (newStart) {
+                                        const startDate = new Date(newStart);
+                                        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+                                        // Adjust to local ISO string for input
+                                        const off = endDate.getTimezoneOffset() * 60000;
+                                        const localISOTime = (new Date(endDate.getTime() - off)).toISOString().slice(0, 16);
+                                        setForm(prev => ({ ...prev, start_time: newStart, end_time: localISOTime }));
+                                    } else {
+                                        update("start_time", newStart);
+                                    }
+                                }}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="end_time">End Time <span className="text-red-500">*</span></Label>
+                            <Input
+                                id="end_time"
+                                type="datetime-local"
+                                value={form.end_time}
+                                onChange={(e) => update("end_time", e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
 
-                                setForm(prev => ({ ...prev, start_time: newStart, end_time: localISOTime }));
-                            } else {
-                                update("start_time", newStart);
-                            }
-                        }}
-                        className="glass-input"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
-                        End Time
-                    </label>
-                    <input
-                        type="datetime-local"
-                        value={form.end_time}
-                        onChange={(e) => update("end_time", e.target.value)}
-                        className="glass-input"
-                        required
-                    />
-                </div>
-            </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="max_rsvps">People Needed (RSVP Slots)</Label>
+                        <Input
+                            id="max_rsvps"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={form.max_rsvps}
+                            onChange={(e) => update("max_rsvps", e.target.value)}
+                            placeholder="e.g. 5"
+                        />
+                    </div>
 
-            <div>
-                <label className="block text-xs text-[var(--text-tertiary)] uppercase tracking-widest mb-1">
-                    People Needed (RSVP Slots)
-                </label>
-                <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={form.max_rsvps}
-                    onChange={(e) => update("max_rsvps", e.target.value)}
-                    placeholder="e.g. 5"
-                    className="glass-input"
-                />
-            </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="uniform">Uniform Requirements</Label>
+                        <Input
+                            id="uniform"
+                            value={form.uniform}
+                            onChange={(e) => update("uniform", e.target.value)}
+                            placeholder="e.g. Ambassador Polo with Navy Pants"
+                        />
+                    </div>
 
-            {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
 
-            <button
-                type="submit"
-                disabled={loading}
-                className="glass-btn-primary w-full"
-            >
-                {loading ? "Creating..." : "Create Event"}
-            </button>
-        </form>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {loading ? "Creating..." : "Create Event"}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     );
 }
+
+export default EventChatWrapper;

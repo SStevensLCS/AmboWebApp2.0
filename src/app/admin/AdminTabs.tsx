@@ -1,48 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-type Tab = "submissions" | "users";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, Users } from "lucide-react";
+import { SubmissionsControl } from "./SubmissionsControl";
+import { UserControl } from "./UserControl";
 
 export default function AdminTabs() {
-  const [activeTab, setActiveTab] = useState<Tab>("submissions");
-  const [SubmissionsControl, setSubmissionsControl] = useState<any>(null);
-  const [UserControl, setUserControl] = useState<any>(null);
-
-  useEffect(() => {
-    import("./SubmissionsControl").then((m) =>
-      setSubmissionsControl(() => m.SubmissionsControl)
-    );
-    import("./UserControl").then((m) => setUserControl(() => m.UserControl));
-  }, []);
-
   return (
-    <div className="space-y-4">
-      <div className="flex gap-1 border border-[var(--border)] rounded-lg p-1 w-fit">
-        <button
-          onClick={() => setActiveTab("submissions")}
-          className={`px-4 py-1.5 rounded-md text-sm transition-all ${activeTab === "submissions"
-            ? "bg-[var(--text-primary)] text-white"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            }`}
-        >
+    <Tabs defaultValue="submissions" className="space-y-4">
+      <TabsList>
+        <TabsTrigger value="submissions" className="gap-2">
+          <FileText className="h-4 w-4" />
           Submissions
-        </button>
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`px-4 py-1.5 rounded-md text-sm transition-all ${activeTab === "users"
-            ? "bg-[var(--text-primary)] text-white"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            }`}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="users" className="gap-2">
+          <Users className="h-4 w-4" />
           Users
-        </button>
-      </div>
-
-      {activeTab === "submissions" && SubmissionsControl && (
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="submissions" className="space-y-4">
         <SubmissionsControl />
-      )}
-      {activeTab === "users" && UserControl && <UserControl />}
-    </div>
+      </TabsContent>
+      <TabsContent value="users" className="space-y-4">
+        <UserControl />
+      </TabsContent>
+    </Tabs>
   );
 }

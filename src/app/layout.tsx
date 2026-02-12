@@ -12,7 +12,9 @@ export const metadata = {
   viewport: {
     width: "device-width",
     initialScale: 1,
-    viewportFit: "cover",
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover", // Fixes notched iPhones visual
   },
 };
 

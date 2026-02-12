@@ -65,6 +65,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
+  overscroll-behavior-y: none;
+  /* Prevents rubber-banding/refresh on PWA */
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+}
+
+/* Prevent iOS zooming on inputs */
+@media screen and (max-width: 768px) {
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 h1,
@@ -541,6 +555,7 @@ b {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -573,6 +588,7 @@ b {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -69,5 +69,23 @@ export async function POST(
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // ── Notify Post Author ───────────────────────────────
+    // Get the post author
+    const { data: post, error: postError } = await supabase
+        .from("posts")
+        .select("user_id, title")
+        .eq("id", params.id)
+        .single();
+
+    if (!postError && post && post.user_id !== session.userId) {
+        const { sendNotificationToUser } = await import("@/lib/notifications");
+        await sendNotificationToUser(post.user_id, {
+            title: "New Comment on: " + post.title,
+            body: data.users.first_name + ": " + content.substring(0, 50),
+            url: "/student/posts", // Or specific post URL if we have a detailed view
+        });
+    }
+
     return NextResponse.json({ comment: data });
 }

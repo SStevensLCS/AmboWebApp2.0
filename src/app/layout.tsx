@@ -18,6 +18,8 @@ export const metadata = {
   },
 };
 
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+
 export default function RootLayout({
   children,
 }: {
@@ -38,7 +40,10 @@ export default function RootLayout({
         />
         <meta name="theme-color" content="#ffffff" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <ServiceWorkerRegister />
+        {children}
+      </body>
     </html>
   );
 }

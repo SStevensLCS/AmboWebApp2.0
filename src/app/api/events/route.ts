@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createCalendarEvent } from "@/lib/googleCalendar";
 
 export async function GET() {
     const session = await getSession();
@@ -36,8 +37,7 @@ export async function POST(req: Request) {
         );
     }
 
-    const supabase = createAdminClient();
-    const { error } = await supabase.from("events").insert({
+    const eventData = {
         title,
         description: description || null,
         start_time,
@@ -46,10 +46,32 @@ export async function POST(req: Request) {
         type: type || "Event",
         created_by: session.userId,
         uniform: body.uniform || "Ambassador Polo with Navy Pants.",
-    });
+    };
+
+    const supabase = createAdminClient();
+    const { data: newEvent, error } = await supabase
+        .from("events")
+        .insert(eventData)
+        .select()
+        .single();
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json({ ok: true });
+
+    // ── Google Calendar sync ─────────────────────────────
+    const gcalId = await createCalendarEvent({
+        ...eventData,
+        id: newEvent.id,
+    });
+
+    if (gcalId) {
+        await supabase
+            .from("events")
+            .update({ google_calendar_event_id: gcalId })
+            .eq("id", newEvent.id);
+    }
+
+    return NextResponse.json({ ok: true, event: newEvent });
 }
+

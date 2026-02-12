@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, PlusCircle, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Calendar, PlusCircle, MessageSquare, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function StudentDesktopNav() {
@@ -28,6 +28,11 @@ export function StudentDesktopNav() {
             href: "/student/posts",
             label: "Posts",
             icon: MessageSquare,
+        },
+        {
+            href: "/student/profile",
+            label: "Profile",
+            icon: UserCircle,
         },
     ];
 

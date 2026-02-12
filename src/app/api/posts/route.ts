@@ -63,5 +63,20 @@ export async function POST(req: Request) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // ── Notify Users ─────────────────────────────────────
+    // If student posts -> Notify Admins
+    // If admin posts -> Notify Students (if it's important?)
+    // For now, let's notify Admins of all new posts.
+
+    if (session.role === "student") {
+        const { sendNotificationToRole } = await import("@/lib/notifications");
+        await sendNotificationToRole("admin", {
+            title: "New Post from " + data.users.first_name,
+            body: content.substring(0, 100),
+            url: "/admin/posts",
+        });
+    }
+
     return NextResponse.json({ post: data });
 }

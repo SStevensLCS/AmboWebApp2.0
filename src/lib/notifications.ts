@@ -78,28 +78,63 @@ export async function sendNotificationToRole(
 ) {
     const supabase = createAdminClient();
 
+    // Log start
+    await supabase.from("debug_logs").insert({
+        level: "info",
+        message: `sendNotificationToRole called for role: ${role}`,
+        data: { role, excludeUserId },
+    });
+
     // 1. Get users with role
-    // If targeting 'admin', also include 'superadmin'
     let roles: string[] = [role];
     if (role === "admin") {
         roles = ["admin", "superadmin"];
     }
 
-    // Efficiency: query push_subscriptions joined with users
-    const { data: subscriptions, error } = await supabase
-        .from("push_subscriptions")
-        .select("*, users!inner(role)")
-        .in("users.role", roles);
+    const { data: users, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .in("role", roles);
 
-    if (error || !subscriptions) {
-        console.error("[Push] Failed to fetch role subscriptions:", error);
+    if (userError || !users || users.length === 0) {
+        await supabase.from("debug_logs").insert({
+            level: "error",
+            message: "Failed to fetch users for role",
+            data: { error: userError, roles },
+        });
+        return;
+    }
+
+    const userIds = users.map((u) => u.id);
+
+    // 2. Fetch subscriptions for these users
+    const { data: subscriptions, error: subError } = await supabase
+        .from("push_subscriptions")
+        .select("*")
+        .in("user_id", userIds);
+
+    if (subError) {
+        await supabase.from("debug_logs").insert({
+            level: "error",
+            message: "Failed to fetch subscriptions",
+            data: { error: subError },
+        });
+        return;
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+        await supabase.from("debug_logs").insert({
+            level: "warn",
+            message: "No subscriptions found for target users",
+            data: { userCount: userIds.length },
+        });
         return;
     }
 
     // Log attempt
     await supabase.from("debug_logs").insert({
         level: "info",
-        message: `Attempting to send to ${subscriptions.length} subscriptions (Role: ${role})`,
+        message: `Attempting to send to ${subscriptions.length} subscriptions`,
         data: { role, excludeUserId, payload },
     });
 

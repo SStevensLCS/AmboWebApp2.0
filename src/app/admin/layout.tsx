@@ -37,6 +37,9 @@ export default async function AdminLayout({
               <Button asChild variant="ghost" size="sm">
                 <Link href="/admin/posts">Posts</Link>
               </Button>
+              <Button asChild variant="ghost" size="sm" className="text-red-500">
+                <Link href="/debug">Debug</Link>
+              </Button>
             </nav>
           </div>
           <form action="/api/auth/signout" method="post">

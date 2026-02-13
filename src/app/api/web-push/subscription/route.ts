@@ -42,9 +42,7 @@ export async function POST(req: Request) {
         message: "API: Subscription synced successfully",
     });
 
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+
 
     return NextResponse.json({ ok: true });
 }

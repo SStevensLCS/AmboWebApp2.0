@@ -13,7 +13,7 @@ export default async function StudentLayout({
 }) {
   const session = await getSession();
 
-  if (!session || session.role !== "student") {
+  if (!session || (session.role !== "student" && session.role !== "admin" && session.role !== "superadmin")) {
     redirect("/login");
   }
 

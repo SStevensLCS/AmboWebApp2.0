@@ -96,6 +96,13 @@ export async function sendNotificationToRole(
         return;
     }
 
+    // Log attempt
+    await supabase.from("debug_logs").insert({
+        level: "info",
+        message: `Attempting to send to ${subscriptions.length} subscriptions (Role: ${role})`,
+        data: { role, excludeUserId, payload },
+    });
+
     const payloadString = JSON.stringify(payload);
 
     const promises = subscriptions
@@ -111,7 +118,20 @@ export async function sendNotificationToRole(
 
             try {
                 await webpush.sendNotification(pushSubscription, payloadString);
+                // Log success
+                await supabase.from("debug_logs").insert({
+                    level: "info",
+                    message: "Push sent successfully",
+                    data: { endpoint: sub.endpoint, userId: sub.user_id },
+                });
             } catch (err: any) {
+                // Log error
+                await supabase.from("debug_logs").insert({
+                    level: "error",
+                    message: "Push failed",
+                    data: { endpoint: sub.endpoint, error: err.toString(), statusCode: err.statusCode },
+                });
+
                 if (err.statusCode === 410 || err.statusCode === 404) {
                     await supabase.from("push_subscriptions").delete().eq("id", sub.id);
                 }

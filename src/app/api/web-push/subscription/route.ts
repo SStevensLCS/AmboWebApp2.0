@@ -13,16 +13,34 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
     }
 
+    // Log attempt
     const supabase = createAdminClient();
+    await supabase.from("debug_logs").insert({
+        level: "info",
+        message: "API: Subscription sync request received",
+        data: { userId: session.userId, endpointSummary: subscription.endpoint?.substring(0, 20) },
+    });
 
-    // Upsert subscription
-    // Use endpoint as unique key to prevent duplicates
     const { error } = await supabase.from("push_subscriptions").upsert({
         user_id: session.userId,
         endpoint: subscription.endpoint,
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
     }, { onConflict: "endpoint" });
+
+    if (error) {
+        await supabase.from("debug_logs").insert({
+            level: "error",
+            message: "API: Failed to upsert subscription",
+            data: { error: error.message },
+        });
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    await supabase.from("debug_logs").insert({
+        level: "info",
+        message: "API: Subscription synced successfully",
+    });
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });

@@ -13,15 +13,36 @@ export function ServiceWorkerRegister() {
                     // Check if subscription exists and sync with server
                     try {
                         const sub = await registration.pushManager.getSubscription();
+
+                        // Log status to server
+                        await fetch("/api/debug/log", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                level: "info",
+                                message: sub ? "Client: Found subscription, syncing..." : "Client: No subscription found"
+                            }),
+                        });
+
                         if (sub) {
-                            await fetch("/api/web-push/subscription", {
+                            const res = await fetch("/api/web-push/subscription", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ subscription: sub }),
                             });
+
+                            if (!res.ok) {
+                                const errText = await res.text();
+                                throw new Error(`API error: ${res.status} ${errText}`);
+                            }
                         }
-                    } catch (err) {
+                    } catch (err: any) {
                         console.error("Failed to sync sub:", err);
+                        await fetch("/api/debug/log", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ level: "error", message: "Client: Sync failed", data: { error: err.toString() } }),
+                        });
                     }
                 })
                 .catch((error) => console.log("SW registration failed: ", error));

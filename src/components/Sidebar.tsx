@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
-import Image from "next/image";
+import { LucideIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface SidebarItem {
     href: string;
@@ -20,43 +21,76 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Sidebar({ className, items, header, footer, ...props }: SidebarProps) {
     const pathname = usePathname();
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
-        <div className={cn("pb-12 min-h-screen w-64 border-r bg-background hidden md:block", className)} {...props}>
-            <div className="space-y-4 py-4">
-                <div className="px-3 py-2">
-                    {header || (
-                        <div className="flex items-center px-4 mb-4">
-                            <div className="relative w-10 h-10 mr-2">
-                                {/* Placeholder for Logo, using a text fallback if no image provided in header */}\n                                  <span className="font-bold text-xl">Ambo</span>
-                            </div>
-                        </div>
-                    )}
-                    <div className="space-y-1">
+        <div
+            className={cn(
+                "relative flex flex-col min-h-screen border-r border-border/40 bg-background transition-all duration-300 ease-in-out",
+                isCollapsed ? "w-16" : "w-64",
+                "hidden md:flex",
+                className
+            )}
+            {...props}
+        >
+            {/* Toggle Button */}
+            <div className="absolute -right-3 top-6 z-20">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6 rounded-full border shadow-md bg-background hover:bg-accent"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                >
+                    {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+                </Button>
+            </div>
+
+            <div className="flex-1 py-4">
+                <div className={cn("px-3 py-2", isCollapsed ? "px-2" : "px-3")}>
+                    {/* Header / Logo */}
+                    <div className={cn("flex items-center mb-6 px-2", isCollapsed ? "justify-center" : "")}>
+                        {header ? header : (
+                            isCollapsed ? (
+                                <span className="font-bold text-xl">A</span>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    {/* <div className="w-6 h-6 bg-primary rounded-full" /> Placeholder logo */}
+                                    <span className="font-bold text-xl">Ambo</span>
+                                </div>
+                            )
+                        )}
+                    </div>
+
+                    <nav className="space-y-1">
                         {items.map((item) => {
                             const isActive = pathname === item.href;
                             return (
                                 <Button
                                     key={item.href}
                                     variant={isActive ? "secondary" : "ghost"}
-                                    className="w-full justify-start"
+                                    className={cn(
+                                        "w-full justify-start transition-all",
+                                        isCollapsed ? "justify-center px-2" : "px-4",
+                                        isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    title={isCollapsed ? item.label : undefined}
                                     asChild
                                 >
                                     <Link href={item.href}>
-                                        <item.icon className="mr-2 h-4 w-4" />
-                                        {item.label}
+                                        <item.icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
+                                        {!isCollapsed && <span>{item.label}</span>}
                                     </Link>
                                 </Button>
                             );
                         })}
-                    </div>
+                    </nav>
                 </div>
             </div>
-            {footer && <div className="absolute bottom-4 px-4 w-full">{footer}</div>}
+
+            {/* Footer */}
+            <div className="p-4 mt-auto border-t border-border/40">
+                {!isCollapsed && footer}
+            </div>
         </div>
     );
 }
-
-// We need Button specific to Sidebar look? 
-// Standard Button variant="ghost" works well.
-import { Button } from "@/components/ui/button";

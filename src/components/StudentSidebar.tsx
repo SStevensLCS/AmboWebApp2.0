@@ -2,6 +2,7 @@
 
 import { LayoutDashboard, Calendar, PlusCircle, MessageSquare, UserCircle, FileText } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export function StudentSidebar() {
     const navItems = [
@@ -37,5 +38,5 @@ export function StudentSidebar() {
         },
     ];
 
-    return <Sidebar items={navItems} className="hidden md:block" />;
+    return <Sidebar items={navItems} className="hidden md:block" footer={<SignOutButton fullWidth className="text-muted-foreground hover:text-red-500 hover:bg-red-50" />} />;
 }

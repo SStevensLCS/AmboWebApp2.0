@@ -15,7 +15,7 @@ export default async function StudentLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-muted/20">
+    <div className="flex min-h-screen bg-white">
       {/* Desktop Sidebar */}
       <StudentSidebar />
 

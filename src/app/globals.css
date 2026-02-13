@@ -5,13 +5,13 @@
 /* ─── Design Tokens ────────────────────────────────────── */
 :root {
   --bg: #ffffff;
-  --bg-secondary: #f8f9fb;
-  --bg-tertiary: #f1f3f6;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
   --surface: #ffffff;
-  --surface-hover: #f4f6f8;
+  --surface-hover: #f8f8f8;
 
-  --border: #e2e6ec;
-  --border-light: #eef1f5;
+  /* --border is defined in @layer base as channels for tailwind config compatibility */
+  --border-light: #f9fafb;
   --border-focus: #3b82f6;
 
   --text-primary: #1a1d23;
@@ -19,10 +19,10 @@
   --text-tertiary: #9ba3b0;
   --text-inverse: #ffffff;
 
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-light: #eff6ff;
-  --accent-subtle: rgba(59, 130, 246, 0.08);
+  --brand: #3b82f6;
+  --brand-hover: #2563eb;
+  --brand-light: #eff6ff;
+  --brand-subtle: rgba(59, 130, 246, 0.08);
 
   --success: #10b981;
   --success-bg: #ecfdf5;
@@ -60,7 +60,7 @@ body {
   font-weight: 400;
   letter-spacing: -0.01em;
   color: var(--text-primary);
-  background: var(--bg-secondary);
+  background: var(--bg);
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -103,7 +103,7 @@ b {
   /* ── Panels ── */
   .glass-panel {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid hsl(var(--border));
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
   }
@@ -111,14 +111,14 @@ b {
   /* ── Cards ── */
   .glass-card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid hsl(var(--border));
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-xs);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .glass-card:hover {
-    border-color: var(--border);
+    border-color: hsl(var(--border));
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
   }
@@ -143,7 +143,7 @@ b {
   /* ── Inputs ── */
   .glass-input {
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: 1px solid hsl(var(--border));
     border-radius: var(--radius-sm);
     color: var(--text-primary);
     padding: 10px 14px;
@@ -163,7 +163,7 @@ b {
 
   .glass-input:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px var(--accent-subtle);
+    box-shadow: 0 0 0 3px var(--brand-subtle);
   }
 
   .glass-input option {
@@ -173,7 +173,7 @@ b {
 
   /* ── Buttons ── */
   .glass-btn-primary {
-    background: var(--accent);
+    background: var(--brand);
     color: var(--text-inverse);
     font-weight: 500;
     padding: 10px 20px;
@@ -188,7 +188,7 @@ b {
   }
 
   .glass-btn-primary:hover {
-    background: var(--accent-hover);
+    background: var(--brand-hover);
     box-shadow: 0 3px 8px rgba(59, 130, 246, 0.35);
     transform: translateY(-1px);
   }
@@ -207,7 +207,7 @@ b {
 
   .glass-btn-secondary {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid hsl(var(--border));
     color: var(--text-primary);
     font-weight: 500;
     padding: 8px 16px;
@@ -286,7 +286,7 @@ b {
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid hsl(var(--border));
     background: var(--bg-secondary);
   }
 
@@ -307,7 +307,7 @@ b {
 
   /* ── Chat Bubbles ── */
   .chat-bubble-user {
-    background: var(--accent);
+    background: var(--brand);
     color: var(--text-inverse);
     border-radius: 18px 18px 4px 18px;
     padding: 10px 16px;
@@ -352,7 +352,7 @@ b {
   /* ── Mobile Card (replaces table on small screens) ── */
   .mobile-card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid hsl(var(--border));
     border-radius: var(--radius-md);
     padding: 14px 16px;
     box-shadow: var(--shadow-xs);
@@ -371,7 +371,7 @@ b {
   }
 
   .text-accent {
-    color: var(--accent);
+    color: var(--brand);
   }
 
   .tabular-nums {
@@ -517,13 +517,13 @@ b {
 
 /* ─── Focus visible ring ──────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
 /* ─── Selection ────────────────────────────────────────── */
 ::selection {
-  background: var(--accent);
+  background: var(--brand);
   color: var(--text-inverse);
 }
 
@@ -537,17 +537,17 @@ b {
     --popover-foreground: 0 0% 3.9%;
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
+    --secondary: 0 0% 97.5%;
     --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
+    --muted: 0 0% 97%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
+    --accent: 0 0% 97%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --border: 220 13% 95%;
+    --input: 220 13% 95%;
+    --ring: 224 71.4% 4.1%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -557,24 +557,24 @@ b {
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 210 20% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
     --ring: 0 0% 83.1%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;

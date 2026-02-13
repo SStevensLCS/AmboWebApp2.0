@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export default async function StudentProfilePage() {
     const session = await getSession();
@@ -15,8 +16,13 @@ export default async function StudentProfilePage() {
                 <p className="text-muted-foreground">Manage your account preferences.</p>
             </div>
 
-            <div className="max-w-xl">
+            <div className="max-w-xl space-y-6">
                 <PushNotificationManager />
+
+                <div className="pt-6 border-t">
+                    <h2 className="text-lg font-semibold mb-4">Account Actions</h2>
+                    <SignOutButton variant="destructive" className="w-full sm:w-auto" />
+                </div>
             </div>
         </div>
     );

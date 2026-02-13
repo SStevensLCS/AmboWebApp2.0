@@ -12,5 +12,5 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json({ connected: isConnected() });
+    return NextResponse.json({ connected: await isConnected() });
 }

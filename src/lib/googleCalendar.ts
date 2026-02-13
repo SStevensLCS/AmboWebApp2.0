@@ -1,12 +1,10 @@
 import { google, calendar_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
-import * as fs from "fs";
-import * as path from "path";
+import { createAdminClient } from "./supabase/admin";
 
 // ─── Config ──────────────────────────────────────────────
-const TOKEN_PATH = path.join(process.cwd(), "token.json");
-
 const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
+const TOKEN_KEY = "google_calendar_tokens";
 
 function getOAuth2Client(): OAuth2Client {
     return new google.auth.OAuth2(
@@ -29,31 +27,62 @@ export function getAuthUrl(): string {
 export async function exchangeCodeForTokens(code: string) {
     const client = getOAuth2Client();
     const { tokens } = await client.getToken(code);
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
+
+    // Store tokens in DB
+    const supabase = createAdminClient();
+    await supabase.from("system_settings").upsert({
+        key: TOKEN_KEY,
+        value: tokens,
+        updated_at: new Date().toISOString(),
+    });
+
     return tokens;
 }
 
-export function isConnected(): boolean {
-    return fs.existsSync(TOKEN_PATH);
+export async function isConnected(): Promise<boolean> {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", TOKEN_KEY)
+        .single();
+
+    return !!data?.value;
 }
 
-function getAuthenticatedClient(): OAuth2Client {
+async function getAuthenticatedClient(): Promise<OAuth2Client> {
     const client = getOAuth2Client();
-    const raw = fs.readFileSync(TOKEN_PATH, "utf-8");
-    const tokens = JSON.parse(raw);
+    const supabase = createAdminClient();
+
+    const { data } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", TOKEN_KEY)
+        .single();
+
+    if (!data?.value) {
+        throw new Error("No tokens found");
+    }
+
+    const tokens = data.value;
     client.setCredentials(tokens);
 
     // Persist refreshed tokens automatically
-    client.on("tokens", (newTokens) => {
+    client.on("tokens", async (newTokens) => {
         const merged = { ...tokens, ...newTokens };
-        fs.writeFileSync(TOKEN_PATH, JSON.stringify(merged, null, 2));
+        await supabase.from("system_settings").upsert({
+            key: TOKEN_KEY,
+            value: merged,
+            updated_at: new Date().toISOString(),
+        });
     });
 
     return client;
 }
 
-function getCalendar(): calendar_v3.Calendar {
-    return google.calendar({ version: "v3", auth: getAuthenticatedClient() });
+async function getCalendar(): Promise<calendar_v3.Calendar> {
+    const auth = await getAuthenticatedClient();
+    return google.calendar({ version: "v3", auth });
 }
 
 // ─── Event mapping ───────────────────────────────────────
@@ -102,10 +131,11 @@ const calendarId = () => process.env.GOOGLE_CALENDAR_ID || "primary";
 export async function createCalendarEvent(
     event: AppEvent
 ): Promise<string | null> {
-    if (!isConnected()) return null;
+    // Check connection first (async)
+    if (!(await isConnected())) return null;
 
     try {
-        const calendar = getCalendar();
+        const calendar = await getCalendar();
         const res = await calendar.events.insert({
             calendarId: calendarId(),
             requestBody: buildGoogleEvent(event),
@@ -121,10 +151,10 @@ export async function updateCalendarEvent(
     googleEventId: string,
     event: AppEvent
 ): Promise<boolean> {
-    if (!isConnected()) return false;
+    if (!(await isConnected())) return false;
 
     try {
-        const calendar = getCalendar();
+        const calendar = await getCalendar();
         await calendar.events.update({
             calendarId: calendarId(),
             eventId: googleEventId,
@@ -140,10 +170,10 @@ export async function updateCalendarEvent(
 export async function deleteCalendarEvent(
     googleEventId: string
 ): Promise<boolean> {
-    if (!isConnected()) return false;
+    if (!(await isConnected())) return false;
 
     try {
-        const calendar = getCalendar();
+        const calendar = await getCalendar();
         await calendar.events.delete({
             calendarId: calendarId(),
             eventId: googleEventId,

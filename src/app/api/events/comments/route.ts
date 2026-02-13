@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     const { data: comments } = await supabase
         .from("event_comments")
-        .select("*, users(first_name, last_name)")
+        .select("*, users(first_name, last_name, role)")
         .eq("event_id", eventId)
         .order("created_at", { ascending: true });
 
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     // Return updated comments
     const { data } = await supabase
         .from("event_comments")
-        .select("*, users(first_name, last_name)")
+        .select("*, users(first_name, last_name, role)")
         .eq("event_id", event_id)
         .order("created_at", { ascending: true });
 

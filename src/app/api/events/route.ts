@@ -12,7 +12,7 @@ export async function GET() {
     const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("events")
-        .select("*")
+        .select("*, users!created_by(role)")
         .order("start_time", { ascending: true });
 
     if (error) {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { EventCalendar } from "@/components/EventCalendar";
 import { EventModal } from "@/components/EventModal";
 
-export function AdminEventsContent({ userId }: { userId: string }) {
+export function AdminEventsContent({ userId, userRole }: { userId: string; userRole: string }) {
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
     return (
@@ -15,7 +15,7 @@ export function AdminEventsContent({ userId }: { userId: string }) {
                     event={selectedEvent}
                     onClose={() => setSelectedEvent(null)}
                     currentUserId={userId}
-                    userRole="admin"
+                    userRole={userRole}
                 />
             )}
         </>

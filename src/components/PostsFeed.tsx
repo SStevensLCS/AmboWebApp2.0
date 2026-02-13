@@ -21,7 +21,7 @@ type Post = {
     comments: { count: number }[];
 };
 
-export function PostsFeed({ currentUserId }: { currentUserId: string }) {
+export function PostsFeed({ currentUserId, currentUserRole }: { currentUserId: string; currentUserRole: string }) {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [newPost, setNewPost] = useState("");
@@ -133,7 +133,7 @@ export function PostsFeed({ currentUserId }: { currentUserId: string }) {
                     </div>
                 ) : posts.length > 0 ? (
                     posts.map((post) => (
-                        <PostItem key={post.id} post={post} currentUserId={currentUserId} />
+                        <PostItem key={post.id} post={post} currentUserId={currentUserId} currentUserRole={currentUserRole} />
                     ))
                 ) : (
                     <div className="text-center py-12">

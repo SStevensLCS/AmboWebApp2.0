@@ -38,10 +38,11 @@ export async function POST(req: NextRequest) {
 
     await setSessionCookie({
       userId: user.id,
-      role: user.role as "student" | "admin",
+      role: user.role as "student" | "admin" | "superadmin",
     });
 
-    const redirectTo = user.role === "admin" ? "/admin" : "/student";
+    const isStaff = ["admin", "superadmin"].includes(user.role);
+    const redirectTo = isStaff ? "/admin" : "/student";
     return NextResponse.json({ redirect: redirectTo });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Login failed.";

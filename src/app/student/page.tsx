@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,7 +31,7 @@ export default async function StudentDashboard() {
     redirect("/login");
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Fetch all submissions for history
   const { data: submissionsData } = await supabase

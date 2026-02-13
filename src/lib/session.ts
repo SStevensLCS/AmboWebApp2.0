@@ -6,7 +6,7 @@ const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export type SessionPayload = {
   userId: string;
-  role: "student" | "admin";
+  role: "student" | "admin" | "superadmin";
 };
 
 function getSecret() {
@@ -30,7 +30,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     const userId = payload.userId as string;
-    const role = payload.role as "student" | "admin";
+    const role = payload.role as "student" | "admin" | "superadmin";
     if (!userId || !role) return null;
     return { userId, role };
   } catch {
@@ -65,7 +65,7 @@ export async function verifySessionToken(
   try {
     const { payload } = await jwtVerify(token, getSecret());
     const userId = payload.userId as string;
-    const role = payload.role as "student" | "admin";
+    const role = payload.role as "student" | "admin" | "superadmin";
     if (!userId || !role) return null;
     return { userId, role };
   } catch {

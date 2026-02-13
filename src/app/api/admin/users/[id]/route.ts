@@ -20,9 +20,63 @@ export async function PATCH(
     const phone10 = body.phone.replace(/\D/g, "");
     if (phone10.length === 10) updates.phone = phone10;
   }
-  if (body.role === "admin" || body.role === "student") updates.role = body.role;
+  if (["admin", "student", "superadmin"].includes(body.role)) updates.role = body.role;
 
   const { error } = await supabase.from("users").update(updates).eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { authorized, supabase, user } = await requireAdmin();
+  if (!authorized) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  // Fetch my role (requireAdmin might technically just check 'admin' row existence, so let's be safe and fetch my role)
+  // Actually requireAdmin usually fetches the user row. Let's see src/lib/admin.ts content.
+  // If it doesn't return user role, we fetch it.
+
+  // Fetch my detailed role
+  const { data: me } = await supabase
+    .from("users")
+    .select("role")
+    .eq("email", user?.email)
+    .single();
+
+  const myRole = me?.role;
+
+  // Fetch target user role
+  const { data: targetUser, error: fetchError } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !targetUser) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  const isSuperAdmin = myRole === "superadmin";
+  const targetIsAdmin = targetUser.role === "admin";
+  const targetIsSuperAdmin = targetUser.role === "superadmin";
+
+  if (!isSuperAdmin) {
+    // If I'm not superadmin (so I am just admin), I cannot delete other admins or superadmins.
+    if (targetIsAdmin || targetIsSuperAdmin) {
+      return NextResponse.json({ error: "Admins cannot delete other admins/superadmins." }, { status: 403 });
+    }
+  }
+
+  const { error } = await supabase.from("users").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

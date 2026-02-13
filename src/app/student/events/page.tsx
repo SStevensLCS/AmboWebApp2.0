@@ -12,7 +12,7 @@ export default async function StudentEventsPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Events</h1>
                 <p className="text-muted-foreground">View upcoming events and RSVP.</p>
             </div>
-            <StudentEventsContent userId={session.userId} />
+            <StudentEventsContent userId={session.userId} userRole={session.role} />
         </div>
     );
 }

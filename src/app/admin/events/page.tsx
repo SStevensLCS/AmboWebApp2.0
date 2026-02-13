@@ -8,7 +8,7 @@ import { getSession } from "@/lib/session";
 export default async function AdminEventsPage() {
     const session = await getSession();
 
-    if (!session || session.role !== "admin") {
+    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
         redirect("/login");
     }
 
@@ -28,7 +28,7 @@ export default async function AdminEventsPage() {
                     </Link>
                 </Button>
             </div>
-            <AdminEventsContent userId={userId} />
+            <AdminEventsContent userId={userId} userRole={session.role} />
         </div>
     );
 }

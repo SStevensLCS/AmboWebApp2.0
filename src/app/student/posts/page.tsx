@@ -12,7 +12,7 @@ export default async function StudentPostsPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Team Posts</h1>
                 <p className="text-muted-foreground">Share updates and connect with the team.</p>
             </div>
-            <PostsFeed currentUserId={session.userId} />
+            <PostsFeed currentUserId={session.userId} currentUserRole={session.role} />
         </div>
     );
 }

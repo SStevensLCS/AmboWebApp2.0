@@ -4,7 +4,7 @@ import { useState } from "react";
 import { EventCalendar } from "@/components/EventCalendar";
 import { EventModal } from "@/components/EventModal";
 
-export function StudentEventsContent({ userId }: { userId: string }) {
+export function StudentEventsContent({ userId, userRole }: { userId: string; userRole: string }) {
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
     return (
@@ -15,7 +15,7 @@ export function StudentEventsContent({ userId }: { userId: string }) {
                     event={selectedEvent}
                     onClose={() => setSelectedEvent(null)}
                     currentUserId={userId}
-                    userRole="student"
+                    userRole={userRole}
                 />
             )}
         </>

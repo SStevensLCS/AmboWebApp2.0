@@ -46,7 +46,25 @@ export function UserControl() {
   });
   const [addError, setAddError] = useState("");
 
+  const [myRole, setMyRole] = useState<string>("student");
+
   const fetchUsers = async () => {
+    // We can also fetch "me" here to get my role if not passed as prop.
+    // Or we rely on parent. But UserControl is a page component usually? 
+    // Actually it's imported in page.tsx. 
+    // Let's assume we can fetch /api/auth/me or similar, or just check the list for myself?
+    // Better to fetch session.
+    // For now, let's validte permissions via API error handling, but UI should hide buttons if known.
+    // I'll add a quick fetch for session or rely on API failures for strict security.
+    // But user wants UI to reflect it? "Student users should only be able to..."
+
+    // Let's fetch /api/auth/session if available, or just /api/users/me
+    const meRes = await fetch("/api/auth/session");
+    if (meRes.ok) {
+      const session = await meRes.json();
+      setMyRole(session.user?.role || "student");
+    }
+
     const res = await fetch("/api/admin/users");
     if (res.ok) {
       const data = await res.json();
@@ -136,6 +154,18 @@ export function UserControl() {
       setCsvError(data.error || "Upload failed.");
     }
     setUploading(false);
+  };
+
+  const deleteUser = async (user: UserRow) => {
+    if (!confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}? This action cannot be undone.`)) return;
+
+    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+    if (res.ok) {
+      fetchUsers();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to delete user");
+    }
   };
 
   if (loading)
@@ -320,9 +350,16 @@ export function UserControl() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => startEdit(row)}>
-                        Edit
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => startEdit(row)}>
+                          Edit
+                        </Button>
+                        {(myRole === "superadmin" || (myRole === "admin" && row.role !== "admin" && row.role !== "superadmin")) && (
+                          <Button variant="ghost" size="sm" onClick={() => deleteUser(row)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </>
                 )}
@@ -394,10 +431,15 @@ export function UserControl() {
                   <div>{row.phone}</div>
                   <div className="truncate">{row.email}</div>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={() => startEdit(row)}>
-                    Edit User
+                    Edit
                   </Button>
+                  {(myRole === "superadmin" || (myRole === "admin" && row.role !== "admin" && row.role !== "superadmin")) && (
+                    <Button variant="outline" size="sm" onClick={() => deleteUser(row)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             )}

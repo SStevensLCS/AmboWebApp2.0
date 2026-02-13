@@ -29,9 +29,11 @@ export default function LoginPage() {
 
       if (res.ok) {
         const data = await res.json();
+        console.log("Login response data:", data);
         router.push(data.redirect || "/");
       } else {
         const data = await res.json();
+        console.error("Login failed:", data);
         setError(data.error || "Login failed");
       }
     } catch {

@@ -43,8 +43,12 @@ export async function POST(req: NextRequest) {
 
     const isStaff = ["admin", "superadmin"].includes(user.role);
     const redirectTo = isStaff ? "/admin" : "/student";
+
+    console.log("Login successful for user:", user.id, "Redirecting to:", redirectTo);
+
     return NextResponse.json({ redirect: redirectTo });
   } catch (err) {
+    console.error("Login error:", err);
     const message = err instanceof Error ? err.message : "Login failed.";
     return NextResponse.json(
       { error: message },

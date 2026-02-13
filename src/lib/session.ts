@@ -44,6 +44,9 @@ export async function setSessionCookie(payload: SessionPayload) {
   }
   const token = await createSession(payload);
   const cookieStore = await cookies();
+
+  console.log("Setting session cookie for user:", payload.userId, "Role:", payload.role);
+
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -51,6 +54,7 @@ export async function setSessionCookie(payload: SessionPayload) {
     maxAge: MAX_AGE,
     path: "/",
   });
+  console.log("Session cookie set successfully");
 }
 
 export async function clearSessionCookie() {

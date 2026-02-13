@@ -9,9 +9,11 @@ export const metadata = {
   },
   manifest: "/manifest.json",
   appleWebApp: {
-    capable: true,
     statusBarStyle: "default",
     title: "Ambo",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
   viewport: {
     width: "device-width",

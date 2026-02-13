@@ -73,22 +73,23 @@ export async function sendNotificationToUser(
  */
 export async function sendNotificationToRole(
     role: "admin" | "student",
-    payload: PushPayload
+    payload: PushPayload,
+    excludeUserId?: string
 ) {
     const supabase = createAdminClient();
 
     // 1. Get users with role
-    // Note: Assuming 'role' column exists in public.users or handled via metadata
-    // But our schema links auth.users. public.users might have role?
-    // Let's check session.ts logic: it gets role from somewhere.
-    // session.ts gets role from cookie or auth.
-    // Our public.users usually has role. Let's assume so based on previous context.
+    // If targeting 'admin', also include 'superadmin'
+    let roles = [role];
+    if (role === "admin") {
+        roles = ["admin", "superadmin"];
+    }
 
     // Efficiency: query push_subscriptions joined with users
     const { data: subscriptions, error } = await supabase
         .from("push_subscriptions")
         .select("*, users!inner(role)")
-        .eq("users.role", role);
+        .in("users.role", roles);
 
     if (error || !subscriptions) {
         console.error("[Push] Failed to fetch role subscriptions:", error);
@@ -97,23 +98,25 @@ export async function sendNotificationToRole(
 
     const payloadString = JSON.stringify(payload);
 
-    const promises = subscriptions.map(async (sub) => {
-        const pushSubscription = {
-            endpoint: sub.endpoint,
-            keys: {
-                p256dh: sub.p256dh,
-                auth: sub.auth,
-            },
-        };
+    const promises = subscriptions
+        .filter((sub) => sub.user_id !== excludeUserId)
+        .map(async (sub) => {
+            const pushSubscription = {
+                endpoint: sub.endpoint,
+                keys: {
+                    p256dh: sub.p256dh,
+                    auth: sub.auth,
+                },
+            };
 
-        try {
-            await webpush.sendNotification(pushSubscription, payloadString);
-        } catch (err: any) {
-            if (err.statusCode === 410 || err.statusCode === 404) {
-                await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+            try {
+                await webpush.sendNotification(pushSubscription, payloadString);
+            } catch (err: any) {
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                    await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+                }
             }
-        }
-    });
+        });
 
     await Promise.all(promises);
 }

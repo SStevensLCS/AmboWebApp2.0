@@ -67,17 +67,26 @@ export async function POST(req: Request) {
     }
 
     // ── Notify Users ─────────────────────────────────────
-    // If student posts -> Notify Admins
-    // If admin posts -> Notify Students (if it's important?)
-    // For now, let's notify Admins of all new posts.
 
-    if (session.role === "student") {
-        const { sendNotificationToRole } = await import("@/lib/notifications");
-        await sendNotificationToRole("admin", {
-            title: "New Post from " + data.users.first_name,
+    // Admin & Student posts -> Notify Admins (excluding self)
+    // Admin posts -> Notify Students (excluding self)
+
+    const { sendNotificationToRole } = await import("@/lib/notifications");
+
+    // 1. Always notify Admins (excluding the sender)
+    await sendNotificationToRole("admin", {
+        title: "New Post from " + data.users.first_name,
+        body: content.substring(0, 100),
+        url: "/admin/posts",
+    }, session.userId);
+
+    // 2. If sender is Admin/Superadmin, ALSO notify Students
+    if (["admin", "superadmin"].includes(session.role)) {
+        await sendNotificationToRole("student", {
+            title: "New Announcement from " + data.users.first_name,
             body: content.substring(0, 100),
-            url: "/admin/posts",
-        });
+            url: "/student/posts",
+        }, session.userId);
     }
 
     return NextResponse.json({ post: data });

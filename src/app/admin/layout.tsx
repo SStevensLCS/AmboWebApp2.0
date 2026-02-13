@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -17,11 +18,15 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-muted/40 pb-safe-bottom">
+
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background px-4 sm:px-6 shadow-sm">
         <div className="flex w-full items-center justify-between mx-auto max-w-5xl">
           <div className="flex items-center gap-6">
-            <h1 className="text-lg font-bold tracking-tight">Ambassador Portal</h1>
+            <div className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Ambassador Portal" width={40} height={40} className="object-contain" />
+              <span className="text-lg font-bold tracking-tight">Ambassador Portal</span>
+            </div>
             <nav className="flex items-center gap-1">
               <Button asChild variant="ghost" size="sm">
                 <Link href="/admin">Dashboard</Link>

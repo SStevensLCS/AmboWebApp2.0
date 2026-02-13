@@ -38,6 +38,16 @@ export function PushNotificationManager() {
         try {
             const registration = await navigator.serviceWorker.ready;
             const sub = await registration.pushManager.getSubscription();
+
+            // Sync with server if subscription exists locally
+            if (sub) {
+                await fetch("/api/web-push/subscription", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ subscription: sub }),
+                });
+            }
+
             setSubscription(sub);
         } catch (error) {
             console.error("Error checking subscription:", error);

@@ -80,7 +80,7 @@ export async function sendNotificationToRole(
 
     // 1. Get users with role
     // If targeting 'admin', also include 'superadmin'
-    let roles = [role];
+    let roles: string[] = [role];
     if (role === "admin") {
         roles = ["admin", "superadmin"];
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Calendar, MessageSquare, FileText } from "lucide-react";
+import { LayoutDashboard, Calendar, MessageSquare, FileText, ClipboardList } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -25,6 +25,11 @@ export function AdminSidebar() {
             href: "/admin/resources",
             label: "Resources",
             icon: FileText,
+        },
+        {
+            href: "/admin/applications",
+            label: "Applications",
+            icon: ClipboardList,
         },
     ];
 

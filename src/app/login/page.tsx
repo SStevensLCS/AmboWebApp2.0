@@ -1,5 +1,7 @@
 "use client";
 
+import { CheddarRain } from "@/components/CheddarRain";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCheddar, setShowCheddar] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,8 +47,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-      <Card className="w-full max-w-sm shadow-lg">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-white relative overflow-hidden">
+      {/* Cheddar Rain Animation */}
+      <CheddarRain isActive={showCheddar} onComplete={() => setShowCheddar(false)} />
+
+      <Card className="w-full max-w-sm shadow-lg z-10">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-2 shadow-md">
             <svg
@@ -94,8 +100,34 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <a href="/apply" className="text-sm text-primary hover:underline font-medium">
+              Apply to be an Ambassador
+            </a>
+          </div>
         </CardContent>
       </Card>
+
+      <div className="absolute bottom-8 text-center animate-bounce">
+        <button
+          onClick={() => setShowCheddar(true)}
+          className="text-muted-foreground hover:text-amber-500 transition-colors text-sm font-medium flex items-center gap-2 cursor-pointer bg-transparent border-0"
+        >
+          Feeling cheddar? 🧀
+        </button>
+      </div>
     </div>
   );
 }

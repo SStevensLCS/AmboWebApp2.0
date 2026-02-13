@@ -18,12 +18,7 @@ export default async function NewSubmissionPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Log Service</h1>
-        <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
-          {profile.first_name} {profile.last_name}
-        </p>
-      </div>
+
       <NewSubmissionForm userId={profile.id} />
     </div>
   );

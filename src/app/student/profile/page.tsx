@@ -11,10 +11,7 @@ export default async function StudentProfilePage() {
 
     return (
         <div className="space-y-6 pb-20">
-            <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Profile & Settings</h1>
-                <p className="text-muted-foreground">Manage your account preferences.</p>
-            </div>
+
 
             <div className="max-w-xl space-y-6">
                 <PushNotificationManager />

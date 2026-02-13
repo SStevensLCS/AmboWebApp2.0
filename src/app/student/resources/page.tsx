@@ -28,10 +28,7 @@ export default function StudentResourcesPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Resources</h1>
-                <p className="text-muted-foreground">Download useful documents and files.</p>
-            </div>
+
 
             {loading ? (
                 <div className="flex justify-center p-8">

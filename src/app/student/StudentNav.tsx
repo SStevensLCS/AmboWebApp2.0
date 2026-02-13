@@ -20,11 +20,6 @@ export default function StudentNav() {
       icon: Calendar,
     },
     {
-      href: "/student/events/new",
-      label: "New",
-      icon: PlusCircle,
-    },
-    {
       href: "/student/posts",
       label: "Posts",
       icon: MessageSquare,

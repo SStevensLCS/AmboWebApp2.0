@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface CheddarRainProps {
     isActive: boolean;
@@ -17,9 +18,11 @@ interface Piece {
 
 export function CheddarRain({ isActive, onComplete }: CheddarRainProps) {
     const [pieces, setPieces] = useState<Piece[]>([]);
+    const [isFading, setIsFading] = useState(false);
 
     useEffect(() => {
         if (isActive) {
+            setIsFading(false);
             // Generate pieces
             const newPieces: Piece[] = Array.from({ length: 50 }).map((_, i) => ({
                 id: i,
@@ -30,22 +33,37 @@ export function CheddarRain({ isActive, onComplete }: CheddarRainProps) {
             }));
             setPieces(newPieces);
 
-            // Stop after 10 seconds (requested update)
-            const timer = setTimeout(() => {
-                setPieces([]); // Clear pieces
-                if (onComplete) onComplete();
-            }, 10000);
+            // Start fading out after 11 seconds (15s total - 4s fade)
+            const fadeTimer = setTimeout(() => {
+                setIsFading(true);
+            }, 11000);
 
-            return () => clearTimeout(timer);
+            // Stop completely after 15 seconds
+            const endTimer = setTimeout(() => {
+                setPieces([]); // Clear pieces
+                setIsFading(false);
+                if (onComplete) onComplete();
+            }, 15000);
+
+            return () => {
+                clearTimeout(fadeTimer);
+                clearTimeout(endTimer);
+            };
         } else {
             setPieces([]);
+            setIsFading(false);
         }
     }, [isActive, onComplete]);
 
     if (!isActive || pieces.length === 0) return null;
 
     return (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+        <div
+            className={cn(
+                "fixed inset-0 pointer-events-none z-50 overflow-hidden transition-opacity duration-[4000ms] ease-in-out",
+                isFading ? "opacity-0" : "opacity-100"
+            )}
+        >
             {pieces.map((p) => (
                 <span
                     key={p.id}

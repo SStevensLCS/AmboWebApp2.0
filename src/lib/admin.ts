@@ -5,7 +5,7 @@ export async function requireAdmin() {
   const session = await getSession();
   const supabase = createAdminClient();
 
-  if (!session || session.role !== "admin") {
+  if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
     // We might want to allow superadmin here too?
     // Actually session.role comes from JWT. If I updated user role in DB, JWT might be stale until relogin.
     // However, for API routes, we often re-fetch user to be safe, or trust JWT.

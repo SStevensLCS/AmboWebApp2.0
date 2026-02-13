@@ -49,7 +49,7 @@ export async function DELETE(
   const { data: me } = await supabase
     .from("users")
     .select("role")
-    .eq("email", user?.email)
+    .eq("id", user?.userId)
     .single();
 
   const myRole = me?.role;

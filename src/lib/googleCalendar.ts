@@ -86,6 +86,7 @@ async function getCalendar(): Promise<calendar_v3.Calendar> {
 }
 
 // ─── Event mapping ───────────────────────────────────────
+// ─── Event mapping ───────────────────────────────────────
 type AppEvent = {
     id?: string;
     title: string;
@@ -96,6 +97,11 @@ type AppEvent = {
     type?: string | null;
     uniform?: string | null;
     google_calendar_event_id?: string | null;
+    rsvps?: {
+        yes: string[];
+        maybe: string[];
+        no: string[];
+    };
 };
 
 function buildGoogleEvent(
@@ -108,6 +114,22 @@ function buildGoogleEvent(
     }
     if (event.uniform) {
         description += `\n\n👔 Uniform: ${event.uniform}`;
+    }
+
+    if (event.rsvps) {
+        description += `\n\n📊 RSVPs:`;
+        if (event.rsvps.yes.length > 0) {
+            description += `\n✅ Yes (${event.rsvps.yes.length}): ${event.rsvps.yes.join(", ")}`;
+        }
+        if (event.rsvps.maybe.length > 0) {
+            description += `\n❓ Maybe (${event.rsvps.maybe.length}): ${event.rsvps.maybe.join(", ")}`;
+        }
+        if (event.rsvps.no.length > 0) {
+            description += `\n❌ No (${event.rsvps.no.length}): ${event.rsvps.no.join(", ")}`;
+        }
+        if (event.rsvps.yes.length === 0 && event.rsvps.maybe.length === 0 && event.rsvps.no.length === 0) {
+            description += `\n(No RSVPs yet)`;
+        }
     }
 
     return {
@@ -127,6 +149,62 @@ function buildGoogleEvent(
 
 // ─── CRUD ────────────────────────────────────────────────
 const calendarId = () => process.env.GOOGLE_CALENDAR_ID || "primary";
+
+/**
+ * Fetches the latest event data + RSVPs and syncs to Google Calendar.
+ * Call this after any event update or RSVP change.
+ */
+export async function syncEventToGoogle(eventId: string) {
+    // 1. Check connection
+    if (!(await isConnected())) return;
+
+    // 2. Fetch Event + RSVPs
+    const supabase = createAdminClient();
+    const { data: event, error: eventError } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", eventId)
+        .single();
+
+    if (eventError || !event || !event.google_calendar_event_id) {
+        // No event or not synced yet
+        return;
+    }
+
+    const { data: rsvps, error: rsvpError } = await supabase
+        .from("event_rsvps")
+        .select("status, users(first_name, last_name)")
+        .eq("event_id", eventId);
+
+    if (rsvpError) {
+        console.error("[GCal] Failed to fetch RSVPs for sync:", rsvpError);
+        return;
+    }
+
+    // 3. Format RSVPs
+    const rsvpSummary = {
+        yes: [] as string[],
+        maybe: [] as string[],
+        no: [] as string[],
+    };
+
+    rsvps?.forEach((row: any) => {
+        const name = `${row.users?.first_name || ""} ${row.users?.last_name || ""}`.trim();
+        if (row.status === "yes") rsvpSummary.yes.push(name);
+        else if (row.status === "maybe") rsvpSummary.maybe.push(name);
+        else if (row.status === "no") rsvpSummary.no.push(name);
+    });
+
+    // 4. Update Google Calendar
+    try {
+        await updateCalendarEvent(event.google_calendar_event_id, {
+            ...event,
+            rsvps: rsvpSummary,
+        });
+    } catch (err) {
+        console.error("[GCal] Sync failed:", err);
+    }
+}
 
 export async function createCalendarEvent(
     event: AppEvent
@@ -155,7 +233,7 @@ export async function updateCalendarEvent(
 
     try {
         const calendar = await getCalendar();
-        await calendar.events.update({
+        await calendar.events.patch({
             calendarId: calendarId(),
             eventId: googleEventId,
             requestBody: buildGoogleEvent(event),

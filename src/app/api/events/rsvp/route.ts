@@ -27,6 +27,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Sync to Google Calendar
+    try {
+        const { syncEventToGoogle } = await import("@/lib/googleCalendar");
+        // Run in background
+        syncEventToGoogle(event_id).catch(console.error);
+    } catch (e) {
+        console.error("Failed to sync RSVP to GCal:", e);
+    }
+
     // Return updated list
     const { data } = await supabase
         .from("event_rsvps")

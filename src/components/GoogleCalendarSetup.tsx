@@ -19,18 +19,37 @@ export function GoogleCalendarSetup() {
             .catch(() => setLoading(false));
     }, []);
 
+    const [syncing, setSyncing] = useState(false);
+
     const handleConnect = () => {
         window.location.href = "/api/auth/google";
     };
 
+    const handleSyncAll = async () => {
+        setSyncing(true);
+        try {
+            const res = await fetch("/api/events/sync", { method: "POST" });
+            const data = await res.json();
+            if (data.error) {
+                alert("Sync failed: " + data.error);
+            } else {
+                alert(`Sync Complete!\nSynced: ${data.stats.synced}\nCreated: ${data.stats.created}\nErrors: ${data.stats.errors}`);
+            }
+        } catch (e) {
+            alert("Sync failed to start.");
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     return (
         <Card className="border-dashed">
-            <CardContent className="flex items-center justify-between p-4 gap-4">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4">
                 <div className="flex items-center gap-3">
                     <div
                         className={`p-2 rounded-lg ${connected
-                                ? "bg-green-100 text-green-700"
-                                : "bg-muted text-muted-foreground"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-muted text-muted-foreground"
                             }`}
                     >
                         <CalendarCheck2 className="h-5 w-5" />
@@ -49,28 +68,48 @@ export function GoogleCalendarSetup() {
                     </div>
                 </div>
 
-                {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : connected ? (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleConnect}
-                        className="gap-2"
-                    >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Reconnect
-                    </Button>
-                ) : (
-                    <Button
-                        size="sm"
-                        onClick={handleConnect}
-                        className="gap-2"
-                    >
-                        <CalendarCheck2 className="h-3.5 w-3.5" />
-                        Connect
-                    </Button>
-                )}
+                <div className="flex gap-2">
+                    {connected && (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleSyncAll}
+                            disabled={syncing}
+                        >
+                            {syncing ? (
+                                <>
+                                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    Syncing...
+                                </>
+                            ) : (
+                                "Sync All Events"
+                            )}
+                        </Button>
+                    )}
+
+                    {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : connected ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleConnect}
+                            className="gap-2"
+                        >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Reconnect
+                        </Button>
+                    ) : (
+                        <Button
+                            size="sm"
+                            onClick={handleConnect}
+                            className="gap-2"
+                        >
+                            <CalendarCheck2 className="h-3.5 w-3.5" />
+                            Connect
+                        </Button>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );

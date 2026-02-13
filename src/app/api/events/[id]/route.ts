@@ -46,8 +46,11 @@ export async function PUT(
     }
 
     // ── Google Calendar sync ─────────────────────────────
+    // ── Google Calendar sync ─────────────────────────────
     if (updated.google_calendar_event_id) {
-        await updateCalendarEvent(updated.google_calendar_event_id, updated);
+        // Use sync helper to include RSVPs
+        const { syncEventToGoogle } = await import("@/lib/googleCalendar");
+        await syncEventToGoogle(updated.id);
     }
 
     return NextResponse.json({ event: updated });

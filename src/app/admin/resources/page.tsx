@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { ResourceCard } from "@/components/ResourceCard";
 import { Plus, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast"; // Check if exists
+
 
 export default function AdminResourcesPage() {
     const [resources, setResources] = useState<any[]>([]);

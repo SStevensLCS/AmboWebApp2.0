@@ -3,6 +3,10 @@ import "./globals.css";
 export const metadata = {
   title: "Ambassador Portal",
   description: "Ambassador service tracking",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

@@ -37,6 +37,10 @@ export function ServiceWorkerRegister() {
                             }
                         }
                     } catch (err: any) {
+                        // Ignore 401s (not logged in)
+                        if (err.message && err.message.includes("401")) {
+                            return;
+                        }
                         console.error("Failed to sync sub:", err);
                         await fetch("/api/debug/log", {
                             method: "POST",

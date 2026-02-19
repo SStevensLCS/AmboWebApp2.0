@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Calendar, PlusCircle, MessageSquare, UserCircle, FileText } from "lucide-react";
+import { LayoutDashboard, Calendar, PlusCircle, MessageSquare, UserCircle, FileText, MessageCircle } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -25,6 +25,11 @@ export function StudentSidebar() {
             href: "/student/posts",
             label: "Posts",
             icon: MessageSquare,
+        },
+        {
+            href: "/student/chat",
+            label: "Chat",
+            icon: MessageCircle,
         },
         {
             href: "/student/resources",

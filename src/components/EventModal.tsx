@@ -547,7 +547,7 @@ export function EventModal({
     if (isDesktop) {
         return (
             <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:hidden">
                     {Content}
                 </DialogContent>
             </Dialog>

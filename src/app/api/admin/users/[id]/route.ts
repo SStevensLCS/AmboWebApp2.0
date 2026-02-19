@@ -5,7 +5,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { authorized, supabase } = await requireAdmin();
+  const { authorized, supabase, user } = await requireAdmin();
   if (!authorized) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -20,7 +20,24 @@ export async function PATCH(
     const phone10 = body.phone.replace(/\D/g, "");
     if (phone10.length === 10) updates.phone = phone10;
   }
-  if (["admin", "student", "superadmin"].includes(body.role)) updates.role = body.role;
+  if (["admin", "student", "superadmin"].includes(body.role)) {
+    if (body.role === "superadmin") {
+      // Validating that only a superadmin can promote someone to superadmin
+      const { data: requester } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user?.userId)
+        .single();
+      
+      if (requester?.role !== "superadmin") {
+        return NextResponse.json(
+          { error: "Only superadmins can promote users to superadmin." },
+          { status: 403 }
+        );
+      }
+    }
+    updates.role = body.role;
+  }
 
   const { error } = await supabase.from("users").update(updates).eq("id", id);
 

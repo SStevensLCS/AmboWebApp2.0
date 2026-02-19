@@ -7,7 +7,9 @@ import { ArrowLeft } from "lucide-react";
 
 export default async function NewEventPage() {
     const session = await getSession();
-    if (!session || session.role !== "admin") redirect("/");
+    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
+        redirect("/login");
+    }
 
     return (
         <div className="space-y-6">

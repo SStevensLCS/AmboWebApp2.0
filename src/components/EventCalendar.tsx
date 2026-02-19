@@ -120,16 +120,11 @@ export function EventCalendar({
                             >
                                 <Card
                                     onClick={() => onEventClick(ev)}
-                                    className="cursor-pointer hover:shadow-md transition-all duration-200 h-full border-l-4 border-l-primary/20 hover:border-l-primary"
+                                    className="cursor-pointer hover:shadow-md transition-all duration-200 h-full"
                                 >
                                     <CardContent className="p-4 space-y-3">
                                         <div className="flex justify-between items-start gap-2">
                                             <h4 className="font-semibold line-clamp-1" title={ev.title}>{ev.title}</h4>
-                                            {ev.type && (
-                                                <Badge variant={typeColors[ev.type.toLowerCase()] || "secondary"} className="shrink-0 capitalize">
-                                                    {ev.type}
-                                                </Badge>
-                                            )}
                                         </div>
                                         <div className="space-y-1.5 text-xs text-muted-foreground">
                                             <div className="flex items-center gap-2">
@@ -146,27 +141,28 @@ export function EventCalendar({
                                                     })}
                                                 </span>
                                             </div>
-                                            {ev.location && (
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin className="h-3.5 w-3.5" />
-                                                    <span className="truncate">{ev.location}</span>
-                                                </div>
-                                            )}
                                         </div>
+                                        <p className="line-clamp-2 text-sm text-muted-foreground mt-2 h-10">
+                                            {ev.description || "\u00A0"}
+                                        </p>
+
                                     </CardContent>
                                 </Card>
                             </motion.div>
                         ))}
                     </div>
-                </motion.div>
-            ))}
-            {events.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                    <Calendar className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                    <p className="font-medium">No upcoming events</p>
-                    <p className="text-sm mt-1">Check back later for new events.</p>
-                </div>
-            )}
-        </motion.div>
+                </motion.div >
+            ))
+            }
+            {
+                events.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <Calendar className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                        <p className="font-medium">No upcoming events</p>
+                        <p className="text-sm mt-1">Check back later for new events.</p>
+                    </div>
+                )
+            }
+        </motion.div >
     );
 }

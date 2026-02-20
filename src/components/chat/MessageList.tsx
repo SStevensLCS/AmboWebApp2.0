@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
     const [newMessage, setNewMessage] = useState("");
     const [sending, setSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -77,6 +77,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
 
                         // We need to fetch sender info for the new message because payload doesn't have it
                         // Since setState is sync, we add the message first, then update with sender info
+                        // We use a temporary sender to avoid UI breaking, assuming standard placeholder
                         return [...prev, { ...newMsg, sender: { first_name: '...', last_name: '' } }];
                     });
 
@@ -145,9 +146,23 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
             if (res.ok) {
                 const data = await res.json();
                 // Replace optimistic message with the real one from the server
-                setMessages((prev) =>
-                    prev.map((m) => m.id === optimisticId ? { ...data.message, sender: optimisticMsg.sender } : m)
-                );
+                // BUT check if real-time subscription already added it to avoid duplicates
+                setMessages((prev) => {
+                    const realMessageId = data.message.id;
+                    const alreadyExists = prev.some((m) => m.id === realMessageId);
+                    
+                    if (alreadyExists) {
+                        // If real message exists, just remove the optimistic one
+                        return prev.filter((m) => m.id !== optimisticId);
+                    }
+                    
+                    // Otherwise replace optimistic with real
+                    return prev.map((m) => 
+                        m.id === optimisticId 
+                            ? { ...data.message, sender: optimisticMsg.sender } 
+                            : m
+                    );
+                });
             } else {
                 console.error("Failed to send message");
                 // Remove optimistic message on failure
@@ -212,7 +227,6 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        disabled={sending}
                     />
                     <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
                         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

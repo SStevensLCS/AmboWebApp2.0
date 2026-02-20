@@ -82,7 +82,7 @@ export function ChatLayout({ currentUserId }: ChatLayoutProps) {
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
     const SidebarContent = () => (
-        <div className="flex flex-col h-full border-r md:border-r-0 bg-background">
+        <div className="flex flex-col h-full border-r bg-background">
             <div className="p-4 border-b flex items-center justify-between">
                 <h2 className="font-semibold text-lg">Chats</h2>
                 <CreateGroupDialog onGroupCreated={(id) => {

@@ -37,13 +37,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const rows: Array<{
-    first_name: string;
-    last_name: string;
-    phone: string;
-    email: string;
-    role: "student" | "admin";
-  }> = [];
+  const supabase = createAdminClient();
+  let created = 0;
+  let skipped = 0;
+  const errors: string[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const cells = parseCSVLine(lines[i]);
@@ -53,26 +50,56 @@ export async function POST(req: Request) {
     const email = cells[emailIdx]?.trim();
     if (!first_name || !last_name || phone.length !== 10 || !email) continue;
 
-    rows.push({
+    const role =
+      roleIdx >= 0 && cells[roleIdx]?.trim() === "admin" ? "admin" : "student";
+
+    // 1. Create Supabase Auth account with phone as default password
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password: phone,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      // If user already exists, skip gracefully
+      if (authError.message?.includes("already been registered") || authError.message?.includes("already exists")) {
+        skipped++;
+        continue;
+      }
+      errors.push(`Row ${i + 1} (${email}): ${authError.message}`);
+      continue;
+    }
+
+    // 2. Insert profile row using the auth user's ID
+    const { error: profileError } = await supabase.from("users").insert({
+      id: authData.user.id,
       first_name,
       last_name,
       phone,
       email,
-      role:
-        roleIdx >= 0 && cells[roleIdx]?.trim() === "admin" ? "admin" : "student",
+      role,
+    });
+
+    if (profileError) {
+      // Clean up the auth user if profile insert fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      errors.push(`Row ${i + 1} (${email}): ${profileError.message}`);
+      continue;
+    }
+
+    created++;
+  }
+
+  if (errors.length > 0) {
+    return NextResponse.json({
+      ok: true,
+      count: created,
+      skipped,
+      errors,
     });
   }
 
-  const supabase = createAdminClient();
-  const { error } = await supabase.from("users").upsert(rows, {
-    onConflict: "phone",
-    ignoreDuplicates: false,
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-  return NextResponse.json({ ok: true, count: rows.length });
+  return NextResponse.json({ ok: true, count: created, skipped });
 }
 
 function parseCSVLine(line: string): string[] {

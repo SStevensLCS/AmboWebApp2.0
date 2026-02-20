@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/admin";
 import { NextResponse } from "next/server";
+import { adminClient } from "@/lib/supabase/admin";
 
 export async function PATCH(
   req: Request,
@@ -44,6 +45,37 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  // When promoting to admin/superadmin, ensure the user has a Supabase Auth account
+  if (body.role === "admin" || body.role === "superadmin") {
+    // Check if auth account already exists
+    const { data: authUser } = await adminClient.auth.admin.getUserById(id);
+
+    if (!authUser?.user) {
+      // Fetch the user's profile to get email & phone for account creation
+      const { data: profile } = await supabase
+        .from("users")
+        .select("email, phone")
+        .eq("id", id)
+        .single();
+
+      if (profile?.email && profile?.phone) {
+        const phone10 = profile.phone.replace(/\D/g, "");
+        const { error: authError } = await adminClient.auth.admin.createUser({
+          id,
+          email: profile.email,
+          password: phone10.length === 10 ? phone10 : profile.phone,
+          email_confirm: true,
+        });
+
+        if (authError) {
+          console.error("Failed to create auth account on role promotion:", authError.message);
+          // Don't fail the request — role was already updated successfully
+        }
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 

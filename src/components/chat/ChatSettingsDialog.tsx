@@ -9,6 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,9 @@ export function ChatSettingsDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Chat Settings</DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Manage settings for this chat group
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                     <div className="space-y-2">

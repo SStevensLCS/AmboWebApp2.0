@@ -9,6 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,6 +72,9 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Chat</DialogTitle>
+                    <DialogDescription className="text-sm text-muted-foreground">
+                        Select a user to start a new chat conversion with.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                     <div className="space-y-2">

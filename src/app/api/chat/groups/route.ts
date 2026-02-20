@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
+import { adminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -22,7 +23,9 @@ export async function POST(req: Request) {
 
         // Student validation: Must include at least one admin
         if (session.role === "student" || session.role === "applicant") {
-            const { data: users, error: userError } = await supabase
+            // Use admin client to bypass RLS when checking other users' roles
+            // Only strictly needed for this check
+            const { data: users, error: userError } = await adminClient
                 .from("users")
                 .select("role")
                 .in("id", participants);

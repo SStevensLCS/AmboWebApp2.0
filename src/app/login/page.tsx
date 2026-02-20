@@ -107,6 +107,12 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <a href="/forgot-password" className="text-sm text-primary hover:underline font-medium">
+                Forgot Password?
+              </a>
+            </div>
+
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

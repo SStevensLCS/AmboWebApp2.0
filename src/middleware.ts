@@ -7,7 +7,14 @@ export async function middleware(request: NextRequest) {
 
   console.log("Middleware checking path:", path);
 
-  if (path.startsWith("/login") || path.startsWith("/api/auth/login")) {
+  if (
+    path.startsWith("/login") ||
+    path.startsWith("/api/auth/login") ||
+    path.startsWith("/forgot-password") ||
+    path.startsWith("/reset-password") ||
+    path.startsWith("/api/auth/forgot-password") ||
+    path.startsWith("/auth/callback")
+  ) {
     return NextResponse.next();
   }
 
@@ -34,6 +41,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|ttf|eot|ico)$).*)",
   ],
 };

@@ -35,13 +35,15 @@ export default async function StudentDashboard() {
   const supabase = createAdminClient();
 
   // Fetch all submissions for history
-  const { data: submissionsData } = await supabase
-    .from("submissions")
-    .select("*")
-    .eq("user_id", session.userId)
-    .order("created_at", { ascending: false });
+  const [submissionsResponse] = await Promise.all([
+    supabase
+      .from("submissions")
+      .select("*")
+      .eq("user_id", session.userId)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  const submissions = (submissionsData as Submission[]) || [];
+  const submissions = (submissionsResponse.data as Submission[]) || [];
 
   // Calculate stats
   const totalHours =

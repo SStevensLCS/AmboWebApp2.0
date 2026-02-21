@@ -40,7 +40,6 @@ export default function ApplicantsPage() {
                         const result = await uploadApplicants(newApplicants);
                         if (!result.success) {
                             console.error("Failed to sync to database:", result.error);
-                            // Optional: Show toast error, but keeping data in UI
                         }
                     } catch (e) {
                         console.error("Upload failed", e);
@@ -57,33 +56,56 @@ export default function ApplicantsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Applicants</h1>
-                    <p className="text-muted-foreground mt-2">Manage and view applicant details.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Applicants</h1>
+                    <p className="text-muted-foreground mt-1 text-sm md:text-base">Manage and view applicant details.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <input
-                            type="file"
-                            accept=".csv"
-                            onChange={handleFileUpload}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            disabled={loading}
-                        />
-                        <Button disabled={loading}>
-                            {loading ? (
-                                <span className="animate-spin mr-2">⏳</span>
-                            ) : (
-                                <Upload className="h-4 w-4 mr-2" />
-                            )}
-                            Upload CSV
-                        </Button>
-                    </div>
+                <div className="relative self-start sm:self-auto">
+                    <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={loading}
+                    />
+                    <Button disabled={loading}>
+                        {loading ? (
+                            <span className="animate-spin mr-2">⏳</span>
+                        ) : (
+                            <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        Upload CSV
+                    </Button>
                 </div>
             </div>
 
-            <div className="border rounded-md">
+            {/* Mobile Card List */}
+            <div className="md:hidden space-y-2">
+                {applicants.length === 0 ? (
+                    <div className="text-center py-10 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">No applicants yet. Upload a CSV to get started.</p>
+                    </div>
+                ) : (
+                    applicants.map((applicant, index) => (
+                        <div
+                            key={index}
+                            className="bg-white border rounded-lg p-3.5 flex items-center justify-between animate-in fade-in slide-in-from-bottom-2 duration-300"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                            <div>
+                                <p className="font-medium text-sm">{applicant.firstName} {applicant.lastName}</p>
+                                {applicant.grade && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">Grade {applicant.grade}</p>
+                                )}
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block border rounded-md">
                 <Table>
                     <TableHeader>
                         <TableRow>

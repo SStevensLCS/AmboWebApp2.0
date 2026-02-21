@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Upload, Plus, UserPlus, Check, X, AlertCircle, MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { UserPlus, Check, AlertCircle, MoreHorizontal, ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -53,7 +54,6 @@ export function UserControl() {
 
   const [myRole, setMyRole] = useState<string>("student");
 
-  // Add Form State
   const [addForm, setAddForm] = useState({
     first_name: "",
     last_name: "",
@@ -63,7 +63,6 @@ export function UserControl() {
   });
   const [addError, setAddError] = useState("");
 
-  // Edit Form State
   const [editForm, setEditForm] = useState<Partial<UserRow>>({});
 
   const fetchUsers = async () => {
@@ -251,91 +250,92 @@ export function UserControl() {
     <div className="space-y-4">
       {/* Actions Bar */}
       <Card>
-        <CardContent className="p-4 flex flex-wrap items-center gap-4">
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>Create a new student or admin manually.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={onAddSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+        <CardContent className="p-4 space-y-3">
+          {/* Row 1: Add User + CSV */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 w-full sm:w-auto">
+                  <UserPlus className="h-4 w-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogDescription>Create a new student or admin manually.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={onAddSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>First Name</Label>
+                      <Input
+                        value={addForm.first_name}
+                        onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Last Name</Label>
+                      <Input
+                        value={addForm.last_name}
+                        onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label>First Name</Label>
+                    <Label>Phone</Label>
                     <Input
-                      value={addForm.first_name}
-                      onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))}
+                      type="tel"
+                      placeholder="10-digit Phone"
+                      value={addForm.phone}
+                      onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Last Name</Label>
+                    <Label>Email</Label>
                     <Input
-                      value={addForm.last_name}
-                      onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))}
+                      type="email"
+                      placeholder="Email"
+                      value={addForm.email}
+                      onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
                       required
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input
-                    type="tel"
-                    placeholder="10-digit Phone"
-                    value={addForm.phone}
-                    onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={addForm.email}
-                    onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select
-                    value={addForm.role}
-                    onValueChange={(val) => setAddForm((f) => ({ ...f, role: val }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select
+                      value={addForm.role}
+                      onValueChange={(val) => setAddForm((f) => ({ ...f, role: val }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {addError && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{addError}</AlertDescription>
-                  </Alert>
-                )}
-                <DialogFooter>
-                  <Button type="submit">Create User</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  {addError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{addError}</AlertDescription>
+                    </Alert>
+                  )}
+                  <DialogFooter>
+                    <Button type="submit">Create User</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
 
-          <div className="flex-1 min-w-[200px]">
-            <form onSubmit={onCsvSubmit} className="flex items-center gap-2 justify-end">
-              <Input type="file" accept=".csv,.txt" className="max-w-[250px]" disabled={uploading} />
-              <Button type="submit" variant="secondary" disabled={uploading}>
+            <form onSubmit={onCsvSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
+              <Input type="file" accept=".csv,.txt" className="flex-1" disabled={uploading} />
+              <Button type="submit" variant="secondary" disabled={uploading} className="shrink-0">
                 {uploading ? "Uploading..." : "CSV Upload"}
               </Button>
             </form>
@@ -359,9 +359,38 @@ export function UserControl() {
         )}
       </Card>
 
-      <DataTable columns={columns} data={rows} />
+      {/* Mobile Card List */}
+      <div className="md:hidden space-y-2">
+        {rows.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No users found.</p>
+        ) : (
+          rows.map((user) => (
+            <Link key={user.id} href={`/admin/users/${user.id}`}>
+              <div className="bg-white border rounded-lg p-3.5 flex items-center gap-3 active:bg-gray-50 hover:bg-gray-50 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">
+                      {user.first_name} {user.last_name}
+                    </span>
+                    <Badge variant={user.role === "admin" || user.role === "superadmin" ? "default" : "secondary"} className="shrink-0 text-xs">
+                      {user.role}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{user.email}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
 
-      {/* Edit Dialog */}
+      {/* Desktop Table */}
+      <div className="hidden md:block">
+        <DataTable columns={columns} data={rows} />
+      </div>
+
+      {/* Edit Dialog (desktop) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -2,6 +2,28 @@ import { requireAdmin } from "@/lib/admin";
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { authorized, supabase } = await requireAdmin();
+  if (!authorized) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, first_name, last_name, phone, email, role")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 404 });
+  }
+  return NextResponse.json(data);
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

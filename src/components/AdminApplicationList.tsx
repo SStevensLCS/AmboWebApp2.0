@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getApplications } from "@/actions/admin";
 import { ApplicationData } from "@/types/application";
-import { Loader2, Search, Filter, Eye } from "lucide-react";
+import { Loader2, Search, Filter, Eye, ChevronRight } from "lucide-react";
 import { ApplicationDetailModal } from "./ApplicationDetailModal";
 import { cn } from "@/lib/utils";
 
@@ -48,10 +48,19 @@ export default function AdminApplicationList() {
         setModalOpen(true);
     };
 
+    const statusClass = (status: string | undefined) => cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize",
+        status === 'submitted' && "bg-blue-100 text-blue-800",
+        status === 'approved' && "bg-green-100 text-green-800",
+        status === 'rejected' && "bg-red-100 text-red-800",
+        status === 'draft' && "bg-gray-100 text-gray-800",
+    );
+
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-zinc-900 p-4 rounded-lg border shadow-sm">
-                <div className="relative w-full sm:w-72">
+            {/* Search & Filter */}
+            <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-lg border shadow-sm">
+                <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                         placeholder="Search applicants..."
@@ -60,10 +69,10 @@ export default function AdminApplicationList() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
                     <select
-                        className="h-10 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        className="h-10 flex-1 sm:flex-none rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
@@ -76,7 +85,46 @@ export default function AdminApplicationList() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border shadow-sm overflow-hidden">
+            {/* Mobile Card List */}
+            <div className="md:hidden space-y-2">
+                {loading ? (
+                    <div className="py-8 text-center text-muted-foreground">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                        Loading applications...
+                    </div>
+                ) : filteredApps.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No applications found.</p>
+                ) : (
+                    filteredApps.map((app) => (
+                        <button
+                            key={app.id}
+                            onClick={() => handleView(app)}
+                            className="w-full bg-white border rounded-lg p-3.5 flex items-center gap-3 active:bg-gray-50 hover:bg-gray-50 transition-colors text-left"
+                        >
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium text-sm">
+                                        {app.first_name || app.last_name
+                                            ? `${app.first_name || ""} ${app.last_name || ""}`.trim()
+                                            : <span className="italic text-muted-foreground">Untitled Draft</span>}
+                                    </span>
+                                    {app.status && (
+                                        <span className={statusClass(app.status)}>{app.status}</span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                    {app.email || app.phone_number || "—"}
+                                    {app.grade_current ? ` · Grade ${app.grade_current}` : ""}
+                                </p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        </button>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white rounded-lg border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-muted/50 text-muted-foreground font-medium border-b">
@@ -110,13 +158,7 @@ export default function AdminApplicationList() {
                                             <div className="text-xs text-muted-foreground">{app.email || app.phone_number}</div>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className={cn(
-                                                "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize",
-                                                app.status === 'submitted' && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-                                                app.status === 'approved' && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-                                                app.status === 'rejected' && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-                                                app.status === 'draft' && "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400",
-                                            )}>
+                                            <span className={statusClass(app.status)}>
                                                 {app.status}
                                             </span>
                                         </td>

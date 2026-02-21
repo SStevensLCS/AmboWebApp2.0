@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
@@ -24,10 +25,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Upload, Check, AlertCircle, MoreHorizontal, FileText } from "lucide-react";
+import { Check, AlertCircle, MoreHorizontal, ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +44,23 @@ type SubRow = {
   created_at?: string;
   users: { first_name: string; last_name: string; email: string } | null;
 };
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <Badge
+      variant={
+        status === "Approved" ? "default" :
+          status === "Denied" ? "destructive" : "secondary"
+      }
+      className={
+        status === "Approved" ? "bg-green-100 text-green-800 hover:bg-green-100/80 border-green-200" :
+          status === "Denied" ? "" : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100/80 border-yellow-200"
+      }
+    >
+      {status}
+    </Badge>
+  );
+}
 
 export function SubmissionsControl() {
   const [rows, setRows] = useState<SubRow[]>([]);
@@ -168,23 +185,7 @@ export function SubmissionsControl() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        return (
-          <Badge
-            variant={
-              status === "Approved" ? "default" :
-                status === "Denied" ? "destructive" : "secondary"
-            }
-            className={
-              status === "Approved" ? "bg-green-100 text-green-800 hover:bg-green-100/80 border-green-200" :
-                status === "Denied" ? "" : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100/80 border-yellow-200"
-            }
-          >
-            {status}
-          </Badge>
-        )
-      }
+      cell: ({ row }) => <StatusBadge status={row.getValue("status") as string} />,
     },
     {
       id: "actions",
@@ -220,21 +221,15 @@ export function SubmissionsControl() {
 
   return (
     <div className="space-y-4">
-      {/* CSV Upload & Actions */}
+      {/* CSV Upload */}
       <Card>
-        <CardContent className="p-4 flex flex-wrap items-center gap-4 justify-between">
-          <div className="flex items-center gap-2">
-            {/* Could add filters here later, e.g. Filter by Status */}
-          </div>
-
-          <div className="flex-1 min-w-[200px] flex justify-end">
-            <form onSubmit={onCsvSubmit} className="flex items-center gap-2">
-              <Input type="file" accept=".csv,.txt" className="max-w-[250px]" disabled={uploading} />
-              <Button type="submit" variant="secondary" disabled={uploading}>
-                {uploading ? "Uploading..." : "CSV Upload"}
-              </Button>
-            </form>
-          </div>
+        <CardContent className="p-4">
+          <form onSubmit={onCsvSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <Input type="file" accept=".csv,.txt" className="flex-1" disabled={uploading} />
+            <Button type="submit" variant="secondary" disabled={uploading} className="shrink-0">
+              {uploading ? "Uploading..." : "CSV Upload"}
+            </Button>
+          </form>
         </CardContent>
         {(csvError || csvSuccess) && (
           <CardFooter className="pt-0 pb-4 block">
@@ -254,9 +249,40 @@ export function SubmissionsControl() {
         )}
       </Card>
 
-      <DataTable columns={columns} data={rows} />
+      {/* Mobile Card List */}
+      <div className="md:hidden space-y-2">
+        {rows.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No submissions found.</p>
+        ) : (
+          rows.map((row) => (
+            <Link key={row.id} href={`/admin/submissions/${row.id}`}>
+              <div className="bg-white border rounded-lg p-3.5 flex items-center gap-3 active:bg-gray-50 hover:bg-gray-50 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm truncate">
+                      {row.users
+                        ? `${row.users.first_name} ${row.users.last_name}`
+                        : row.user_id}
+                    </span>
+                    <StatusBadge status={row.status} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {row.service_type} &middot; {row.hours}h &middot; {row.service_date}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
 
-      {/* Edit Dialog */}
+      {/* Desktop Table */}
+      <div className="hidden md:block">
+        <DataTable columns={columns} data={rows} />
+      </div>
+
+      {/* Edit Dialog (desktop) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

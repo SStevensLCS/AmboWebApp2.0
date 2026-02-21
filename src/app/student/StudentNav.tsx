@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Calendar, MessageSquare, UserCircle, MessageCircle } from "lucide-react";
@@ -7,6 +8,19 @@ import { cn } from "@/lib/utils";
 
 export default function StudentNav() {
   const pathname = usePathname();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const viewport = window.visualViewport;
+    const handleViewportChange = () => {
+      setKeyboardVisible(viewport.height < window.innerHeight * 0.75);
+    };
+
+    viewport.addEventListener("resize", handleViewportChange);
+    return () => viewport.removeEventListener("resize", handleViewportChange);
+  }, []);
 
   const navItems = [
     {
@@ -35,6 +49,8 @@ export default function StudentNav() {
       icon: UserCircle,
     },
   ];
+
+  if (keyboardVisible) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-lg border-t shadow-lg sm:hidden pb-safe-bottom">

@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { PlusCircle, ArrowRight } from "lucide-react";
+import { PlusCircle, FileText } from "lucide-react";
 
 interface Submission {
     id: string;
@@ -47,23 +47,36 @@ export default function DashboardClient({ submissions }: DashboardClientProps) {
 
     return (
         <div className="space-y-6">
-            {/* Search/Submit Card */}
-            <Card className="border-dashed border-2 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                <Link href="/student/events/new">
-                    <CardContent className="flex items-center justify-between p-6 cursor-pointer">
-                        <div className="flex items-center gap-4">
+            {/* Action Cards */}
+            <div className="grid grid-cols-2 gap-4">
+                <Card className="border-dashed border-2 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                    <Link href="/student/events/new">
+                        <CardContent className="flex flex-col items-center text-center p-4 sm:p-6 cursor-pointer gap-3">
                             <div className="p-3 bg-primary/10 rounded-full">
                                 <PlusCircle className="h-6 w-6 text-primary" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-lg">Log New Activity</h3>
-                                <p className="text-sm text-muted-foreground">Submit a new service entry or event.</p>
+                                <h3 className="font-semibold text-sm sm:text-lg">Log New Activity</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Submit a new service entry.</p>
                             </div>
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-muted-foreground hidden sm:block" />
-                    </CardContent>
-                </Link>
-            </Card>
+                        </CardContent>
+                    </Link>
+                </Card>
+
+                <Card className="border-dashed border-2 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                    <Link href="/student/resources">
+                        <CardContent className="flex flex-col items-center text-center p-4 sm:p-6 cursor-pointer gap-3">
+                            <div className="p-3 bg-primary/10 rounded-full">
+                                <FileText className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-sm sm:text-lg">Resources</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">View shared files and documents.</p>
+                            </div>
+                        </CardContent>
+                    </Link>
+                </Card>
+            </div>
 
             <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

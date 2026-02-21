@@ -105,7 +105,7 @@ export function ChatLayout({ currentUserId }: ChatLayoutProps) {
                             let displayName = group.name;
                             if (!displayName && group.participants) {
                                 const others = group.participants
-                                    .filter(p => p.user.id !== currentUserId)
+                                    .filter(p => p.user && p.user.id !== currentUserId)
                                     .map(p => p.user.first_name);
                                 displayName = others.length > 0 ? others.slice(0, 2).join(", ") + (others.length > 2 ? ` +${others.length - 2}` : "") : "Empty Group";
                             }

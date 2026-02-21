@@ -47,7 +47,7 @@ type Comment = {
     user_id: string;
     content: string;
     created_at: string;
-    users: { first_name: string; last_name: string; role?: string };
+    users: { first_name: string; last_name: string; role?: string; avatar_url?: string };
 };
 
 type RSVP = {
@@ -460,6 +460,7 @@ export function EventModal({
                             {comments.map((c) => (
                                 <div key={c.id} className="flex gap-3 group">
                                     <Avatar className="h-8 w-8">
+                                        {c.users?.avatar_url && <AvatarImage src={c.users.avatar_url} className="object-cover" />}
                                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                             {getInitials(c.users?.first_name, c.users?.last_name)}
                                         </AvatarFallback>

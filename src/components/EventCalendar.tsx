@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +40,7 @@ export function EventCalendar({
 }) {
     const [events, setEvents] = useState<EventDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const upcomingRef = useRef<HTMLDivElement>(null);
 
     const fetchEvents = async () => {
         try {
@@ -60,6 +61,19 @@ export function EventCalendar({
         return () => clearInterval(interval);
     }, []);
 
+    // Scroll to upcoming events after initial load
+    useEffect(() => {
+        if (!loading && events.length > 0 && upcomingRef.current) {
+            const timer = setTimeout(() => {
+                upcomingRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [loading, events.length]);
+
     const grouped = events.reduce(
         (acc, ev) => {
             const date = new Date(ev.start_time).toDateString();
@@ -69,6 +83,16 @@ export function EventCalendar({
         },
         {} as Record<string, EventDetails[]>
     );
+
+    // Determine the next upcoming date group for auto-scroll
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sortedDateKeys = Object.keys(grouped).sort(
+        (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    );
+    const nextUpcomingDateKey = sortedDateKeys.find(
+        (dateStr) => new Date(dateStr) >= today
+    ) || null;
 
     const typeColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
         tour: "default",
@@ -99,8 +123,15 @@ export function EventCalendar({
             initial="hidden"
             animate="visible"
         >
-            {Object.entries(grouped).map(([date, evts]) => (
-                <motion.div key={date} className="space-y-4" variants={itemVariants}>
+            {Object.entries(grouped)
+                .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+                .map(([date, evts]) => (
+                <motion.div
+                    key={date}
+                    className="space-y-4"
+                    variants={itemVariants}
+                    ref={date === nextUpcomingDateKey ? upcomingRef : undefined}
+                >
                     <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">

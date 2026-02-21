@@ -14,9 +14,10 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 interface ChatLayoutProps {
     currentUserId: string;
+    pageTitle?: string;
 }
 
-export function ChatLayout({ currentUserId }: ChatLayoutProps) {
+export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -84,7 +85,12 @@ export function ChatLayout({ currentUserId }: ChatLayoutProps) {
     const SidebarContent = () => (
         <div className="flex flex-col h-full border-r bg-background">
             <div className="p-4 border-b flex items-center justify-between">
-                <h2 className="font-semibold text-lg">Chats</h2>
+                <div>
+                    {pageTitle && (
+                        <p className="text-xs text-muted-foreground leading-none mb-1">{pageTitle}</p>
+                    )}
+                    <h2 className="font-semibold text-lg leading-none">Chats</h2>
+                </div>
                 <CreateGroupDialog onGroupCreated={(id) => {
                     fetchGroups();
                     selectGroup(id);
@@ -137,7 +143,15 @@ export function ChatLayout({ currentUserId }: ChatLayoutProps) {
     );
 
     return (
-        <div className="flex h-[calc(100dvh-4rem)] border rounded-lg overflow-hidden bg-background">
+        // Height = full dynamic viewport
+        //   minus nav bar height (4rem / 64 px)
+        //   minus iOS home-indicator safe area so the input isn't hidden behind the nav.
+        // Using an inline style because Tailwind's arbitrary-value parser chokes on
+        // the comma inside env(safe-area-inset-bottom, 0px).
+        <div
+            className="flex border rounded-lg overflow-hidden bg-background"
+            style={{ height: "calc(100dvh - 4rem - env(safe-area-inset-bottom, 0px))" }}
+        >
             {/* Sidebar - Visible on Desktop, or on Mobile when no chat selected */}
             <div className={cn(
                 "w-full md:w-80 flex-col",

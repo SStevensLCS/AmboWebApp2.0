@@ -1,7 +1,7 @@
 "use client";
 
 import { CheddarRain } from "@/components/CheddarRain";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showCheddar, setShowCheddar] = useState(false);
   const router = useRouter();
+
+  const handleCheddarComplete = useCallback(() => setShowCheddar(false), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +54,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white relative overflow-hidden">
       {/* Cheddar Rain Animation */}
-      <CheddarRain isActive={showCheddar} onComplete={() => setShowCheddar(false)} />
+      <CheddarRain isActive={showCheddar} onComplete={handleCheddarComplete} />
 
       <Card className="w-full max-w-sm shadow-lg z-10">
         <CardHeader className="text-center space-y-2">

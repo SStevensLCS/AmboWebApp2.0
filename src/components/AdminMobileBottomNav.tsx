@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Calendar, MessageSquare, ClipboardList, MessageCircle } from "lucide-react";
@@ -9,14 +9,19 @@ import { cn } from "@/lib/utils";
 export default function AdminMobileBottomNav() {
   const pathname = usePathname();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // Store the viewport height captured before any keyboard opens.
+  // On iOS Safari, window.innerHeight tracks the visual viewport (shrinks with
+  // keyboard), so we can't use it as a stable baseline — hence the ref.
+  const baseHeightRef = useRef<number>(0);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
 
     const viewport = window.visualViewport;
+    baseHeightRef.current = viewport.height;
+
     const handleViewportChange = () => {
-      // Keyboard is open when visual viewport height is significantly smaller than window height
-      setKeyboardVisible(viewport.height < window.innerHeight * 0.75);
+      setKeyboardVisible(viewport.height < baseHeightRef.current * 0.75);
     };
 
     viewport.addEventListener("resize", handleViewportChange);

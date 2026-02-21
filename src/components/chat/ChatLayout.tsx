@@ -137,7 +137,7 @@ export function ChatLayout({ currentUserId }: ChatLayoutProps) {
     );
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] border rounded-lg overflow-hidden bg-background">
+        <div className="flex h-[calc(100dvh-4rem)] border rounded-lg overflow-hidden bg-background">
             {/* Sidebar - Visible on Desktop, or on Mobile when no chat selected */}
             <div className={cn(
                 "w-full md:w-80 flex-col",

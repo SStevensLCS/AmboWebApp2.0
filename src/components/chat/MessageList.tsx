@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -27,10 +25,17 @@ interface MessageListProps {
 export function MessageList({ groupId, currentUserId }: MessageListProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
-    const [newMessage, setNewMessage] = useState("");
     const [sending, setSending] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const [inputEmpty, setInputEmpty] = useState(true);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLDivElement>(null);
     const supabase = useMemo(() => createClient(), []);
+
+    const scrollToBottom = useCallback(() => {
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    }, []);
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -45,8 +50,6 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                 .order("created_at", { ascending: true });
 
             if (!error && data) {
-                // Cast data to match Message type (handling join properly)
-                // Supabase returns array of objects. We need to help TS or cast.
                 setMessages(data as any as Message[]);
                 scrollToBottom();
             }
@@ -69,19 +72,13 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                 async (payload) => {
                     const newMsg = payload.new as Message;
 
-                    // Deduplicate: skip if this message already exists in state
                     setMessages((prev) => {
                         if (prev.some((m) => m.id === newMsg.id)) {
                             return prev;
                         }
-
-                        // We need to fetch sender info for the new message because payload doesn't have it
-                        // Since setState is sync, we add the message first, then update with sender info
-                        // We use a temporary sender to avoid UI breaking, assuming standard placeholder
                         return [...prev, { ...newMsg, sender: { first_name: '...', last_name: '' } }];
                     });
 
-                    // Fetch sender info and update the message
                     const { data: senderData } = await supabase
                         .from("users")
                         .select("first_name, last_name")
@@ -106,24 +103,27 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [groupId, supabase]);
+    }, [groupId, supabase, scrollToBottom]);
 
-    const scrollToBottom = () => {
-        setTimeout(() => {
-            if (scrollRef.current) {
-                scrollRef.current.scrollIntoView({ behavior: "smooth" });
-            }
-        }, 100);
+    const getInputText = (): string => {
+        return inputRef.current?.textContent?.trim() || "";
     };
 
-    const handleSendMessage = async (e?: React.FormEvent) => {
-        e?.preventDefault();
-        if (!newMessage.trim() || sending) return;
+    const clearInput = () => {
+        if (inputRef.current) {
+            inputRef.current.textContent = "";
+            setInputEmpty(true);
+        }
+    };
 
-        const messageContent = newMessage.trim();
+    const handleSend = async () => {
+        const messageContent = getInputText();
+        if (!messageContent || sending) return;
+
+        clearInput();
+        inputRef.current?.focus();
+
         const optimisticId = `optimistic-${Date.now()}`;
-
-        // Optimistic update: show the message immediately
         const optimisticMsg: Message = {
             id: optimisticId,
             sender_id: currentUserId,
@@ -132,7 +132,6 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
             sender: { first_name: "You", last_name: "" },
         };
         setMessages((prev) => [...prev, optimisticMsg]);
-        setNewMessage("");
         scrollToBottom();
 
         setSending(true);
@@ -145,93 +144,132 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
 
             if (res.ok) {
                 const data = await res.json();
-                // Replace optimistic message with the real one from the server
-                // BUT check if real-time subscription already added it to avoid duplicates
                 setMessages((prev) => {
                     const realMessageId = data.message.id;
                     const alreadyExists = prev.some((m) => m.id === realMessageId);
-                    
+
                     if (alreadyExists) {
-                        // If real message exists, just remove the optimistic one
                         return prev.filter((m) => m.id !== optimisticId);
                     }
-                    
-                    // Otherwise replace optimistic with real
-                    return prev.map((m) => 
-                        m.id === optimisticId 
-                            ? { ...data.message, sender: optimisticMsg.sender } 
+
+                    return prev.map((m) =>
+                        m.id === optimisticId
+                            ? { ...data.message, sender: optimisticMsg.sender }
                             : m
                     );
                 });
             } else {
                 console.error("Failed to send message");
-                // Remove optimistic message on failure
                 setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
             }
         } catch (error) {
             console.error("Error sending message", error);
-            // Remove optimistic message on failure
             setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         } finally {
             setSending(false);
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    const handleInput = () => {
+        setInputEmpty(!getInputText());
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData("text/plain");
+        document.execCommand("insertText", false, text);
+    };
+
     return (
         <div className="flex flex-col h-full">
-            <ScrollArea className="flex-1 p-4">
-                {loading ? (
-                    <div className="flex justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                ) : messages.length === 0 ? (
-                    <div className="flex justify-center py-4 text-muted-foreground">
-                        No messages yet. Start the conversation!
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {messages.map((msg) => {
-                            const isMe = msg.sender_id === currentUserId;
-                            return (
-                                <div
-                                    key={msg.id}
-                                    className={cn(
-                                        "flex flex-col max-w-[75%]",
-                                        isMe ? "ml-auto items-end" : "items-start"
-                                    )}
-                                >
+            {/* Messages area - native scroll for best mobile keyboard behavior */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+                <div className="px-4 py-3">
+                    {loading ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : messages.length === 0 ? (
+                        <div className="flex justify-center py-8 text-muted-foreground text-sm">
+                            No messages yet. Start the conversation!
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {messages.map((msg) => {
+                                const isMe = msg.sender_id === currentUserId;
+                                return (
                                     <div
+                                        key={msg.id}
                                         className={cn(
-                                            "px-4 py-2 rounded-lg text-sm",
-                                            isMe
-                                                ? "bg-primary text-primary-foreground rounded-br-none"
-                                                : "bg-muted rounded-bl-none"
+                                            "flex flex-col",
+                                            isMe ? "items-end" : "items-start"
                                         )}
                                     >
-                                        {msg.content}
+                                        {!isMe && msg.sender && (
+                                            <span className="text-[11px] text-muted-foreground mb-0.5 px-3 font-medium">
+                                                {msg.sender.first_name}
+                                            </span>
+                                        )}
+                                        <div
+                                            className={cn(
+                                                "px-3.5 py-2 text-sm leading-relaxed max-w-[80%]",
+                                                isMe
+                                                    ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-[4px]"
+                                                    : "bg-muted rounded-[18px] rounded-bl-[4px]"
+                                            )}
+                                        >
+                                            {msg.content}
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground mt-0.5 px-3">
+                                            {new Date(msg.created_at).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                                        {!isMe && msg.sender ? `${msg.sender.first_name} ` : ""}
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                        <div ref={scrollRef} />
-                    </div>
-                )}
-            </ScrollArea>
-            <div className="p-4 border-t mt-auto">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
+                                );
+                            })}
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Input bar - minimal chrome, sits flush above keyboard */}
+            <div className="shrink-0 bg-background border-t px-3 py-2">
+                <div className="flex items-end gap-2">
+                    <div
+                        ref={inputRef}
+                        contentEditable
+                        suppressContentEditableWarning
+                        className="chat-editable-input flex-1 min-h-[36px] max-h-[100px] overflow-y-auto rounded-full bg-muted px-4 py-2 text-sm outline-none leading-relaxed"
+                        data-placeholder="Message"
+                        onKeyDown={handleKeyDown}
+                        onInput={handleInput}
+                        onPaste={handlePaste}
+                        role="textbox"
+                        aria-label="Message input"
                     />
-                    <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
-                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    <Button
+                        size="icon"
+                        className="rounded-full h-9 w-9 shrink-0"
+                        disabled={sending || inputEmpty}
+                        onClick={handleSend}
+                    >
+                        {sending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Send className="h-4 w-4" />
+                        )}
                     </Button>
-                </form>
+                </div>
             </div>
         </div>
     );

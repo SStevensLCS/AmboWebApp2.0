@@ -1,4 +1,14 @@
 import "./globals.css";
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata = {
   title: "Ambassador Portal",
@@ -14,13 +24,6 @@ export const metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover", // Fixes notched iPhones visual
   },
 };
 

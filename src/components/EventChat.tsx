@@ -70,6 +70,24 @@ export function EventChat({
     >([]);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+    // ── Track visualViewport height for mobile keyboard handling ──
+    // Sets --app-height CSS variable so .chat-container can size correctly
+    useEffect(() => {
+        const vv = window.visualViewport;
+        if (!vv) return;
+
+        const update = () => {
+            document.documentElement.style.setProperty("--app-height", `${vv.height}px`);
+        };
+
+        update();
+        vv.addEventListener("resize", update);
+        return () => {
+            vv.removeEventListener("resize", update);
+            document.documentElement.style.removeProperty("--app-height");
+        };
+    }, []);
+
     const scrollToBottom = useCallback(() => {
         requestAnimationFrame(() => {
             const viewport = scrollAreaRef.current?.querySelector(

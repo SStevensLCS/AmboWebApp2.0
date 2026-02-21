@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MessageSquare, Loader2, ArrowLeft, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,6 +25,57 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
+
+    // ── Dynamic viewport height for mobile keyboard handling ──
+    // On Safari PWA, CSS viewport units (dvh/vh) are unreliable when the
+    // virtual keyboard opens. We use the visualViewport API to get the
+    // actual visible height and size the container precisely.
+    const [mobileStyle, setMobileStyle] = useState<React.CSSProperties | null>(null);
+    const baseHeightRef = useRef(0);
+
+    useEffect(() => {
+        const vv = window.visualViewport;
+        if (!vv) return;
+
+        baseHeightRef.current = vv.height;
+
+        // Read the mobile nav height from our CSS variable (includes safe-area-inset-bottom)
+        const computedNavHeight =
+            parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--mobile-nav-height")) || 80;
+
+        const update = () => {
+            // Only apply JS-driven height on mobile
+            if (window.innerWidth >= 768) {
+                setMobileStyle(null);
+                return;
+            }
+
+            // Update baseline when the viewport grows (orientation change, keyboard fully closed)
+            if (vv.height > baseHeightRef.current * 0.9) {
+                baseHeightRef.current = Math.max(baseHeightRef.current, vv.height);
+            }
+
+            const isKeyboardOpen = vv.height < baseHeightRef.current * 0.75;
+            // When keyboard is open, the bottom nav hides itself, so use full visible height.
+            // When closed, subtract the nav height so the chat sits above the nav bar.
+            const height = isKeyboardOpen ? vv.height : vv.height - computedNavHeight;
+
+            setMobileStyle({
+                height: `${height}px`,
+                top: `${vv.offsetTop}px`, // follow Safari auto-scroll offset
+            });
+        };
+
+        update();
+        vv.addEventListener("resize", update);
+        vv.addEventListener("scroll", update);
+        window.addEventListener("resize", update);
+        return () => {
+            vv.removeEventListener("resize", update);
+            vv.removeEventListener("scroll", update);
+            window.removeEventListener("resize", update);
+        };
+    }, []);
 
     // Sync with URL param
     useEffect(() => {
@@ -143,8 +194,10 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
 
     return (
         <div
-            className="flex md:border md:rounded-lg overflow-hidden bg-background"
-            style={{ height: "calc(100dvh - 4rem - env(safe-area-inset-bottom, 0px))" }}
+            className="fixed inset-x-0 top-0 z-30 md:relative md:inset-auto md:z-auto flex md:border md:rounded-lg overflow-hidden bg-background"
+            style={
+                mobileStyle ?? { height: "calc(100dvh - 4rem - env(safe-area-inset-bottom, 0px))" }
+            }
         >
             {/* Sidebar - Visible on Desktop, or on Mobile when no chat selected */}
             <div className={cn(

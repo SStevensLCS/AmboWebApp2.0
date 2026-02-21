@@ -2,16 +2,7 @@ import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Clock, Award, CheckCircle } from "lucide-react";
+import { Clock, Award } from "lucide-react";
 import DashboardClient from "./DashboardClient";
 
 interface Submission {
@@ -50,10 +41,6 @@ export default async function StudentDashboard() {
     submissions.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0) || 0;
   const totalCredits =
     submissions.reduce((acc, curr) => acc + (Number(curr.credits) || 0), 0) || 0;
-  // Assuming "Approved" is the status for completed
-  const completedEvents =
-    submissions.filter((s) => s.status === "Approved").length || 0;
-
   const stats = [
     {
       label: "Total Hours",
@@ -67,19 +54,13 @@ export default async function StudentDashboard() {
       icon: Award,
       color: "text-purple-600",
     },
-    {
-      label: "Events Completed",
-      value: completedEvents,
-      icon: CheckCircle,
-      color: "text-green-600",
-    },
   ];
 
   return (
     <div className="space-y-8 animate-fade-in">
 
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (

@@ -17,6 +17,7 @@ type Post = {
     users: {
         first_name: string;
         last_name: string;
+        avatar_url?: string;
     };
     comments: { count: number }[];
 };

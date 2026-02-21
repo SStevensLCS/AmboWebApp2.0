@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MessageSquare, Loader2, ArrowLeft } from "lucide-react";
+import { MessageSquare, Loader2, ArrowLeft, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,6 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
 
     const fetchGroups = async () => {
         setLoading(true);
-        // Fetch groups I am a participant of
         const { data: participations, error } = await supabase
             .from("chat_participants")
             .select("group_id")
@@ -143,13 +142,8 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
     );
 
     return (
-        // Height = full dynamic viewport
-        //   minus nav bar height (4rem / 64 px)
-        //   minus iOS home-indicator safe area so the input isn't hidden behind the nav.
-        // Using an inline style because Tailwind's arbitrary-value parser chokes on
-        // the comma inside env(safe-area-inset-bottom, 0px).
         <div
-            className="flex border rounded-lg overflow-hidden bg-background"
+            className="flex md:border md:rounded-lg overflow-hidden bg-background"
             style={{ height: "calc(100dvh - 4rem - env(safe-area-inset-bottom, 0px))" }}
         >
             {/* Sidebar - Visible on Desktop, or on Mobile when no chat selected */}
@@ -166,29 +160,33 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
                 selectedGroupId ? "flex" : "hidden md:flex"
             )}>
                 {selectedGroupId && selectedGroup ? (
-                    <div className="flex flex-col h-full">
-                        <div className="border-b p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="md:hidden"
-                                    onClick={() => selectGroup("")} // Clear selection
-                                >
-                                    <ArrowLeft className="h-5 w-5" />
-                                </Button>
-                                <h3 className="font-semibold truncate max-w-[200px] md:max-w-md">
-                                    {selectedGroup.name || "Chat"}
-                                </h3>
+                    <div className="flex flex-col h-full overflow-hidden">
+                        {/* Chat header - always pinned at top */}
+                        <div className="shrink-0 border-b bg-background z-10">
+                            <div className="flex items-center justify-between px-3 h-14">
+                                <div className="flex items-center gap-1 min-w-0">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="md:hidden shrink-0 -ml-1 h-9 w-9"
+                                        onClick={() => selectGroup("")}
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </Button>
+                                    <h3 className="font-semibold truncate text-base">
+                                        {selectedGroup.name || "Chat"}
+                                    </h3>
+                                </div>
+                                <ChatSettingsDialog
+                                    group={selectedGroup}
+                                    currentUserId={currentUserId}
+                                    onUpdate={fetchGroups}
+                                />
                             </div>
-                            <ChatSettingsDialog
-                                group={selectedGroup}
-                                currentUserId={currentUserId}
-                                onUpdate={fetchGroups}
-                            />
                         </div>
 
-                        <div className="flex-1 overflow-hidden">
+                        {/* Messages + Input area - fills remaining space */}
+                        <div className="flex-1 min-h-0">
                             <MessageList groupId={selectedGroupId} currentUserId={currentUserId} />
                         </div>
                     </div>

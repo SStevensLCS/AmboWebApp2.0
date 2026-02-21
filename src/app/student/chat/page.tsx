@@ -20,7 +20,7 @@ export default async function StudentChatPage() {
     return (
         // Negative margins cancel the layout's p-4 pb-24 (mobile) / md:p-8 md:pb-8
         // so ChatLayout can fill exactly the viewport height minus the nav bar.
-        <div className="-mt-4 -mb-24 md:-mt-8 md:-mb-8">
+        <div className="-mt-4 -mb-24 md:-mt-8 md:-mb-8 overflow-hidden">
             <ChatLayout currentUserId={session.userId} pageTitle="Team Chat" />
         </div>
     );

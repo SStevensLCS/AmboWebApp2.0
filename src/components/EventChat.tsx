@@ -1,17 +1,25 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Bot, Sparkles, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Send, Bot, Sparkles, Loader2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ChatMessage = {
     role: "user" | "ai";
     content: string;
+    id: number;
 };
 
 type EventFields = {
@@ -19,6 +27,18 @@ type EventFields = {
     hours: number | null;
     tour_credits: number | null;
     notes: string | null;
+};
+
+let messageIdCounter = 0;
+
+const bubbleVariants = {
+    hidden: { opacity: 0, y: 12, scale: 0.97 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] },
+    },
 };
 
 export function EventChat({
@@ -33,6 +53,7 @@ export function EventChat({
             role: "ai",
             content:
                 "Hey! Tell me about the event you want to log — what was it, how long, and how did it go?",
+            id: messageIdCounter++,
         },
     ]);
     const [input, setInput] = useState("");
@@ -47,19 +68,33 @@ export function EventChat({
     const [conversationHistory, setConversationHistory] = useState<
         { role: string; content: string }[]
     >([]);
-    const bottomRef = useRef<HTMLDivElement>(null);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = useCallback(() => {
+        requestAnimationFrame(() => {
+            const viewport = scrollAreaRef.current?.querySelector(
+                "[data-radix-scroll-area-viewport]"
+            );
+            if (viewport) {
+                viewport.scrollTo({
+                    top: viewport.scrollHeight,
+                    behavior: "smooth",
+                });
+            }
+        });
+    }, []);
 
     useEffect(() => {
-        if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [messages]);
+        scrollToBottom();
+    }, [messages, loading, scrollToBottom]);
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
         const userMsg = input.trim();
-        setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+        setMessages((prev) => [
+            ...prev,
+            { role: "user", content: userMsg, id: messageIdCounter++ },
+        ]);
         setInput("");
         setLoading(true);
 
@@ -71,7 +106,11 @@ export function EventChat({
                 setAwaitingConfirm(false);
                 setMessages((prev) => [
                     ...prev,
-                    { role: "ai", content: "No problem. What would you like to change?" },
+                    {
+                        role: "ai",
+                        content: "No problem. What would you like to change?",
+                        id: messageIdCounter++,
+                    },
                 ]);
             }
             setLoading(false);
@@ -100,8 +139,10 @@ export function EventChat({
             // Update fields with what Gemini extracted
             const merged: EventFields = { ...fields };
             if (data.fields) {
-                if (data.fields.event_name) merged.event_name = data.fields.event_name;
-                if (data.fields.hours != null) merged.hours = data.fields.hours;
+                if (data.fields.event_name)
+                    merged.event_name = data.fields.event_name;
+                if (data.fields.hours != null)
+                    merged.hours = data.fields.hours;
                 if (data.fields.tour_credits != null)
                     merged.tour_credits = data.fields.tour_credits;
                 if (data.fields.notes) merged.notes = data.fields.notes;
@@ -128,12 +169,18 @@ export function EventChat({
                     {
                         role: "ai",
                         content: `${data.message}\n\nType "yes" to submit.`,
+                        id: messageIdCounter++,
                     },
                 ]);
             } else {
                 setMessages((prev) => [
                     ...prev,
-                    { role: "ai", content: data.message || "Could you tell me more?" },
+                    {
+                        role: "ai",
+                        content:
+                            data.message || "Could you tell me more?",
+                        id: messageIdCounter++,
+                    },
                 ]);
             }
         } catch {
@@ -141,7 +188,9 @@ export function EventChat({
                 ...prev,
                 {
                     role: "ai",
-                    content: "Sorry, I had trouble processing that. Could you try again?",
+                    content:
+                        "Sorry, I had trouble processing that. Could you try again?",
+                    id: messageIdCounter++,
                 },
             ]);
         }
@@ -167,7 +216,11 @@ export function EventChat({
             if (res.ok) {
                 setMessages((prev) => [
                     ...prev,
-                    { role: "ai", content: "Submitted! ✓" },
+                    {
+                        role: "ai",
+                        content: "Submitted! ✓",
+                        id: messageIdCounter++,
+                    },
                 ]);
                 setFields({
                     event_name: null,
@@ -181,94 +234,163 @@ export function EventChat({
             } else {
                 setMessages((prev) => [
                     ...prev,
-                    { role: "ai", content: "Something went wrong submitting. Try again?" },
+                    {
+                        role: "ai",
+                        content:
+                            "Something went wrong submitting. Try again?",
+                        id: messageIdCounter++,
+                    },
                 ]);
                 setAwaitingConfirm(false);
             }
         } catch {
             setMessages((prev) => [
                 ...prev,
-                { role: "ai", content: "Network error. Try again?" },
+                {
+                    role: "ai",
+                    content: "Network error. Try again?",
+                    id: messageIdCounter++,
+                },
             ]);
             setAwaitingConfirm(false);
         }
     };
 
     return (
-        <Card className="h-[400px] sm:h-[450px] lg:h-[500px] flex flex-col shadow-sm">
-            <CardHeader className="p-4 py-3 border-b bg-muted/20">
+        <Card className="chat-container shadow-md border-border/60">
+            {/* ── Header (pinned) ── */}
+            <CardHeader className="shrink-0 px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-500" />
-                    AI Assistant
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    Assistant
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden relative">
-                <ScrollArea className="h-full p-4" ref={scrollContainerRef}>
-                    <div className="space-y-4">
-                        {messages.map((m, i) => (
-                            <div
-                                key={i}
-                                className={cn(
-                                    "flex gap-3",
-                                    m.role === "user" ? "flex-row-reverse" : "flex-row"
-                                )}
-                            >
-                                <Avatar className={cn("h-8 w-8 shrink-0", m.role === "user" ? "hidden" : "block")}>
-                                    <AvatarFallback className="bg-purple-100 text-purple-600">
-                                        <Bot className="w-4 h-4" />
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div
+
+            {/* ── Messages (scrollable) ── */}
+            <CardContent className="flex-1 p-0 overflow-hidden">
+                <ScrollArea className="h-full" ref={scrollAreaRef}>
+                    <div className="bg-slate-50/50 min-h-full px-4 py-4 space-y-3">
+                        <AnimatePresence initial={false}>
+                            {messages.map((m) => (
+                                <motion.div
+                                    key={m.id}
+                                    variants={bubbleVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    layout
                                     className={cn(
-                                        "rounded-2xl px-4 py-2.5 max-w-[85%] text-sm shadow-sm",
+                                        "flex gap-2.5",
                                         m.role === "user"
-                                            ? "bg-primary text-primary-foreground rounded-tr-sm"
-                                            : "bg-muted text-foreground rounded-tl-sm border"
+                                            ? "flex-row-reverse"
+                                            : "flex-row"
                                     )}
                                 >
-                                    {m.content.split("\n").map((line, j) => (
-                                        <p key={j} className={cn(j > 0 && "mt-1")}>
-                                            {line}
-                                        </p>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                        {loading && (
-                            <div className="flex gap-3">
-                                <Avatar className="h-8 w-8 shrink-0">
-                                    <AvatarFallback className="bg-purple-100 text-purple-600">
-                                        <Bot className="w-4 h-4" />
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="bg-muted text-foreground rounded-2xl rounded-tl-sm px-4 py-3 border shadow-sm flex items-center gap-1.5 h-10">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.3s]" />
-                                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.15s]" />
-                                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" />
-                                </div>
-                            </div>
-                        )}
-                        <div ref={bottomRef} className="h-px w-full" />
+                                    {/* Avatar */}
+                                    <Avatar
+                                        className={cn(
+                                            "h-8 w-8 shrink-0 mt-0.5",
+                                            m.role === "user"
+                                                ? "bg-primary"
+                                                : "bg-primary/10"
+                                        )}
+                                    >
+                                        <AvatarFallback
+                                            className={cn(
+                                                m.role === "user"
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-primary/10 text-primary"
+                                            )}
+                                        >
+                                            {m.role === "user" ? (
+                                                <User className="h-4 w-4" />
+                                            ) : (
+                                                <Bot className="h-4 w-4" />
+                                            )}
+                                        </AvatarFallback>
+                                    </Avatar>
+
+                                    {/* Bubble */}
+                                    <div
+                                        className={cn(
+                                            "rounded-2xl px-4 py-2.5 max-w-[80%] text-sm leading-relaxed shadow-sm",
+                                            m.role === "user"
+                                                ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                : "bg-background text-foreground rounded-tl-none border border-border/60"
+                                        )}
+                                    >
+                                        {m.content
+                                            .split("\n")
+                                            .map((line, j) => (
+                                                <p
+                                                    key={j}
+                                                    className={cn(
+                                                        j > 0 && "mt-1.5"
+                                                    )}
+                                                >
+                                                    {line}
+                                                </p>
+                                            ))}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+
+                        {/* Typing indicator */}
+                        <AnimatePresence>
+                            {loading && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    className="flex gap-2.5"
+                                >
+                                    <Avatar className="h-8 w-8 shrink-0 mt-0.5">
+                                        <AvatarFallback className="bg-primary/10 text-primary">
+                                            <Bot className="h-4 w-4" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="bg-background text-foreground rounded-2xl rounded-tl-none px-4 py-3 border border-border/60 shadow-sm flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.3s]" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.15s]" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/40 animate-bounce" />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </ScrollArea>
             </CardContent>
-            <CardFooter className="p-3 bg-background border-t">
+
+            {/* ── Input bar (pinned) ── */}
+            <CardFooter className="shrink-0 p-3 bg-background border-t">
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
                         handleSend();
                     }}
-                    className="flex gap-2 w-full"
+                    className="flex gap-2 w-full items-center"
                 >
                     <Input
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1"
+                        className="flex-1 h-11 text-base"
                         disabled={loading}
+                        autoComplete="off"
                     />
-                    <Button type="submit" size="icon" disabled={loading || !input.trim()}>
-                        <Send className="w-4 h-4" />
+                    <Button
+                        type="submit"
+                        size="icon"
+                        className="h-11 w-11 shrink-0"
+                        disabled={loading || !input.trim()}
+                    >
+                        {loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Send className="h-4 w-4" />
+                        )}
                         <span className="sr-only">Send</span>
                     </Button>
                 </form>

@@ -16,12 +16,12 @@ export default async function AdminEventsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-                    <p className="text-muted-foreground">Manage and view upcoming events.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Events</h1>
+                    <p className="text-muted-foreground text-sm md:text-base">Manage and view upcoming events.</p>
                 </div>
-                <Button asChild>
+                <Button asChild className="self-start sm:self-auto">
                     <Link href="/admin/events/new" className="gap-2">
                         <Plus className="h-4 w-4" />
                         New Event

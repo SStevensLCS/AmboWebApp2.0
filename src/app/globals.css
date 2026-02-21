@@ -4,6 +4,9 @@
 
 /* ─── Design Tokens ────────────────────────────────────── */
 :root {
+  /* Mobile bottom nav total height: h-16 (4rem) + safe-area-inset-bottom */
+  --mobile-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
+
   --bg: #ffffff;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f5f5f5;
@@ -360,7 +363,7 @@ b {
   /* ── Chat Container (dynamic viewport for mobile keyboard) ── */
   .chat-container {
     height: 100%;
-    max-height: calc(100dvh - 10rem);
+    max-height: calc(var(--app-height, 100dvh) - 10rem);
     display: flex;
     flex-direction: column;
     overscroll-behavior-y: none;

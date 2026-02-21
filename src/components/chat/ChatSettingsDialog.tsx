@@ -124,7 +124,7 @@ export function ChatSettingsDialog({
                     <div className="space-y-2">
                         <Label>Participants</Label>
                         <div className="border rounded-md p-2 max-h-[200px] overflow-y-auto space-y-2">
-                            {group.participants?.map((p) => (
+                            {group.participants?.filter(p => p.user).map((p) => (
                                 <div key={p.user.id} className="flex items-center justify-between">
                                     <span className="text-sm">
                                         {p.user.first_name} {p.user.last_name}
@@ -148,7 +148,7 @@ export function ChatSettingsDialog({
                     <div className="space-y-2">
                         <Label>Add Participant</Label>
                         <UserSearch
-                            selectedUsers={group.participants?.map(p => p.user.id) || []}
+                            selectedUsers={group.participants?.filter(p => p.user).map(p => p.user.id) || []}
                             onSelect={handleAddParticipant}
                         />
                     </div>

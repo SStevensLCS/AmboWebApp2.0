@@ -84,6 +84,30 @@ body {
   }
 }
 
+/* ── iOS keyboard accessory toolbar suppression ── */
+/* contentEditable elements bypass the iOS form accessory bar entirely.
+   These rules ensure they behave consistently across iOS versions. */
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS from showing autocorrect bar on elements that don't need it */
+input[type="search"],
+input[type="password"],
+input[enterkeyhint] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure touch interactions don't trigger iOS form-related UI */
+input,
+textarea,
+select,
+[contenteditable] {
+  touch-action: manipulation;
+}
+
 h1,
 h2,
 h3,

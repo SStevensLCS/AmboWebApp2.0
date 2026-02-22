@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -56,7 +55,8 @@ export function EventChat({
             id: messageIdCounter++,
         },
     ]);
-    const [input, setInput] = useState("");
+    const [inputEmpty, setInputEmpty] = useState(true);
+    const inputRef = useRef<HTMLDivElement>(null);
     const [fields, setFields] = useState<EventFields>({
         event_name: null,
         hours: null,
@@ -106,14 +106,25 @@ export function EventChat({
         scrollToBottom();
     }, [messages, loading, scrollToBottom]);
 
+    const getInputText = (): string =>
+        inputRef.current?.textContent?.trim() || "";
+
+    const clearInput = () => {
+        if (inputRef.current) {
+            inputRef.current.textContent = "";
+            setInputEmpty(true);
+        }
+    };
+
     const handleSend = async () => {
-        if (!input.trim() || loading) return;
-        const userMsg = input.trim();
+        const userMsg = getInputText();
+        if (!userMsg || loading) return;
         setMessages((prev) => [
             ...prev,
             { role: "user", content: userMsg, id: messageIdCounter++ },
         ]);
-        setInput("");
+        clearInput();
+        inputRef.current?.focus();
         setLoading(true);
 
         // Handle confirmation
@@ -383,26 +394,34 @@ export function EventChat({
 
             {/* ── Input bar (pinned) ── */}
             <CardFooter className="shrink-0 p-3 bg-background border-t">
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSend();
-                    }}
-                    className="flex gap-2 w-full items-center"
-                >
-                    <Input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type a message..."
-                        className="flex-1 h-11 text-base"
-                        disabled={loading}
-                        autoComplete="off"
+                <div className="flex gap-2 w-full items-end">
+                    <div
+                        ref={inputRef}
+                        contentEditable={!loading}
+                        suppressContentEditableWarning
+                        className="chat-editable-input flex-1 min-h-[36px] max-h-[100px] overflow-y-auto rounded-full bg-muted px-4 py-2 text-sm outline-none leading-relaxed"
+                        data-placeholder="Type a message..."
+                        enterKeyHint="send"
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
+                        onInput={() => setInputEmpty(!getInputText())}
+                        onPaste={(e) => {
+                            e.preventDefault();
+                            const text = e.clipboardData.getData("text/plain");
+                            document.execCommand("insertText", false, text);
+                        }}
+                        role="textbox"
+                        aria-label="Message input"
                     />
                     <Button
-                        type="submit"
                         size="icon"
-                        className="h-11 w-11 shrink-0"
-                        disabled={loading || !input.trim()}
+                        className="h-9 w-9 shrink-0 rounded-full"
+                        disabled={loading || inputEmpty}
+                        onClick={handleSend}
                     >
                         {loading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -411,7 +430,7 @@ export function EventChat({
                         )}
                         <span className="sr-only">Send</span>
                     </Button>
-                </form>
+                </div>
             </CardFooter>
         </Card>
     );

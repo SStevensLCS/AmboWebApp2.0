@@ -519,19 +519,19 @@ export function EventModal({
 
             {/* Footer Input */}
             <div className="p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 mt-auto">
-                <form
-                    onSubmit={(e) => { e.preventDefault(); postComment(); }}
-                    className="flex gap-2"
-                >
+                <div className="flex gap-2">
                     <Input
                         placeholder="Write a comment..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); postComment(); } }}
                         disabled={loadingComment}
+                        enterKeyHint="send"
+                        autoComplete="off"
                     />
                     <Button
-                        type="submit"
                         size="icon"
+                        onClick={postComment}
                         disabled={loadingComment || !newComment.trim()}
                     >
                         {loadingComment ? (
@@ -540,7 +540,7 @@ export function EventModal({
                             <Send className="h-4 w-4" />
                         )}
                     </Button>
-                </form>
+                </div>
             </div>
         </div>
     );

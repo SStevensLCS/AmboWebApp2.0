@@ -251,6 +251,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                         suppressContentEditableWarning
                         className="chat-editable-input flex-1 min-h-[36px] max-h-[100px] overflow-y-auto rounded-full bg-muted px-4 py-2 text-sm outline-none leading-relaxed"
                         data-placeholder="Message"
+                        enterKeyHint="send"
                         onKeyDown={handleKeyDown}
                         onInput={handleInput}
                         onPaste={handlePaste}

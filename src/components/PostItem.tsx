@@ -337,6 +337,8 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                                     placeholder="Write a comment..."
                                                     className="h-9"
                                                     onKeyDown={(e) => e.key === "Enter" && handlePostComment()}
+                                                    enterKeyHint="send"
+                                                    autoComplete="off"
                                                 />
                                                 <Button
                                                     size="icon"

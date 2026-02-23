@@ -19,8 +19,7 @@ export async function GET(
             users (
                 first_name,
                 last_name,
-                role,
-                avatar_url
+                role
             )
         `)
         .eq("post_id", params.id)
@@ -64,8 +63,7 @@ export async function POST(
             users (
                 first_name,
                 last_name,
-                role,
-                avatar_url
+                role
             )
         `)
         .single();

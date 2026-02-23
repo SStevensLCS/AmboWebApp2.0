@@ -17,13 +17,13 @@ export async function GET(req: NextRequest) {
 
     const { data: comments } = await supabase
         .from("event_comments")
-        .select("*, users(first_name, last_name, role, avatar_url)")
+        .select("*, users(first_name, last_name, role)")
         .eq("event_id", eventId)
         .order("created_at", { ascending: true });
 
     const { data: rsvps } = await supabase
         .from("event_rsvps")
-        .select("status, user_id, users(first_name, last_name, avatar_url)")
+        .select("status, user_id, users(first_name, last_name)")
         .eq("event_id", eventId);
 
     return NextResponse.json({
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     // Return updated comments
     const { data } = await supabase
         .from("event_comments")
-        .select("*, users(first_name, last_name, role, avatar_url)")
+        .select("*, users(first_name, last_name, role)")
         .eq("event_id", event_id)
         .order("created_at", { ascending: true });
 

@@ -16,8 +16,7 @@ export async function GET() {
             users (
                 first_name,
                 last_name,
-                role,
-                avatar_url
+                role
             ),
             comments (count)
         `)
@@ -58,8 +57,7 @@ export async function POST(req: Request) {
             users (
                 first_name,
                 last_name,
-                role,
-                avatar_url
+                role
             )
         `)
         .single();

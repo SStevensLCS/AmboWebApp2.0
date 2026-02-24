@@ -18,7 +18,7 @@ import { UserSearch } from "./UserSearch";
 import { Badge } from "@/components/ui/badge";
 
 interface CreateGroupDialogProps {
-    onGroupCreated: (groupId: string) => void;
+    onGroupCreated: (groupId: string, groupData: { name: string | null; created_by: string; created_at: string; participants: User[] }) => void;
 }
 
 export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
@@ -42,7 +42,12 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
                 setOpen(false);
                 setName("");
                 setSelectedUsers([]);
-                onGroupCreated(data.group.id);
+                onGroupCreated(data.group.id, {
+                    name: data.group.name,
+                    created_by: data.group.created_by,
+                    created_at: data.group.created_at,
+                    participants: selectedUsers,
+                });
             } else {
                 const err = await res.json();
                 alert(err.error || "Failed to create group");

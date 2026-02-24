@@ -141,8 +141,8 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
                     )}
                     <h2 className="font-semibold text-lg leading-none">Chats</h2>
                 </div>
-                <CreateGroupDialog onGroupCreated={(id) => {
-                    fetchGroups();
+                <CreateGroupDialog onGroupCreated={async (id) => {
+                    await fetchGroups();
                     selectGroup(id);
                 }} />
             </div>

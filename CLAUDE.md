@@ -223,6 +223,46 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY      # For web push notifications
 VAPID_PRIVATE_KEY
 ```
 
+### Client-Side Data Fetching Pattern
+
+```typescript
+"use client";
+// Client components fetch from API routes:
+const res = await fetch("/api/resources");
+const data = await res.json();
+```
+
+### Supabase Realtime (Chat)
+
+Chat uses Supabase Realtime subscriptions in `components/chat/MessageList.tsx`:
+```typescript
+const channel = supabase
+  .channel(`chat:${groupId}`)
+  .on("postgres_changes", {
+    event: "INSERT",
+    schema: "public",
+    table: "chat_messages",
+    filter: `group_id=eq.${groupId}`,
+  }, (payload) => { /* update state */ })
+  .subscribe();
+// Cleanup: supabase.removeChannel(channel);
+```
+
+### File Uploads
+
+Files are uploaded to Supabase Storage buckets, then metadata is saved to DB:
+- **Storage buckets:** `resources`, `transcripts`, `avatars`
+- Pattern: `supabase.storage.from("bucket").upload(path, file)` then insert metadata row
+- Public URLs: `supabase.storage.from("bucket").getPublicUrl(path)`
+
+### Push Notifications
+
+Web Push via `web-push` library in `lib/notifications.ts`:
+- `sendNotificationToUser(userId, payload)` - send to specific user
+- `sendNotificationToRole(role, payload, excludeUserId?)` - broadcast to role
+- Expired subscriptions (410/404) are auto-cleaned from DB
+- Client subscribes via `PushNotificationManager.tsx` component
+
 ## Database Migrations
 
 Migrations live in `supabase/migrations/` as SQL files. They are applied manually via the Supabase SQL Editor (not via CLI). Files are named with timestamps: `YYYYMMDD_description.sql`.
@@ -234,5 +274,8 @@ Migrations live in `supabase/migrations/` as SQL files. They are applied manuall
 - Shadcn/ui components are in `components/ui/` and configured via `components.json` (new-york style, RSC enabled)
 - The app is a PWA with a service worker (`public/sw.js`) and manifest
 - Mobile-first design with bottom navigation for student views
-- Phone numbers are stored as 10-digit strings with a DB constraint
+- Phone numbers are stored as 10-digit strings with a DB constraint (`^\d{10}$`)
 - `SERVICE_TYPES` constant in `lib/types.ts` defines valid submission service types
+- Google Calendar integration stores OAuth tokens in `system_settings` table
+- Chat groups require at least one admin participant when created by students
+- Superadmin privilege escalation is protected - only superadmins can promote to superadmin

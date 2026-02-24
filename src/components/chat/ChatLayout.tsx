@@ -141,9 +141,20 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
                     )}
                     <h2 className="font-semibold text-lg leading-none">Chats</h2>
                 </div>
-                <CreateGroupDialog onGroupCreated={async (id) => {
-                    await fetchGroups();
+                <CreateGroupDialog onGroupCreated={(id, groupData) => {
+                    // Optimistically add the new group to state so it's
+                    // available immediately — avoids RLS/timing issues with refetch
+                    const optimisticGroup: Group = {
+                        id,
+                        name: groupData.name,
+                        created_by: groupData.created_by,
+                        created_at: groupData.created_at,
+                        participants: groupData.participants.map(u => ({ user: u })),
+                    };
+                    setGroups(prev => [optimisticGroup, ...prev]);
                     selectGroup(id);
+                    // Background refetch to sync full data
+                    fetchGroups();
                 }} />
             </div>
             <ScrollArea className="flex-1">

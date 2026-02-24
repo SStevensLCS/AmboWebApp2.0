@@ -15,7 +15,7 @@ export default async function StudentProfilePage() {
     const supabase = createAdminClient();
     const { data: user } = await supabase
         .from("users")
-        .select("first_name, last_name")
+        .select("first_name, last_name, avatar_url")
         .eq("id", session.userId)
         .single();
 
@@ -23,7 +23,7 @@ export default async function StudentProfilePage() {
         <div className="space-y-6 pb-20">
             <div className="max-w-xl space-y-6">
                 <AvatarUpload
-                    currentAvatarUrl={null}
+                    currentAvatarUrl={user?.avatar_url || null}
                     firstName={user?.first_name || ""}
                     lastName={user?.last_name || ""}
                 />

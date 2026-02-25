@@ -143,7 +143,9 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
                 </div>
                 <CreateGroupDialog onGroupCreated={(id, groupData) => {
                     // Optimistically add the new group to state so it's
-                    // available immediately — avoids RLS/timing issues with refetch
+                    // available immediately — avoids RLS/timing issues where
+                    // the browser Supabase client can't see the new group yet
+                    // (e.g. Safari PWA with isolated cookie context)
                     const optimisticGroup: Group = {
                         id,
                         name: groupData.name,
@@ -153,8 +155,6 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
                     };
                     setGroups(prev => [optimisticGroup, ...prev]);
                     selectGroup(id);
-                    // Background refetch to sync full data
-                    fetchGroups();
                 }} />
             </div>
             <ScrollArea className="flex-1">

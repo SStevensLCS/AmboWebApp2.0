@@ -7,11 +7,19 @@ const ALLOWED_DOMAINS = ["@student.linfield.com", "@linfield.com"];
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password } = await req.json();
+    const { firstName, lastName, email, phone, password } = await req.json();
 
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !phone || !password) {
       return NextResponse.json(
         { error: "All fields are required." },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone: exactly 10 digits
+    if (!/^\d{10}$/.test(phone)) {
+      return NextResponse.json(
+        { error: "Phone number must be exactly 10 digits." },
         { status: 400 }
       );
     }
@@ -59,9 +67,9 @@ export async function POST(req: NextRequest) {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: emailLower,
+        phone,
         password_hash: passwordHash,
         role: "basic",
-        // phone is collected during the application and set then
       })
       .select("id, role")
       .single();

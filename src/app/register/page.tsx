@@ -58,6 +58,7 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -71,6 +72,11 @@ export default function RegisterPage() {
     return ALLOWED_DOMAINS.some((d) => lower.endsWith(d));
   }, [email]);
 
+  const phoneDigits = phone.replace(/\D/g, "");
+  const phoneValid = phoneDigits.length === 10;
+  const phoneTouched = phone.length > 0;
+  const phoneShowError = phoneTouched && !phoneValid;
+
   const passwordLongEnough = password.length >= 8;
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
@@ -82,6 +88,7 @@ export default function RegisterPage() {
     firstName.trim() &&
     lastName.trim() &&
     emailDomainValid &&
+    phoneValid &&
     passwordLongEnough &&
     passwordsMatch;
 
@@ -96,7 +103,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstName, lastName, email, phone: phoneDigits, password }),
       });
 
       const data = await res.json();
@@ -162,6 +169,34 @@ export default function RegisterPage() {
                   className="bg-background"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Cell Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="5031234567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className={`bg-background ${
+                  phoneShowError
+                    ? "border-red-400 focus-visible:ring-red-400"
+                    : phoneValid
+                    ? "border-green-400 focus-visible:ring-green-400"
+                    : ""
+                }`}
+              />
+              {phoneShowError && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-red-500"
+                >
+                  Must be a 10-digit phone number
+                </motion.p>
+              )}
             </div>
 
             <div className="space-y-2">

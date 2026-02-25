@@ -1,5 +1,8 @@
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { AvatarUpload } from "@/components/AvatarUpload";
+import { GoogleCalendarSetup } from "@/components/GoogleCalendarSetup";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -9,14 +12,24 @@ export default async function AdminProfilePage() {
         redirect("/");
     }
 
+    const supabase = createAdminClient();
+    const { data: user } = await supabase
+        .from("users")
+        .select("first_name, last_name, avatar_url")
+        .eq("id", session.userId)
+        .single();
+
     return (
         <div className="space-y-6 pb-20">
-            <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-                <p className="text-muted-foreground">Manage your account settings.</p>
-            </div>
-
             <div className="max-w-xl space-y-6">
+                <AvatarUpload
+                    currentAvatarUrl={user?.avatar_url || null}
+                    firstName={user?.first_name || ""}
+                    lastName={user?.last_name || ""}
+                />
+
+                <GoogleCalendarSetup />
+
                 <PushNotificationManager />
 
                 <div className="pt-6 border-t">

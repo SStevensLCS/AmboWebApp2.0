@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, MessageSquare, ClipboardList, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Calendar, MessageSquare, MessageCircle, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminMobileBottomNav() {
@@ -45,14 +45,14 @@ export default function AdminMobileBottomNav() {
       icon: MessageSquare,
     },
     {
-      href: "/admin/applications",
-      label: "Apply",
-      icon: ClipboardList,
-    },
-    {
       href: "/admin/chat",
       label: "Chat",
       icon: MessageCircle,
+    },
+    {
+      href: "/admin/profile",
+      label: "Profile",
+      icon: UserCircle,
     },
   ];
 

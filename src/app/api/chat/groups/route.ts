@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
 import { adminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
@@ -19,12 +18,8 @@ export async function POST(req: Request) {
             );
         }
 
-        const supabase = await createClient();
-
         // Student validation: Must include at least one admin
         if (session.role === "student" || session.role === "applicant") {
-            // Use admin client to bypass RLS when checking other users' roles
-            // Only strictly needed for this check
             const { data: users, error: userError } = await adminClient
                 .from("users")
                 .select("role")
@@ -47,7 +42,8 @@ export async function POST(req: Request) {
         }
 
         // 1. Create Group
-        const { data: group, error: groupError } = await supabase
+        // Use adminClient to bypass RLS since auth is verified via custom JWT session above
+        const { data: group, error: groupError } = await adminClient
             .from("chat_groups")
             .insert({
                 name: name || null, // Allow unnamed groups (e.g. 1:1 DMs)
@@ -69,7 +65,7 @@ export async function POST(req: Request) {
             user_id: userId,
         }));
 
-        const { error: partError } = await supabase
+        const { error: partError } = await adminClient
             .from("chat_participants")
             .insert(participantsData);
 

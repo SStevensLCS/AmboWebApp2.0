@@ -15,13 +15,28 @@ export async function GET(req: NextRequest) {
     if (!error && data.session?.user) {
       const userId = data.session.user.id;
 
-      // Look up the user's role from the public users table
+      // Look up the user's role from the public users table.
+      // New users: users.id === supabase auth id (matched at registration).
+      // Existing users (pre-dual-auth): look up by email as fallback.
       const adminSupabase = createAdminClient();
-      const { data: userProfile } = await adminSupabase
+      const userEmail = data.session.user.email;
+
+      let userProfile = null;
+      const { data: byId } = await adminSupabase
         .from("users")
         .select("id, role")
         .eq("id", userId)
         .single();
+      userProfile = byId;
+
+      if (!userProfile && userEmail) {
+        const { data: byEmail } = await adminSupabase
+          .from("users")
+          .select("id, role")
+          .eq("email", userEmail)
+          .single();
+        userProfile = byEmail;
+      }
 
       if (userProfile) {
         await setSessionCookie({

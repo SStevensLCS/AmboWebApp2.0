@@ -37,21 +37,35 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
+      // Update password in Supabase Auth (validates the reset session)
       const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({
-        password,
-      });
+      const { error: updateError } = await supabase.auth.updateUser({ password });
 
       if (updateError) {
         console.error("Password update error:", updateError);
         setError(updateError.message);
-      } else {
-        setSuccess(true);
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+        setLoading(false);
+        return;
       }
+
+      // Also update the bcrypt hash used by the custom login route
+      const hashRes = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!hashRes.ok) {
+        const data = await hashRes.json();
+        setError(data.error || "Failed to update password.");
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
     } catch {
       setError("An unexpected error occurred.");
     }

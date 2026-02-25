@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(""); // may be email or 10-digit phone
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   
@@ -70,16 +70,16 @@ export default function LoginPage() {
             </svg>
           </div>
           <CardTitle className="text-2xl font-bold">Ambassador Portal</CardTitle>
-          <CardDescription>Sign in with your email and password</CardDescription>
+          <CardDescription>Sign in with your email or phone number</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email or Phone Number</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="name@student.linfield.com"
+                type="text"
+                placeholder="name@student.linfield.com or 5031234567"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

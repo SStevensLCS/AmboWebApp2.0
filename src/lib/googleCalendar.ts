@@ -87,7 +87,7 @@ async function getCalendar(): Promise<calendar_v3.Calendar> {
 
 // ─── Event mapping ───────────────────────────────────────
 // ─── Event mapping ───────────────────────────────────────
-type AppEvent = {
+export type AppEvent = {
     id?: string;
     title: string;
     description?: string | null;
@@ -104,7 +104,7 @@ type AppEvent = {
     };
 };
 
-function buildGoogleEvent(
+export function buildGoogleEvent(
     event: AppEvent
 ): calendar_v3.Schema$Event {
     // Build a rich description with event type and uniform info

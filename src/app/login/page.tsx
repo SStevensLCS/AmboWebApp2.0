@@ -135,10 +135,17 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="text-center">
-            <a href="/register" className="text-sm text-primary hover:underline font-medium">
-              Create an Account
-            </a>
+          <div className="text-center space-y-2">
+            <div>
+              <a href="/register" className="text-sm text-primary hover:underline font-medium">
+                Create an Account
+              </a>
+            </div>
+            <div>
+              <a href="/forgot-password" className="text-sm text-muted-foreground hover:underline">
+                Forgot Password?
+              </a>
+            </div>
           </div>
         </CardContent>
       </Card>

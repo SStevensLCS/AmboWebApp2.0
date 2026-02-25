@@ -5,13 +5,32 @@ import { setSessionCookie } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { email: emailOrPhone, password } = await req.json();
 
-    if (!email || !password) {
+    if (!emailOrPhone || !password) {
       return NextResponse.json(
         { error: "Email and password are required." },
         { status: 400 }
       );
+    }
+
+    // If the identifier is a 10-digit phone number, look up the associated email
+    let email = emailOrPhone;
+    if (/^\d{10}$/.test(emailOrPhone)) {
+      const adminSupabase = createAdminClient();
+      const { data: userByPhone, error: phoneError } = await adminSupabase
+        .from("users")
+        .select("email")
+        .eq("phone", emailOrPhone)
+        .single();
+
+      if (phoneError || !userByPhone?.email) {
+        return NextResponse.json(
+          { error: "Invalid email or password." },
+          { status: 401 }
+        );
+      }
+      email = userByPhone.email;
     }
 
     // 1. Authenticate with Supabase Auth

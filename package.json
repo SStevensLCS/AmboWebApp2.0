@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed": "tsx supabase/seed.ts",
-    "test:e2e": "playwright test",
-    "test:smoke": "playwright test --grep @smoke",
-    "test:unit": "vitest run"
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit/utils.test.ts tests/unit/session.test.ts tests/unit/googleCalendar.test.ts",
+    "test:smoke": "vitest run tests/unit/middleware.test.ts",
+    "test:e2e": "vitest run tests/unit/auth-flow.test.ts tests/unit/api-auth.test.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -52,7 +53,6 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^18",

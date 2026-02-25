@@ -141,77 +141,6 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
 
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
-    const SidebarContent = () => (
-        <div className="flex flex-col h-full border-r bg-background">
-            <div className="p-4 border-b flex items-center justify-between">
-                <div>
-                    {pageTitle && (
-                        <p className="text-xs text-muted-foreground leading-none mb-1">{pageTitle}</p>
-                    )}
-                    <h2 className="font-semibold text-lg leading-none">Chats</h2>
-                </div>
-                <CreateGroupDialog onGroupCreated={(id, groupData) => {
-                    // Optimistically add the new group to state so it's
-                    // available immediately — avoids RLS/timing issues where
-                    // the browser Supabase client can't see the new group yet
-                    // (e.g. Safari PWA with isolated cookie context)
-                    const optimisticGroup: Group = {
-                        id,
-                        name: groupData.name,
-                        created_by: groupData.created_by,
-                        created_at: groupData.created_at,
-                        participants: groupData.participants.map(u => ({ user: u })),
-                    };
-                    setGroups(prev => [optimisticGroup, ...prev]);
-                    selectGroup(id);
-                }} />
-            </div>
-            <ScrollArea className="flex-1">
-                {loading ? (
-                    <div className="flex justify-center p-4">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                ) : groups.length === 0 ? (
-                    <div className="p-4 text-center text-muted-foreground text-sm">
-                        No chats yet. Start one!
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-1 p-2">
-                        {groups.map((group) => {
-                            let displayName = group.name;
-                            if (!displayName && group.participants) {
-                                const others = group.participants
-                                    .filter(p => p.user && p.user.id !== currentUserId)
-                                    .map(p => p.user.first_name);
-                                displayName = others.length > 0 ? others.slice(0, 2).join(", ") + (others.length > 2 ? ` +${others.length - 2}` : "") : "Empty Group";
-                            }
-
-                            return (
-                                <Button
-                                    key={group.id}
-                                    variant={selectedGroupId === group.id ? "secondary" : "ghost"}
-                                    className={cn(
-                                        "justify-start h-auto py-3 px-4 w-full",
-                                        selectedGroupId === group.id && "bg-muted"
-                                    )}
-                                    onClick={() => selectGroup(group.id)}
-                                >
-                                    <MessageSquare className="mr-2 h-4 w-4 shrink-0" />
-                                    <div className="overflow-hidden text-left w-full">
-                                        <div className="font-medium truncate">{displayName}</div>
-                                        <div className="text-xs text-muted-foreground truncate">
-                                            {new Date(group.updated_at || group.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                </Button>
-                            );
-                        })}
-                    </div>
-                )}
-            </ScrollArea>
-        </div>
-    );
-
     return (
         <div
             className="fixed inset-x-0 top-0 z-30 md:relative md:inset-auto md:z-auto flex md:border md:rounded-lg overflow-hidden bg-background"
@@ -224,7 +153,74 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
                 "w-full md:w-80 flex-col",
                 selectedGroupId ? "hidden md:flex" : "flex"
             )}>
-                <SidebarContent />
+                <div className="flex flex-col h-full border-r bg-background">
+                    <div className="p-4 border-b flex items-center justify-between">
+                        <div>
+                            {pageTitle && (
+                                <p className="text-xs text-muted-foreground leading-none mb-1">{pageTitle}</p>
+                            )}
+                            <h2 className="font-semibold text-lg leading-none">Chats</h2>
+                        </div>
+                        <CreateGroupDialog onGroupCreated={(id, groupData) => {
+                            // Optimistically add the new group to state so it's
+                            // available immediately — avoids RLS/timing issues where
+                            // the browser Supabase client can't see the new group yet
+                            // (e.g. Safari PWA with isolated cookie context)
+                            const optimisticGroup: Group = {
+                                id,
+                                name: groupData.name,
+                                created_by: groupData.created_by,
+                                created_at: groupData.created_at,
+                                participants: groupData.participants.map(u => ({ user: u })),
+                            };
+                            setGroups(prev => [optimisticGroup, ...prev]);
+                            selectGroup(id);
+                        }} />
+                    </div>
+                    <ScrollArea className="flex-1">
+                        {loading ? (
+                            <div className="flex justify-center p-4">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
+                        ) : groups.length === 0 ? (
+                            <div className="p-4 text-center text-muted-foreground text-sm">
+                                No chats yet. Start one!
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-1 p-2">
+                                {groups.map((group) => {
+                                    let displayName = group.name;
+                                    if (!displayName && group.participants) {
+                                        const others = group.participants
+                                            .filter(p => p.user && p.user.id !== currentUserId)
+                                            .map(p => p.user.first_name);
+                                        displayName = others.length > 0 ? others.slice(0, 2).join(", ") + (others.length > 2 ? ` +${others.length - 2}` : "") : "Empty Group";
+                                    }
+
+                                    return (
+                                        <Button
+                                            key={group.id}
+                                            variant={selectedGroupId === group.id ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "justify-start h-auto py-3 px-4 w-full",
+                                                selectedGroupId === group.id && "bg-muted"
+                                            )}
+                                            onClick={() => selectGroup(group.id)}
+                                        >
+                                            <MessageSquare className="mr-2 h-4 w-4 shrink-0" />
+                                            <div className="overflow-hidden text-left w-full">
+                                                <div className="font-medium truncate">{displayName}</div>
+                                                <div className="text-xs text-muted-foreground truncate">
+                                                    {new Date(group.updated_at || group.created_at).toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </ScrollArea>
+                </div>
             </div>
 
             {/* Main Content - Visible on Desktop, or on Mobile when chat selected */}

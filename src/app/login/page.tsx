@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, Eye, EyeOff, MailCheck } from "lucide-react";
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -16,7 +16,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [needsPassword, setNeedsPassword] = useState(false);
   const [showCheddar, setShowCheddar] = useState(false);
   const router = useRouter();
 
@@ -37,12 +36,8 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        if (data.needsPassword) {
-          setNeedsPassword(true);
-        } else {
-          router.push(data.redirect || "/");
-          router.refresh();
-        }
+        router.push(data.redirect || "/");
+        router.refresh();
       } else {
         setError(data.error || "Login failed");
       }
@@ -55,7 +50,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white relative overflow-hidden">
-      {/* Cheddar Rain Animation */}
       <CheddarRain isActive={showCheddar} onComplete={handleCheddarComplete} />
 
       <Card className="w-full max-w-sm shadow-lg z-10">
@@ -72,110 +66,80 @@ export default function LoginPage() {
             </svg>
           </div>
           <CardTitle className="text-2xl font-bold">Ambassador Portal</CardTitle>
-          <CardDescription>
-            {needsPassword ? "Check your inbox" : "Sign in with your email or phone number"}
-          </CardDescription>
+          <CardDescription>Sign in with your email and password</CardDescription>
         </CardHeader>
         <CardContent>
-          {needsPassword ? (
-            <div className="space-y-4 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <MailCheck className="w-6 h-6 text-green-600" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Looks like you haven&apos;t set a password yet. We sent you an email with a link to create one — after that, you can log in instantly anytime.
-              </p>
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => { setNeedsPassword(false); setPassword(""); }}
-              >
-                Back to sign in
-              </Button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="emailOrPhone">Email or Phone Number</Label>
+              <Input
+                id="emailOrPhone"
+                type="text"
+                placeholder="name@student.linfield.com"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                required
+                className="bg-background"
+              />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="emailOrPhone">Email or Phone Number</Label>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
                 <Input
-                  id="emailOrPhone"
-                  type="text"
-                  placeholder="name@student.linfield.com or 5031234567"
-                  value={emailOrPhone}
-                  onChange={(e) => setEmailOrPhone(e.target.value)}
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-background"
+                  className="bg-background pr-10"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="bg-background pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-              <div className="flex justify-end">
-                <a href="/forgot-password" className="text-sm text-primary hover:underline font-medium">
-                  Forgot Password?
-                </a>
-              </div>
-
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
               )}
+            </Button>
+          </form>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-          )}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or
+              </span>
+            </div>
+          </div>
 
-          {!needsPassword && (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <a href="/apply" className="text-sm text-primary hover:underline font-medium">
-                  Apply to be an Ambassador
-                </a>
-              </div>
-            </>
-          )}
+          <div className="text-center">
+            <a href="/register" className="text-sm text-primary hover:underline font-medium">
+              Create an Account
+            </a>
+          </div>
         </CardContent>
       </Card>
 

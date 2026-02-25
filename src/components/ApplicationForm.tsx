@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StepIndicator } from "./StepIndicator";
 import { cn } from "@/lib/utils";
 import { Check, ChevronRight, ChevronLeft, Loader2, Save, Upload, FileText } from "lucide-react";
-import { getApplicationByPhone, saveApplicationStep, submitApplication, uploadTranscript } from "@/actions/application";
+import { getApplicationByPhone, saveApplicationStep, submitApplication, submitApplicationForUser, uploadTranscript } from "@/actions/application";
 import { ApplicationData } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,7 @@ const INITIAL_DATA: ApplicationData = {
     q_time_commitment: ""
 };
 
-export default function ApplicationForm() {
+export default function ApplicationForm({ userId }: { userId?: string }) {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [resumeData, setResumeData] = useState<ApplicationData>(INITIAL_DATA);
     const [direction, setDirection] = useState(0);
@@ -186,6 +186,12 @@ export default function ApplicationForm() {
         setIsSubmitting(true);
         try {
             await submitApplication(resumeData.phone_number);
+            // If logged in as a basic user, promote to applicant
+            if (userId) {
+                await submitApplicationForUser(userId);
+                window.location.href = "/status";
+                return;
+            }
             setIsSubmitted(true);
         } catch (error) {
             console.error(error);

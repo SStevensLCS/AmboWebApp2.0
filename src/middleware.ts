@@ -1,39 +1,90 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
+// Routes that never require authentication
+const PUBLIC_PATHS = [
+  "/api/auth/",
+  "/auth/callback",
+  "/forgot-password",
+  "/reset-password",
+];
+
+function roleHome(role: string): string {
+  switch (role) {
+    case "basic":
+      return "/apply";
+    case "applicant":
+      return "/status";
+    case "admin":
+    case "superadmin":
+      return "/admin";
+    default:
+      return "/student";
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-
-  console.log("Middleware checking path:", path);
-
-  if (
-    path.startsWith("/login") ||
-    path.startsWith("/api/auth/login") ||
-    path.startsWith("/forgot-password") ||
-    path.startsWith("/reset-password") ||
-    path.startsWith("/api/auth/forgot-password") ||
-    path.startsWith("/auth/callback")
-  ) {
+  // Always allow API auth routes and public callback routes
+  if (PUBLIC_PATHS.some((p) => path.startsWith(p))) {
     return NextResponse.next();
   }
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
-  console.log("Cookie token present:", !!token);
-
   const session = token ? await verifySessionToken(token) : null;
-  console.log("Session verified:", !!session, "Role:", session?.role);
 
-  if (path.startsWith("/student") || path.startsWith("/admin")) {
-    if (!session) {
-      console.log("No session, redirecting to login");
-      const login = new URL("/login", request.url);
-      return NextResponse.redirect(login);
+  // ──────────────────────────────────────────
+  // Guest pages: login and register
+  // If already authenticated → redirect to their home
+  // ──────────────────────────────────────────
+  if (path.startsWith("/login") || path.startsWith("/register")) {
+    if (session) {
+      return NextResponse.redirect(new URL(roleHome(session.role), request.url));
     }
-    if (path.startsWith("/admin") && !["admin", "superadmin"].includes(session.role)) {
-      console.log("Admin path access denied for role:", session.role);
-      return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.next();
+  }
+
+  // ──────────────────────────────────────────
+  // Everything below requires a session
+  // ──────────────────────────────────────────
+  if (!session) {
+    // /apply is accessible to both guests (public application) and logged-in basic users
+    if (path.startsWith("/apply")) {
+      return NextResponse.next();
     }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // ──────────────────────────────────────────
+  // Role-based access enforcement
+  // ──────────────────────────────────────────
+  const { role } = session;
+
+  // basic → can only access /apply
+  if (role === "basic") {
+    if (!path.startsWith("/apply") && !path.startsWith("/api/")) {
+      return NextResponse.redirect(new URL("/apply", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // applicant → can only access /status
+  if (role === "applicant") {
+    if (!path.startsWith("/status") && !path.startsWith("/api/")) {
+      return NextResponse.redirect(new URL("/status", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // admin/superadmin → full access
+  if (role === "admin" || role === "superadmin") {
+    return NextResponse.next();
+  }
+
+  // student → can access /student and /apply, but not /admin
+  if (path.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/student", request.url));
   }
 
   return NextResponse.next();

@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { setSessionCookie } from "@/lib/session";
+import bcrypt from "bcryptjs";
+
+function redirectForRole(role: string): string {
+  switch (role) {
+    case "basic":
+      return "/apply";
+    case "applicant":
+      return "/status";
+    case "admin":
+    case "superadmin":
+      return "/admin";
+    default:
+      return "/student";
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,81 +28,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If the identifier is a 10-digit phone number, look up the associated email
-    let email = emailOrPhone;
-    if (/^\d{10}$/.test(emailOrPhone)) {
-      const adminSupabase = createAdminClient();
-      const { data: userByPhone, error: phoneError } = await adminSupabase
-        .from("users")
-        .select("email")
-        .eq("phone", emailOrPhone)
-        .single();
+    const supabase = createAdminClient();
+    const identifier = emailOrPhone.trim().toLowerCase();
 
-      if (phoneError || !userByPhone?.email) {
-        return NextResponse.json(
-          { error: "Invalid email or password." },
-          { status: 401 }
-        );
-      }
-      email = userByPhone.email;
+    // Look up user by email or 10-digit phone number
+    let query = supabase.from("users").select("id, role, password_hash, email");
+    if (/^\d{10}$/.test(identifier)) {
+      query = query.eq("phone", identifier);
+    } else {
+      query = query.eq("email", identifier);
     }
 
-    const supabase = await createClient();
+    const { data: user, error: lookupError } = await query.single();
 
-    // 1. Try email + password login
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    if (lookupError || !user) {
+      return NextResponse.json(
+        { error: "Invalid email or password." },
+        { status: 401 }
+      );
+    }
+
+    // Verify password against stored hash
+    if (!user.password_hash) {
+      return NextResponse.json(
+        { error: "No password set for this account. Please register or reset your password." },
+        { status: 401 }
+      );
+    }
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return NextResponse.json(
+        { error: "Invalid email or password." },
+        { status: 401 }
+      );
+    }
+
+    // Set session cookie
+    await setSessionCookie({
+      userId: user.id,
+      role: user.role as "basic" | "student" | "admin" | "superadmin" | "applicant",
     });
 
-    if (!authError && authData.user) {
-      // Success — fetch role and set session cookie
-      const adminSupabase = createAdminClient();
-      const { data: userProfile, error: profileError } = await adminSupabase
-        .from("users")
-        .select("id, role")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profileError || !userProfile) {
-        console.error("Profile fetch error:", profileError);
-        return NextResponse.json(
-          { error: "User profile not found." },
-          { status: 404 }
-        );
-      }
-
-      await setSessionCookie({
-        userId: userProfile.id,
-        role: userProfile.role as "student" | "admin" | "superadmin",
-      });
-
-      const isStaff = ["admin", "superadmin"].includes(userProfile.role);
-      return NextResponse.json({ redirect: isStaff ? "/admin" : "/student" });
-    }
-
-    // 2. Auth failed — check if this is a known user who just hasn't set a password yet
-    const adminSupabase = createAdminClient();
-    const { data: existingUser } = await adminSupabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single();
-
-    if (existingUser) {
-      // Valid user, no password set — send a reset email so they can create one
-      const origin = req.headers.get("origin") || "http://localhost:3000";
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/callback?next=/reset-password`,
-      });
-      return NextResponse.json({ needsPassword: true });
-    }
-
-    // Unknown user
-    return NextResponse.json(
-      { error: "Invalid email or password." },
-      { status: 401 }
-    );
+    return NextResponse.json({ redirect: redirectForRole(user.role) });
   } catch (err) {
     console.error("Login error:", err);
     return NextResponse.json(

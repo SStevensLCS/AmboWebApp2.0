@@ -61,6 +61,31 @@ export async function submitApplication(phone: string) {
         throw new Error("Failed to submit application");
     }
 
+    // Promote any basic user with this phone number to applicant
+    await supabase
+        .from("users")
+        .update({ role: "applicant" })
+        .eq("phone", phone)
+        .eq("role", "basic");
+
+    return { success: true };
+}
+
+export async function submitApplicationForUser(userId: string) {
+    const supabase = adminClient;
+
+    // Update user role from basic to applicant
+    const { error } = await supabase
+        .from("users")
+        .update({ role: "applicant" })
+        .eq("id", userId)
+        .eq("role", "basic");
+
+    if (error) {
+        console.error("Error promoting user to applicant:", error);
+        throw new Error("Failed to submit application");
+    }
+
     return { success: true };
 }
 

@@ -8,7 +8,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -69,11 +68,15 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="mr-2 h-4 w-4" /> New Chat
-                </Button>
-            </DialogTrigger>
+            <Button
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setOpen(true);
+                }}
+            >
+                <Plus className="mr-2 h-4 w-4" /> New Chat
+            </Button>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New Chat</DialogTitle>

@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setSessionCookie } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email: emailOrPhone } = await req.json();
+    const { email: emailOrPhone, password } = await req.json();
 
-    if (!emailOrPhone) {
+    if (!emailOrPhone || !password) {
       return NextResponse.json(
-        { error: "Email or phone number is required." },
+        { error: "Email and password are required." },
         { status: 400 }
       );
     }
@@ -24,25 +25,70 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (phoneError || !userByPhone?.email) {
-        // Don't reveal whether the phone number exists
-        return NextResponse.json({ ok: true });
+        return NextResponse.json(
+          { error: "Invalid email or password." },
+          { status: 401 }
+        );
       }
       email = userByPhone.email;
     }
 
-    const origin = req.headers.get("origin") || "http://localhost:3000";
     const supabase = await createClient();
 
-    await supabase.auth.signInWithOtp({
+    // 1. Try email + password login
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback`,
-        shouldCreateUser: false, // only allow existing users to sign in
-      },
+      password,
     });
 
-    // Always return ok — don't reveal whether the email exists
-    return NextResponse.json({ ok: true });
+    if (!authError && authData.user) {
+      // Success — fetch role and set session cookie
+      const adminSupabase = createAdminClient();
+      const { data: userProfile, error: profileError } = await adminSupabase
+        .from("users")
+        .select("id, role")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError || !userProfile) {
+        console.error("Profile fetch error:", profileError);
+        return NextResponse.json(
+          { error: "User profile not found." },
+          { status: 404 }
+        );
+      }
+
+      await setSessionCookie({
+        userId: userProfile.id,
+        role: userProfile.role as "student" | "admin" | "superadmin",
+      });
+
+      const isStaff = ["admin", "superadmin"].includes(userProfile.role);
+      return NextResponse.json({ redirect: isStaff ? "/admin" : "/student" });
+    }
+
+    // 2. Auth failed — check if this is a known user who just hasn't set a password yet
+    const adminSupabase = createAdminClient();
+    const { data: existingUser } = await adminSupabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (existingUser) {
+      // Valid user, no password set — send a reset email so they can create one
+      const origin = req.headers.get("origin") || "http://localhost:3000";
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/auth/callback?next=/reset-password`,
+      });
+      return NextResponse.json({ needsPassword: true });
+    }
+
+    // Unknown user
+    return NextResponse.json(
+      { error: "Invalid email or password." },
+      { status: 401 }
+    );
   } catch (err) {
     console.error("Login error:", err);
     return NextResponse.json(

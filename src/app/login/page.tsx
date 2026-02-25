@@ -2,19 +2,23 @@
 
 import { CheddarRain } from "@/components/CheddarRain";
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, MailCheck } from "lucide-react";
+import { Loader2, AlertCircle, Eye, EyeOff, MailCheck } from "lucide-react";
 
 export default function LoginPage() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [needsPassword, setNeedsPassword] = useState(false);
   const [showCheddar, setShowCheddar] = useState(false);
+  const router = useRouter();
 
   const handleCheddarComplete = useCallback(() => setShowCheddar(false), []);
 
@@ -27,17 +31,23 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailOrPhone }),
+        body: JSON.stringify({ email: emailOrPhone, password }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        setSent(true);
+        if (data.needsPassword) {
+          setNeedsPassword(true);
+        } else {
+          router.push(data.redirect || "/");
+          router.refresh();
+        }
       } else {
-        const data = await res.json();
-        setError(data.error || "Something went wrong. Please try again.");
+        setError(data.error || "Login failed");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError("Network error");
     }
 
     setLoading(false);
@@ -63,24 +73,24 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Ambassador Portal</CardTitle>
           <CardDescription>
-            {sent ? "Check your inbox" : "Sign in with your email or phone number"}
+            {needsPassword ? "Check your inbox" : "Sign in with your email or phone number"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {sent ? (
+          {needsPassword ? (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                 <MailCheck className="w-6 h-6 text-green-600" />
               </div>
               <p className="text-sm text-muted-foreground">
-                We sent a sign-in link to your email. Click the link to log in — it expires in 1 hour.
+                Looks like you haven&apos;t set a password yet. We sent you an email with a link to create one — after that, you can log in instantly anytime.
               </p>
               <Button
                 variant="ghost"
                 className="w-full"
-                onClick={() => { setSent(false); setEmailOrPhone(""); }}
+                onClick={() => { setNeedsPassword(false); setPassword(""); }}
               >
-                Use a different email
+                Back to sign in
               </Button>
             </div>
           ) : (
@@ -98,6 +108,34 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-background pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <a href="/forgot-password" className="text-sm text-primary hover:underline font-medium">
+                  Forgot Password?
+                </a>
+              </div>
+
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -109,16 +147,16 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending link...
+                    Signing in...
                   </>
                 ) : (
-                  "Send Sign-In Link"
+                  "Sign In"
                 )}
               </Button>
             </form>
           )}
 
-          {!sent && (
+          {!needsPassword && (
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">

@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         email: emailLower,
         password_hash: passwordHash,
         role: "basic",
-        phone: "0000000000", // placeholder — updated during application
+        // phone is collected during the application and set then
       })
       .select("id, role")
       .single();

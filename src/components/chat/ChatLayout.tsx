@@ -10,7 +10,7 @@ import { CreateGroupDialog } from "./CreateGroupDialog";
 import { MessageList } from "./MessageList";
 import { ChatSettingsDialog } from "./ChatSettingsDialog";
 import { Group } from "./types";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 
 interface ChatLayoutProps {
     currentUserId: string;
@@ -23,7 +23,6 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const supabase = createClient();
     const searchParams = useSearchParams();
-    const router = useRouter();
     const pathname = usePathname();
 
     // ── Dynamic viewport height for mobile keyboard handling ──
@@ -84,10 +83,20 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
     }, [searchParams]);
 
     const selectGroup = (id: string) => {
-        setSelectedGroupId(id);
-        const params = new URLSearchParams(searchParams);
-        params.set("group", id);
-        router.replace(`${pathname}?${params.toString()}`);
+        setSelectedGroupId(id || null);
+        // Use history.replaceState instead of router.replace to avoid triggering
+        // a Next.js soft navigation. Soft navigation re-executes the server
+        // component, and the loading.tsx Suspense boundary unmounts ChatLayout,
+        // destroying all client state (groups, selectedGroupId). On mobile this
+        // leaves the user stuck on "Select a chat" with no back button.
+        const params = new URLSearchParams(window.location.search);
+        if (id) {
+            params.set("group", id);
+        } else {
+            params.delete("group");
+        }
+        const qs = params.toString();
+        window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
     };
 
     const fetchGroups = async () => {

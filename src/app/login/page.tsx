@@ -2,23 +2,19 @@
 
 import { CheddarRain } from "@/components/CheddarRain";
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState(""); // may be email or 10-digit phone
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [showCheddar, setShowCheddar] = useState(false);
-  const router = useRouter();
 
   const handleCheddarComplete = useCallback(() => setShowCheddar(false), []);
 
@@ -31,21 +27,17 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: emailOrPhone }),
       });
 
       if (res.ok) {
-        const data = await res.json();
-        console.log("Login successful:", data);
-        router.push(data.redirect || "/");
-        router.refresh(); // Refresh to update middleware/session state
+        setSent(true);
       } else {
         const data = await res.json();
-        console.error("Login failed:", data);
-        setError(data.error || "Login failed");
+        setError(data.error || "Something went wrong. Please try again.");
       }
     } catch {
-      setError("Network error");
+      setError("Network error. Please try again.");
     }
 
     setLoading(false);
@@ -70,86 +62,82 @@ export default function LoginPage() {
             </svg>
           </div>
           <CardTitle className="text-2xl font-bold">Ambassador Portal</CardTitle>
-          <CardDescription>Sign in with your email or phone number</CardDescription>
+          <CardDescription>
+            {sent ? "Check your inbox" : "Sign in with your email or phone number"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email or Phone Number</Label>
-              <Input
-                id="email"
-                type="text"
-                placeholder="name@student.linfield.com or 5031234567"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-background"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-background pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+          {sent ? (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <MailCheck className="w-6 h-6 text-green-600" />
               </div>
+              <p className="text-sm text-muted-foreground">
+                We sent a sign-in link to your email. Click the link to log in — it expires in 1 hour.
+              </p>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setSent(false); setEmailOrPhone(""); }}
+              >
+                Use a different email
+              </Button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="emailOrPhone">Email or Phone Number</Label>
+                <Input
+                  id="emailOrPhone"
+                  type="text"
+                  placeholder="name@student.linfield.com or 5031234567"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
+                  required
+                  className="bg-background"
+                />
+              </div>
 
-            <div className="flex justify-end">
-              <a href="/forgot-password" className="text-sm text-primary hover:underline font-medium">
-                Forgot Password?
-              </a>
-            </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
-            </Button>
-          </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or
-              </span>
-            </div>
-          </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending link...
+                  </>
+                ) : (
+                  "Send Sign-In Link"
+                )}
+              </Button>
+            </form>
+          )}
 
-          <div className="text-center">
-            <a href="/apply" className="text-sm text-primary hover:underline font-medium">
-              Apply to be an Ambassador
-            </a>
-          </div>
+          {!sent && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <a href="/apply" className="text-sm text-primary hover:underline font-medium">
+                  Apply to be an Ambassador
+                </a>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

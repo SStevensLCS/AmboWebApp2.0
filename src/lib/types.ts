@@ -1,5 +1,6 @@
-export type UserRole = "student" | "admin";
+export type UserRole = "student" | "admin" | "superadmin" | "applicant";
 export type SubmissionStatus = "Pending" | "Approved" | "Denied";
+export type RSVPStatus = "going" | "maybe" | "no";
 
 export interface User {
   id: string;
@@ -8,6 +9,7 @@ export interface User {
   phone: string;
   email: string;
   role: UserRole;
+  avatar_url?: string;
 }
 
 export interface Submission {
@@ -20,6 +22,33 @@ export interface Submission {
   feedback: string | null;
   status: SubmissionStatus;
   created_at?: string;
+}
+
+export interface EventDetails {
+  id: string;
+  title: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  type: string;
+  created_by: string;
+  uniform?: string;
+  users?: { role?: string };
+}
+
+export interface EventComment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  users: { first_name: string; last_name: string; role?: string; avatar_url?: string };
+}
+
+export interface EventRSVP {
+  status: RSVPStatus;
+  users: { first_name: string; last_name: string };
+  user_id: string;
 }
 
 export const SERVICE_TYPES = [

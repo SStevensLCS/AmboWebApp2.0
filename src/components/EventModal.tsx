@@ -28,33 +28,7 @@ import {
     DrawerFooter,
     DrawerClose
 } from "@/components/ui/drawer";
-
-type EventDetails = {
-    id: string;
-    title: string;
-    description: string;
-    start_time: string;
-    end_time: string;
-    location: string;
-    type: string;
-    created_by: string;
-    uniform?: string;
-    users?: { role?: string };
-};
-
-type Comment = {
-    id: string;
-    user_id: string;
-    content: string;
-    created_at: string;
-    users: { first_name: string; last_name: string; role?: string; avatar_url?: string };
-};
-
-type RSVP = {
-    status: string;
-    users: { first_name: string; last_name: string };
-    user_id: string;
-};
+import type { EventDetails, EventComment, EventRSVP, UserRole } from "@/lib/types";
 
 export function EventModal({
     event,
@@ -65,11 +39,11 @@ export function EventModal({
     event: EventDetails;
     onClose: () => void;
     currentUserId: string;
-    userRole: string; // "student", "admin", "superadmin"
+    userRole: UserRole;
 }) {
     // Data State
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [rsvps, setRsvps] = useState<RSVP[]>([]);
+    const [comments, setComments] = useState<EventComment[]>([]);
+    const [rsvps, setRsvps] = useState<EventRSVP[]>([]);
 
     // Permission Logic
     const isSuperAdmin = userRole === "superadmin";
@@ -92,7 +66,7 @@ export function EventModal({
     const canEditEvent = isSuperAdmin || isMyEvent || (isAdmin && eventCreatorRole === "student");
 
     // Comment Permission:
-    const canEditComment = (comment: Comment) => {
+    const canEditComment = (comment: EventComment) => {
         const isMyComment = comment.user_id === currentUserId;
         const commentOwnerRole = comment.users?.role || "student";
         return isSuperAdmin || isMyComment || (isAdmin && commentOwnerRole === "student");
@@ -176,7 +150,7 @@ export function EventModal({
         }
     };
 
-    const startEditComment = (comment: Comment) => {
+    const startEditComment = (comment: EventComment) => {
         setEditingCommentId(comment.id);
         setEditCommentContent(comment.content);
     };

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
+import type { EventDetails } from "@/lib/types";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -20,17 +21,6 @@ const containerVariants = {
 const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
-};
-
-type EventDetails = {
-    id: string;
-    title: string;
-    description: string;
-    start_time: string;
-    end_time: string;
-    location: string;
-    type: string;
-    created_by: string;
 };
 
 export function EventCalendar({

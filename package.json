@@ -7,7 +7,11 @@
     "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "tsx supabase/seed.ts"
+    "db:seed": "tsx supabase/seed.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit/utils.test.ts tests/unit/session.test.ts tests/unit/googleCalendar.test.ts",
+    "test:smoke": "vitest run tests/unit/middleware.test.ts",
+    "test:e2e": "vitest run tests/unit/auth-flow.test.ts tests/unit/api-auth.test.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -54,12 +58,14 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }

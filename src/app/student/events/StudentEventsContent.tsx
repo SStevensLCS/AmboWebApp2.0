@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { EventCalendar } from "@/components/EventCalendar";
 import { EventModal } from "@/components/EventModal";
+import type { EventDetails, UserRole } from "@/lib/types";
 
-export function StudentEventsContent({ userId, userRole }: { userId: string; userRole: string }) {
-    const [selectedEvent, setSelectedEvent] = useState<any>(null);
+export function StudentEventsContent({ userId, userRole }: { userId: string; userRole: UserRole }) {
+    const [selectedEvent, setSelectedEvent] = useState<EventDetails | null>(null);
 
     return (
         <>

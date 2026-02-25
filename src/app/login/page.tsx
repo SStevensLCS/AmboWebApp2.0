@@ -11,10 +11,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState(""); // may be email or 10-digit phone
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCheddar, setShowCheddar] = useState(false);
@@ -31,17 +30,15 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: emailOrPhone, password }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await res.json();
-        console.log("Login successful:", data);
         router.push(data.redirect || "/");
-        router.refresh(); // Refresh to update middleware/session state
+        router.refresh();
       } else {
-        const data = await res.json();
-        console.error("Login failed:", data);
         setError(data.error || "Login failed");
       }
     } catch {
@@ -53,7 +50,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white relative overflow-hidden">
-      {/* Cheddar Rain Animation */}
       <CheddarRain isActive={showCheddar} onComplete={handleCheddarComplete} />
 
       <Card className="w-full max-w-sm shadow-lg z-10">
@@ -70,18 +66,18 @@ export default function LoginPage() {
             </svg>
           </div>
           <CardTitle className="text-2xl font-bold">Ambassador Portal</CardTitle>
-          <CardDescription>Sign in with your email or phone number</CardDescription>
+          <CardDescription>Sign in with your email and password</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email or Phone Number</Label>
+              <Label htmlFor="emailOrPhone">Email or Phone Number</Label>
               <Input
-                id="email"
+                id="emailOrPhone"
                 type="text"
-                placeholder="name@student.linfield.com or 5031234567"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@student.linfield.com"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
                 required
                 className="bg-background"
               />
@@ -107,12 +103,6 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
-
-            <div className="flex justify-end">
-              <a href="/forgot-password" className="text-sm text-primary hover:underline font-medium">
-                Forgot Password?
-              </a>
             </div>
 
             {error && (
@@ -146,8 +136,8 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center">
-            <a href="/apply" className="text-sm text-primary hover:underline font-medium">
-              Apply to be an Ambassador
+            <a href="/register" className="text-sm text-primary hover:underline font-medium">
+              Create an Account
             </a>
           </div>
         </CardContent>

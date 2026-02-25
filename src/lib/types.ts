@@ -1,4 +1,4 @@
-export type UserRole = "student" | "admin" | "superadmin" | "applicant";
+export type UserRole = "basic" | "student" | "admin" | "superadmin" | "applicant";
 export type SubmissionStatus = "Pending" | "Approved" | "Denied";
 export type RSVPStatus = "going" | "maybe" | "no";
 

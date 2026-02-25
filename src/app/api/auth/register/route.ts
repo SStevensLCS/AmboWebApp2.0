@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Check if email already exists
+    // Check if email already exists in our users table
     const { data: existing } = await supabase
       .from("users")
       .select("id")
@@ -58,12 +58,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash password and insert user
+    // Create Supabase Auth user so password-reset emails work.
+    // We use its auto-generated UUID as the users.id so the two stay in sync.
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: emailLower,
+      password,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      console.error("Auth user creation error:", authError);
+      return NextResponse.json(
+        { error: "Failed to create account. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    // Hash password for our custom bcrypt login
     const passwordHash = await bcrypt.hash(password, 12);
 
     const { data: newUser, error: insertError } = await supabase
       .from("users")
       .insert({
+        id: authData.user.id, // Match Supabase Auth UUID so callback lookup works
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: emailLower,

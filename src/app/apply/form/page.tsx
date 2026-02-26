@@ -3,20 +3,6 @@ import { getSession } from "@/lib/session";
 import ApplicationForm from "@/components/ApplicationForm";
 import { getApplicationByUserId, getUserData, getActualUserRole } from "@/actions/application";
 
-function roleHome(role: string): string {
-  switch (role) {
-    case "basic":
-      return "/apply";
-    case "applicant":
-      return "/status";
-    case "admin":
-    case "superadmin":
-      return "/admin";
-    default:
-      return "/student";
-  }
-}
-
 export default async function ApplyFormPage({
   searchParams,
 }: {
@@ -29,10 +15,10 @@ export default async function ApplyFormPage({
   }
 
   // Check if the user's role was changed in the DB (e.g. admin promoted to student).
-  // The JWT may be stale, so we read the actual role from the database.
+  // Redirect to the refresh-session API route to update the stale JWT cookie.
   const actualRole = await getActualUserRole(session.userId);
   if (actualRole && actualRole !== "basic") {
-    redirect(roleHome(actualRole));
+    redirect("/api/auth/refresh-session");
   }
 
   const userData = await getUserData(session.userId);

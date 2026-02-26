@@ -63,29 +63,6 @@ export async function POST(req: Request) {
             );
         }
 
-        // Student validation: Must include at least one admin
-        if (session.role === "student" || session.role === "applicant") {
-            const { data: users, error: userError } = await adminClient
-                .from("users")
-                .select("role")
-                .in("id", participants);
-
-            if (userError) {
-                return NextResponse.json({ error: "Failed to validate participants" }, { status: 500 });
-            }
-
-            const hasAdmin = users.some(
-                (u) => u.role === "admin" || u.role === "superadmin"
-            );
-
-            if (!hasAdmin) {
-                return NextResponse.json(
-                    { error: "Students must include at least one admin in the chat" },
-                    { status: 403 }
-                );
-            }
-        }
-
         // 1. Create Group
         // Use adminClient to bypass RLS since auth is verified via custom JWT session above
         const { data: group, error: groupError } = await adminClient

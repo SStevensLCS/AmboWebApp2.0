@@ -45,15 +45,31 @@ export async function POST(req: NextRequest) {
     const supabase = createAdminClient();
 
     // Check if email already exists in our users table
-    const { data: existing } = await supabase
+    const { data: existingEmail } = await supabase
       .from("users")
       .select("id")
       .eq("email", emailLower)
       .single();
 
-    if (existing) {
+    if (existingEmail) {
       return NextResponse.json(
         { error: "An account with this email already exists." },
+        { status: 409 }
+      );
+    }
+
+    // Check if phone number already exists BEFORE creating the auth user.
+    // This prevents orphaned auth records when the users-table insert fails
+    // on the phone uniqueness constraint.
+    const { data: existingPhone } = await supabase
+      .from("users")
+      .select("id")
+      .eq("phone", phone)
+      .single();
+
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: "An account with this phone number already exists." },
         { status: 409 }
       );
     }
@@ -92,6 +108,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (insertError) {
+      // Clean up the orphaned Supabase Auth user so the email can be reused
+      await supabase.auth.admin.deleteUser(authData.user.id);
       console.error("Registration insert error:", insertError);
       return NextResponse.json(
         { error: "Failed to create account. Please try again." },

@@ -22,9 +22,11 @@ type Message = {
 interface MessageListProps {
     groupId: string;
     currentUserId: string;
+    currentUserFirstName?: string;
+    currentUserLastName?: string;
 }
 
-export function MessageList({ groupId, currentUserId }: MessageListProps) {
+export function MessageList({ groupId, currentUserId, currentUserFirstName = "", currentUserLastName = "" }: MessageListProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -132,7 +134,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
             sender_id: currentUserId,
             content: messageContent,
             created_at: new Date().toISOString(),
-            sender: { first_name: "You", last_name: "" },
+            sender: { first_name: currentUserFirstName, last_name: currentUserLastName },
         };
         setMessages((prev) => [...prev, optimisticMsg]);
         scrollToBottom();
@@ -207,7 +209,9 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                         <div className="space-y-2">
                             {messages.map((msg) => {
                                 const isMe = msg.sender_id === currentUserId;
-                                const initials = `${(msg.sender?.first_name || "?")[0]}${(msg.sender?.last_name || "")[0] || ""}`.toUpperCase();
+                                const firstName = isMe ? currentUserFirstName : (msg.sender?.first_name || "?");
+                                const lastName = isMe ? currentUserLastName : (msg.sender?.last_name || "");
+                                const initials = `${(firstName || "?")[0]}${(lastName || "")[0] || ""}`.toUpperCase();
                                 return (
                                     <div
                                         key={msg.id}

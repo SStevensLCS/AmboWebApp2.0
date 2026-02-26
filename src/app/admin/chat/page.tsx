@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/session";
 import { ChatLayout } from "@/components/chat/ChatLayout";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 
 export default async function AdminChatPage() {
@@ -13,11 +14,23 @@ export default async function AdminChatPage() {
         redirect("/login");
     }
 
+    const supabase = createAdminClient();
+    const { data: user } = await supabase
+        .from("users")
+        .select("first_name, last_name")
+        .eq("id", session.userId)
+        .single();
+
     return (
         // Negative margins cancel the layout's p-4 pb-24 (mobile) / md:p-8 md:pb-8
         // so ChatLayout can fill exactly the viewport height minus the nav bar.
         <div className="-mt-4 -mb-24 md:-mt-8 md:-mb-8 overflow-hidden">
-            <ChatLayout currentUserId={session.userId} pageTitle="Ambassador Chat" />
+            <ChatLayout
+                currentUserId={session.userId}
+                currentUserFirstName={user?.first_name ?? ""}
+                currentUserLastName={user?.last_name ?? ""}
+                pageTitle="Ambassador Chat"
+            />
         </div>
     );
 }

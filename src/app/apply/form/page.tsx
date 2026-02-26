@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ApplicationForm from "@/components/ApplicationForm";
-import { getApplicationByUserId, getUserData, refreshSessionIfRoleChanged } from "@/actions/application";
+import { getApplicationByUserId, getUserData, getActualUserRole } from "@/actions/application";
 
 function roleHome(role: string): string {
   switch (role) {
@@ -28,14 +28,11 @@ export default async function ApplyFormPage({
     redirect("/apply");
   }
 
-  // Check if the user's role was changed in the DB (e.g. admin promoted to student)
-  const newRole = await refreshSessionIfRoleChanged(session.userId, session.role);
-  if (newRole && newRole !== "basic") {
-    redirect(roleHome(newRole));
-  }
-
-  if (session.role !== "basic" && !newRole) {
-    redirect("/apply");
+  // Check if the user's role was changed in the DB (e.g. admin promoted to student).
+  // The JWT may be stale, so we read the actual role from the database.
+  const actualRole = await getActualUserRole(session.userId);
+  if (actualRole && actualRole !== "basic") {
+    redirect(roleHome(actualRole));
   }
 
   const userData = await getUserData(session.userId);

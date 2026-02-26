@@ -29,4 +29,3 @@ token.json
 *.mjs
 .claude/
 supabase/.temp/
-.mcp.json

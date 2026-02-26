@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/session";
 import { sendNotificationToUser } from "@/lib/notifications";
 import { NextResponse } from "next/server";
@@ -19,13 +19,24 @@ export async function POST(req: Request) {
             );
         }
 
-        const supabase = await createClient();
+        const supabase = createAdminClient();
 
-        // 1. Check if user is participant (Implicitly handled by RLS on Insert, but good to check for Notifications)
-        // Actually RLS for INSERT chat_messages: "Participants can insert messages".
-        // So if insert succeeds, they are a participant.
+        // Verify user is a participant in this group
+        const { data: participant } = await supabase
+            .from("chat_participants")
+            .select("user_id")
+            .eq("group_id", groupId)
+            .eq("user_id", session.userId)
+            .single();
 
-        // 2. Insert Message
+        if (!participant) {
+            return NextResponse.json(
+                { error: "You are not a participant in this group" },
+                { status: 403 }
+            );
+        }
+
+        // Insert Message
         const { data: message, error } = await supabase
             .from("chat_messages")
             .insert({

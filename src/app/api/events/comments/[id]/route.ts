@@ -23,7 +23,7 @@ export async function DELETE(
         return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    if (comment.user_id !== session.userId && session.role !== "admin") {
+    if (comment.user_id !== session.userId && (session.role !== "admin" && session.role !== "superadmin")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -58,7 +58,7 @@ export async function PATCH(
         return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    if (comment.user_id !== session.userId && session.role !== "admin") {
+    if (comment.user_id !== session.userId && (session.role !== "admin" && session.role !== "superadmin")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

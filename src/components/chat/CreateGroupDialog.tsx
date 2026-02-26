@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, Search, Check, Loader2 } from "lucide-react";
+import { Plus, Search, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { User } from "./types";
@@ -149,25 +148,6 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
                                 className="pl-9"
                             />
                         </div>
-
-                        {/* Selected user badges */}
-                        {selectedUsers.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                                {selectedUsers.map(user => (
-                                    <Badge key={user.id} variant="secondary" className="flex items-center gap-1 pr-1">
-                                        {user.first_name} {user.last_name}
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleUser(user)}
-                                            className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
-                                            aria-label={`Remove ${user.first_name} ${user.last_name}`}
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
 
                         {/* Scrollable user list */}
                         <div className="border rounded-lg max-h-[280px] overflow-y-auto">

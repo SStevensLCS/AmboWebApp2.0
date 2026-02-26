@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
             .from("chat_messages")
             .select(`
                 *,
-                sender:users!chat_messages_sender_id_fkey(first_name, last_name)
+                sender:users!chat_messages_sender_id_fkey(first_name, last_name, avatar_url)
             `)
             .eq("group_id", groupId)
             .order("created_at", { ascending: true });

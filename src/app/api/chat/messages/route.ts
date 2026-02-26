@@ -1,7 +1,53 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/session";
 import { sendNotificationToUser } from "@/lib/notifications";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+    try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const groupId = req.nextUrl.searchParams.get("groupId");
+        if (!groupId) {
+            return NextResponse.json({ error: "groupId is required" }, { status: 400 });
+        }
+
+        const supabase = createAdminClient();
+
+        // Verify user is a participant
+        const { data: participant } = await supabase
+            .from("chat_participants")
+            .select("user_id")
+            .eq("group_id", groupId)
+            .eq("user_id", session.userId)
+            .single();
+
+        if (!participant) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const { data: messages, error } = await supabase
+            .from("chat_messages")
+            .select(`
+                *,
+                sender:users!chat_messages_sender_id_fkey(first_name, last_name)
+            `)
+            .eq("group_id", groupId)
+            .order("created_at", { ascending: true });
+
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ messages: messages || [] });
+    } catch (error) {
+        console.error("Unexpected error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
 
 export async function POST(req: Request) {
     try {

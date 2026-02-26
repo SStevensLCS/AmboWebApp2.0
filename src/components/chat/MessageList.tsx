@@ -40,25 +40,22 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
     useEffect(() => {
         const fetchMessages = async () => {
             setLoading(true);
-            const { data, error } = await supabase
-                .from("chat_messages")
-                .select(`
-          *,
-          sender:users!chat_messages_sender_id_fkey(first_name, last_name)
-        `)
-                .eq("group_id", groupId)
-                .order("created_at", { ascending: true });
-
-            if (!error && data) {
-                setMessages(data as any as Message[]);
-                scrollToBottom();
+            try {
+                const res = await fetch(`/api/chat/messages?groupId=${groupId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMessages(data.messages as Message[]);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error("Error fetching messages:", error);
             }
             setLoading(false);
         };
 
         fetchMessages();
 
-        // Real-time subscription
+        // Real-time subscription for new messages
         const channel = supabase
             .channel(`chat:${groupId}`)
             .on(
@@ -79,20 +76,24 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                         return [...prev, { ...newMsg, sender: { first_name: '...', last_name: '' } }];
                     });
 
-                    const { data: senderData } = await supabase
-                        .from("users")
-                        .select("first_name, last_name")
-                        .eq("id", newMsg.sender_id)
-                        .single();
-
-                    if (senderData) {
-                        setMessages((prev) =>
-                            prev.map((m) =>
-                                m.id === newMsg.id
-                                    ? { ...m, sender: senderData }
-                                    : m
-                            )
-                        );
+                    // Fetch sender info via API
+                    try {
+                        const res = await fetch(`/api/chat/users`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            const sender = data.users?.find?.((u: { id: string }) => u.id === newMsg.sender_id);
+                            if (sender) {
+                                setMessages((prev) =>
+                                    prev.map((m) =>
+                                        m.id === newMsg.id
+                                            ? { ...m, sender: { first_name: sender.first_name, last_name: sender.last_name } }
+                                            : m
+                                    )
+                                );
+                            }
+                        }
+                    } catch {
+                        // Sender lookup is best-effort
                     }
 
                     scrollToBottom();

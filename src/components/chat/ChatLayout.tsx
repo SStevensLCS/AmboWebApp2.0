@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MessageSquare, Loader2, ArrowLeft, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { CreateGroupDialog } from "./CreateGroupDialog";
 import { MessageList } from "./MessageList";
 import { ChatSettingsDialog } from "./ChatSettingsDialog";
@@ -21,7 +20,6 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-    const supabase = useMemo(() => createClient(), []);
     const searchParams = useSearchParams();
     const pathname = usePathname();
 
@@ -101,43 +99,23 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
 
     const fetchGroups = async () => {
         setLoading(true);
-        const { data: participations, error } = await supabase
-            .from("chat_participants")
-            .select("group_id")
-            .eq("user_id", currentUserId);
-
-        if (error || !participations) {
-            console.error("Error fetching participations", error);
-            setLoading(false);
-            return;
-        }
-
-        const groupIds = participations.map(p => p.group_id);
-
-        if (groupIds.length > 0) {
-            const { data: groupsData, error: groupsError } = await supabase
-                .from("chat_groups")
-                .select(`
-            *,
-            participants:chat_participants(
-                user:users(id, first_name, last_name, email)
-            )
-        `)
-                .in("id", groupIds)
-                .order("updated_at", { ascending: false });
-
-            if (groupsData) {
-                setGroups(groupsData as any as Group[]);
+        try {
+            const res = await fetch("/api/chat/groups");
+            if (res.ok) {
+                const data = await res.json();
+                setGroups(data.groups as Group[]);
+            } else {
+                console.error("Error fetching groups:", await res.text());
             }
-        } else {
-            setGroups([]);
+        } catch (error) {
+            console.error("Error fetching groups:", error);
         }
         setLoading(false);
     };
 
     useEffect(() => {
         fetchGroups();
-    }, [currentUserId, supabase]);
+    }, [currentUserId]);
 
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
 

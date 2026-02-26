@@ -2,6 +2,51 @@ import { getSession } from "@/lib/session";
 import { adminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
+export async function GET() {
+    try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Fetch groups the current user participates in
+        const { data: participations, error: partError } = await adminClient
+            .from("chat_participants")
+            .select("group_id")
+            .eq("user_id", session.userId);
+
+        if (partError) {
+            return NextResponse.json({ error: partError.message }, { status: 500 });
+        }
+
+        const groupIds = (participations || []).map(p => p.group_id);
+
+        if (groupIds.length === 0) {
+            return NextResponse.json({ groups: [] });
+        }
+
+        const { data: groups, error: groupsError } = await adminClient
+            .from("chat_groups")
+            .select(`
+                *,
+                participants:chat_participants(
+                    user:users(id, first_name, last_name, email)
+                )
+            `)
+            .in("id", groupIds)
+            .order("updated_at", { ascending: false });
+
+        if (groupsError) {
+            return NextResponse.json({ error: groupsError.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ groups: groups || [] });
+    } catch (error) {
+        console.error("Unexpected error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const session = await getSession();

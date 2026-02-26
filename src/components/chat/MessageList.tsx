@@ -225,7 +225,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                                             </Avatar>
                                         )}
                                         <div className={cn(
-                                            "flex flex-col",
+                                            "flex flex-col max-w-[80%]",
                                             isMe ? "items-end" : "items-start"
                                         )}>
                                             {!isMe && msg.sender && (
@@ -235,7 +235,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                                             )}
                                             <div
                                                 className={cn(
-                                                    "px-3.5 py-2 text-sm leading-relaxed max-w-[80%]",
+                                                    "px-3.5 py-2 text-sm leading-relaxed",
                                                     isMe
                                                         ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-[4px]"
                                                         : "bg-muted rounded-[18px] rounded-bl-[4px]"

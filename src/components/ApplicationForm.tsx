@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { StepIndicator } from "./StepIndicator";
 import { cn } from "@/lib/utils";
 import { Check, ChevronRight, ChevronLeft, Loader2, Save, Upload, FileText } from "lucide-react";
 import { getApplicationByPhone, saveApplicationStep, submitApplication, submitApplicationForUser, uploadTranscript } from "@/actions/application";
@@ -10,14 +9,18 @@ import { ApplicationData } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Hardcoded Steps
-const STEPS = [
-    "Contact Info",
-    "Personal Info",
-    "Academic Info",
-    "References",
-    "Questionnaire"
-];
+type StepKey = "contact" | "personal" | "academic" | "references" | "questionnaire";
+
+const GUEST_STEP_KEYS: StepKey[] = ["contact", "personal", "academic", "references", "questionnaire"];
+const AUTH_STEP_KEYS: StepKey[] = ["personal", "academic", "references", "questionnaire"];
+
+const STEP_LABELS: Record<StepKey, string> = {
+    contact: "Contact Info",
+    personal: "Personal Info",
+    academic: "Academic Info",
+    references: "References",
+    questionnaire: "Questionnaire",
+};
 
 const INITIAL_DATA: ApplicationData = {
     phone_number: "",
@@ -45,46 +48,78 @@ const INITIAL_DATA: ApplicationData = {
     q_time_commitment: ""
 };
 
-export default function ApplicationForm({ userId }: { userId?: string }) {
-    const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [resumeData, setResumeData] = useState<ApplicationData>(INITIAL_DATA);
+interface UserData {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+}
+
+interface ApplicationFormProps {
+    userId?: string;
+    userData?: UserData;
+    initialData?: ApplicationData | null;
+    resumeStep?: number;
+}
+
+export default function ApplicationForm({ userId, userData, initialData, resumeStep }: ApplicationFormProps) {
+    const isAuthenticated = !!userData;
+    const stepKeys = isAuthenticated ? AUTH_STEP_KEYS : GUEST_STEP_KEYS;
+
+    const [currentStepIndex, setCurrentStepIndex] = useState(resumeStep ?? 0);
+    const [resumeData, setResumeData] = useState<ApplicationData>(() => {
+        if (initialData) {
+            return initialData;
+        }
+        if (userData) {
+            return {
+                ...INITIAL_DATA,
+                phone_number: userData.phone,
+                first_name: userData.firstName,
+                last_name: userData.lastName,
+                email: userData.email,
+            };
+        }
+        return INITIAL_DATA;
+    });
     const [direction, setDirection] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
-
-    // For File Upload
     const [uploading, setUploading] = useState(false);
+
+    const currentStepKey = stepKeys[currentStepIndex];
 
     const handleChange = (field: keyof ApplicationData, value: any) => {
         setResumeData(prev => ({ ...prev, [field]: value }));
     };
 
-    const validateStep = (stepIndex: number) => {
-        switch (stepIndex) {
-            case 0: // Contact
+    const validateStep = (stepKey: StepKey) => {
+        switch (stepKey) {
+            case "contact":
                 if (!resumeData.phone_number || resumeData.phone_number.length < 10) return "Please enter a valid phone number.";
                 return null;
-            case 1: // Personal
-                if (!resumeData.first_name) return "First Name is required.";
-                if (!resumeData.last_name) return "Last Name is required.";
-                if (!resumeData.email) return "Student Email is required.";
+            case "personal":
+                if (!isAuthenticated) {
+                    if (!resumeData.first_name) return "First Name is required.";
+                    if (!resumeData.last_name) return "Last Name is required.";
+                    if (!resumeData.email) return "Student Email is required.";
+                }
                 if (!resumeData.grade_current) return "Current Grade is required.";
                 if (!resumeData.grade_entry) return "Entry Grade is required.";
                 return null;
-            case 2: // Academic
+            case "academic":
                 if (resumeData.gpa === undefined || resumeData.gpa === null) return "GPA is required.";
                 if (resumeData.gpa < 0 || resumeData.gpa > 5) return "GPA must be between 0.00 and 5.00.";
-                // if (!resumeData.transcript_url) return "Transcript upload is required."; // User didn't strictly say this, but implies "all questions...required". Let's assume yes.
                 return null;
-            case 3: // References
+            case "references":
                 if (!resumeData.referrer_academic_name) return "Academic Reference Name is required.";
                 if (!resumeData.referrer_academic_email) return "Academic Reference Email is required.";
                 if (!resumeData.referrer_bible_name) return "Spiritual Reference Name is required.";
                 if (!resumeData.referrer_bible_email) return "Spiritual Reference Email is required.";
                 return null;
-            case 4: // Questionnaire
+            case "questionnaire":
                 if (!resumeData.q_involvement) return "Involvement question is required.";
                 if (!resumeData.q_why_ambassador) return "Why Ambassador question is required.";
                 if (!resumeData.q_faith) return "Faith question is required.";
@@ -98,16 +133,15 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
             default:
                 return null;
         }
-    }
+    };
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
             await saveApplicationStep({
                 ...resumeData,
-                current_step: currentStepIndex + 1 // Save current step index (1-based)
+                current_step: currentStepIndex + 1
             });
-            // Show toast or temporary success message? For now just stop loading.
         } catch (error) {
             console.error(error);
             alert("Failed to save progress.");
@@ -117,7 +151,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
     };
 
     const handleNext = async () => {
-        const error = validateStep(currentStepIndex);
+        const error = validateStep(currentStepKey);
         if (error) {
             alert(error);
             return;
@@ -125,9 +159,8 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
 
         setIsSaving(true);
         try {
-            // Validate Phone on first step
-            if (currentStepIndex === 0) {
-                // Check for existing
+            if (currentStepKey === "contact") {
+                // Guest flow: phone lookup on first step
                 setIsLoading(true);
                 const existing = await getApplicationByPhone(resumeData.phone_number);
                 setIsLoading(false);
@@ -140,7 +173,6 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                         return;
                     }
                 } else {
-                    // Save new
                     await saveApplicationStep({
                         phone_number: resumeData.phone_number,
                         status: 'draft',
@@ -155,7 +187,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                 });
             }
 
-            if (currentStepIndex < STEPS.length - 1) {
+            if (currentStepIndex < stepKeys.length - 1) {
                 setDirection(1);
                 setCurrentStepIndex(prev => prev + 1);
             }
@@ -175,7 +207,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
     };
 
     const handleSubmit = async () => {
-        const error = validateStep(currentStepIndex);
+        const error = validateStep(currentStepKey);
         if (error) {
             alert(error);
             return;
@@ -186,7 +218,6 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
         setIsSubmitting(true);
         try {
             await submitApplication(resumeData.phone_number);
-            // If logged in as a basic user, promote to applicant
             if (userId) {
                 await submitApplicationForUser(userId);
                 window.location.href = "/status";
@@ -205,8 +236,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
         if (!e.target.files?.length) return;
         const file = e.target.files[0];
 
-        // Validate
-        if (file.size > 5 * 1024 * 1024) { // 5MB
+        if (file.size > 5 * 1024 * 1024) {
             alert("File is too large. Max 5MB.");
             return;
         }
@@ -245,7 +275,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                 <h1 className="text-3xl font-bold mb-4 tracking-tight">You did it!</h1>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
                     Your Student Ambassador Application has been successfully submitted.
-                    The Student Ambassador Coordinator will email you after the Round 1 Deadline whether you’ve passed onto Round 2 or not.
+                    The Student Ambassador Coordinator will email you after the Round 1 Deadline whether you&apos;ve passed onto Round 2 or not.
                 </p>
                 <div className="bg-muted p-6 rounded-lg text-sm text-left border shadow-sm">
                     <p className="font-semibold mb-2">Questions?</p>
@@ -255,7 +285,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
         );
     }
 
-    const progress = Math.round(((currentStepIndex) / (STEPS.length)) * 100);
+    const progress = Math.round(((currentStepIndex) / (stepKeys.length)) * 100);
 
     const variants = {
         enter: (direction: number) => ({ x: direction > 0 ? 20 : -20, opacity: 0 }),
@@ -275,7 +305,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                         className="bg-primary h-full rounded-full"
                     />
                 </div>
-                <h1 className="text-2xl font-semibold tracking-tight">{STEPS[currentStepIndex]}</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">{STEP_LABELS[currentStepKey]}</h1>
             </div>
 
             <div className="bg-card border shadow-sm rounded-xl p-6 md:p-10 min-h-[400px] relative overflow-hidden flex flex-col">
@@ -290,8 +320,8 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                         transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
                         className="w-full flex-1"
                     >
-                        {/* --- Step 1: Contact (Phone Login) --- */}
-                        {currentStepIndex === 0 && (
+                        {/* --- Contact Info (Guest only) --- */}
+                        {currentStepKey === "contact" && (
                             <div className="space-y-6 max-w-md mx-auto py-8">
                                 <div className="text-center space-y-2">
                                     <h2 className="text-xl font-semibold">Welcome</h2>
@@ -312,22 +342,27 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                             </div>
                         )}
 
-                        {/* --- Step 2: Personal Info --- */}
-                        {currentStepIndex === 1 && (
+                        {/* --- Personal Info --- */}
+                        {currentStepKey === "personal" && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">First Name <span className="text-red-500">*</span></label>
-                                        <Input value={resumeData.first_name || ""} onChange={(e) => handleChange("first_name", e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Last Name <span className="text-red-500">*</span></label>
-                                        <Input value={resumeData.last_name || ""} onChange={(e) => handleChange("last_name", e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-2">
-                                        <label className="text-sm font-medium">Student Email <span className="text-red-500">*</span></label>
-                                        <Input type="email" value={resumeData.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
-                                    </div>
+                                    {/* Guest flow: show name and email fields */}
+                                    {!isAuthenticated && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">First Name <span className="text-red-500">*</span></label>
+                                                <Input value={resumeData.first_name || ""} onChange={(e) => handleChange("first_name", e.target.value)} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Last Name <span className="text-red-500">*</span></label>
+                                                <Input value={resumeData.last_name || ""} onChange={(e) => handleChange("last_name", e.target.value)} />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <label className="text-sm font-medium">Student Email <span className="text-red-500">*</span></label>
+                                                <Input type="email" value={resumeData.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
+                                            </div>
+                                        </>
+                                    )}
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Current Grade <span className="text-red-500">*</span></label>
                                         <select
@@ -350,8 +385,8 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                             </div>
                         )}
 
-                        {/* --- Step 3: Academic --- */}
-                        {currentStepIndex === 2 && (
+                        {/* --- Academic Info --- */}
+                        {currentStepKey === "academic" && (
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Current Cumulative GPA <span className="text-red-500">*</span></label>
@@ -393,8 +428,8 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                             </div>
                         )}
 
-                        {/* --- Step 4: References --- */}
-                        {currentStepIndex === 3 && (
+                        {/* --- References --- */}
+                        {currentStepKey === "references" && (
                             <div className="space-y-8">
                                 <div className="space-y-4">
                                     <h3 className="font-semibold border-b pb-2 flex items-center gap-2">
@@ -431,8 +466,8 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                             </div>
                         )}
 
-                        {/* --- Step 5: Questionnaire --- */}
-                        {currentStepIndex === 4 && (
+                        {/* --- Questionnaire --- */}
+                        {currentStepKey === "questionnaire" && (
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Please list your current or past involvement... <span className="text-red-500">*</span></label>
@@ -523,7 +558,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                     </Button>
 
                     <div className="flex items-center gap-2">
-                        {currentStepIndex > 0 && (
+                        {currentStepKey !== "contact" && (
                             <Button
                                 variant="outline"
                                 onClick={handleSave}
@@ -534,7 +569,7 @@ export default function ApplicationForm({ userId }: { userId?: string }) {
                             </Button>
                         )}
 
-                        {currentStepIndex === STEPS.length - 1 ? (
+                        {currentStepIndex === stepKeys.length - 1 ? (
                             <Button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || isSaving}

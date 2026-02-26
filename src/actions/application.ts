@@ -89,6 +89,86 @@ export async function submitApplicationForUser(userId: string) {
     return { success: true };
 }
 
+export async function getUserData(userId: string) {
+    const supabase = adminClient;
+
+    const { data, error } = await supabase
+        .from("users")
+        .select("first_name, last_name, phone, email")
+        .eq("id", userId)
+        .single();
+
+    if (error) {
+        console.error("Error fetching user data:", error);
+        throw new Error("Failed to fetch user data");
+    }
+
+    return data as { first_name: string; last_name: string; phone: string; email: string };
+}
+
+export async function getApplicationByUserId(userId: string) {
+    const supabase = adminClient;
+
+    // First get the user's phone number
+    const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("phone")
+        .eq("id", userId)
+        .single();
+
+    if (userError || !user?.phone) {
+        return null;
+    }
+
+    // Then look up application by phone
+    const { data, error } = await supabase
+        .from("applications")
+        .select("*")
+        .eq("phone_number", user.phone)
+        .single();
+
+    if (error && error.code !== "PGRST116") {
+        console.error("Error fetching application:", error);
+        throw new Error("Failed to fetch application");
+    }
+
+    return data as ApplicationData | null;
+}
+
+export async function deleteApplication(phone: string) {
+    const supabase = adminClient;
+
+    if (!phone) {
+        throw new Error("Phone number is required");
+    }
+
+    // Delete any uploaded transcript files first
+    const { data: app } = await supabase
+        .from("applications")
+        .select("transcript_url")
+        .eq("phone_number", phone)
+        .single();
+
+    if (app?.transcript_url) {
+        const fileName = app.transcript_url.split("/").pop();
+        if (fileName) {
+            await supabase.storage.from("transcripts").remove([fileName]);
+        }
+    }
+
+    const { error } = await supabase
+        .from("applications")
+        .delete()
+        .eq("phone_number", phone);
+
+    if (error) {
+        console.error("Error deleting application:", error);
+        throw new Error("Failed to delete application");
+    }
+
+    return { success: true };
+}
+
 export async function uploadTranscript(formData: FormData) {
     const supabase = adminClient;
     const file = formData.get("file") as File;

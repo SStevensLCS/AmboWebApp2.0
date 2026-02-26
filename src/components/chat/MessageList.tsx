@@ -250,6 +250,14 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                                                 })}
                                             </span>
                                         </div>
+                                        {isMe && (
+                                            <Avatar className="h-7 w-7 mt-1 ml-2 shrink-0">
+                                                {msg.sender?.avatar_url && <AvatarImage src={msg.sender.avatar_url} className="object-cover" />}
+                                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
+                                                    {initials}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        )}
                                     </div>
                                 );
                             })}

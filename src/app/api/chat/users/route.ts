@@ -10,18 +10,9 @@ export async function GET() {
         }
 
         const supabase = createAdminClient();
-        let query = supabase.from("users").select("id, first_name, last_name, role, email, avatar_url");
-
-        if (session.role === "student") {
-            // Students can only see admins and superadmins
-            query = query.in("role", ["admin", "superadmin"]);
-        } else if (session.role === "applicant") {
-            // Applicants can only see admins and superadmins (assuming similar to student)
-            query = query.in("role", ["admin", "superadmin"]);
-        }
-        // Admins and Superadmins see everyone
-
-        const { data: users, error } = await query;
+        const { data: users, error } = await supabase
+            .from("users")
+            .select("id, first_name, last_name, role, email, avatar_url");
 
         if (error) {
             console.error("Error fetching users:", error);

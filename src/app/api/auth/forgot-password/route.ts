@@ -38,7 +38,13 @@ export async function POST(req: NextRequest) {
     });
     // Ignore errors — the most common case is the user already exists, which is fine.
 
-    const origin = req.headers.get("origin") || "http://localhost:3000";
+    // Prefer an explicit env var so production deployments always use the
+    // correct URL. NEXT_PUBLIC_SITE_URL must be set in Vercel (and in
+    // Supabase's Redirect URL allowlist) for the link to work in production.
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      req.headers.get("origin") ||
+      "http://localhost:3000";
 
     const { error } = await supabase.auth.resetPasswordForEmail(existingUser.email, {
       redirectTo: `${origin}/auth/callback?next=/reset-password`,

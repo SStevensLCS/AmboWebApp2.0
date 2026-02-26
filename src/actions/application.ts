@@ -2,7 +2,6 @@
 
 import { adminClient } from "@/lib/supabase/admin";
 import { ApplicationData } from "@/types/application";
-import { setSessionCookie, type SessionPayload } from "@/lib/session";
 import { v4 as uuidv4 } from 'uuid';
 
 export async function getActualUserRole(userId: string): Promise<string | null> {
@@ -20,15 +19,6 @@ export async function getActualUserRole(userId: string): Promise<string | null> 
     }
 
     return data.role;
-}
-
-export async function refreshSessionIfRoleChanged(userId: string, currentJwtRole: string): Promise<string | null> {
-    const actualRole = await getActualUserRole(userId);
-    if (!actualRole || actualRole === currentJwtRole) return null;
-
-    // Role has changed in the DB — update the session cookie
-    await setSessionCookie({ userId, role: actualRole as SessionPayload["role"] });
-    return actualRole;
 }
 
 export async function getApplicationByPhone(phone: string) {

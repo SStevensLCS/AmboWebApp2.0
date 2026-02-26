@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ApplicationForm from "@/components/ApplicationForm";
 import ApplyLandingPage from "@/components/ApplyLandingPage";
-import { getApplicationByUserId, getUserData, refreshSessionIfRoleChanged } from "@/actions/application";
+import { getApplicationByUserId, getUserData, getActualUserRole } from "@/actions/application";
 
 function roleHome(role: string): string {
   switch (role) {
@@ -26,12 +26,12 @@ export default async function ApplyPage() {
     redirect("/status");
   }
 
-  // Check if the user's role was changed in the DB (e.g. admin promoted to student)
-  // and refresh the session cookie so they get redirected properly
+  // Check if the user's role was changed in the DB (e.g. admin promoted to student).
+  // The JWT may be stale, so we read the actual role from the database.
   if (session?.userId) {
-    const newRole = await refreshSessionIfRoleChanged(session.userId, session.role);
-    if (newRole && newRole !== "basic") {
-      redirect(roleHome(newRole));
+    const actualRole = await getActualUserRole(session.userId);
+    if (actualRole && actualRole !== "basic") {
+      redirect(roleHome(actualRole));
     }
   }
 

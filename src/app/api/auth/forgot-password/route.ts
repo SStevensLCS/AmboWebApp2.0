@@ -46,8 +46,13 @@ export async function POST(req: NextRequest) {
       req.headers.get("origin") ||
       "http://localhost:3000";
 
+    // Redirect to the site root — the root page (page.tsx) already handles
+    // both PKCE codes (?code=) and implicit-flow hash fragments
+    // (#access_token=...&type=recovery), forwarding the user to /reset-password.
+    // Using just the origin avoids Supabase redirect-allowlist issues that occur
+    // when the redirectTo contains query parameters like ?next=/reset-password.
     const { error } = await supabase.auth.resetPasswordForEmail(existingUser.email, {
-      redirectTo: `${origin}/auth/callback?next=/reset-password`,
+      redirectTo: origin,
     });
 
     if (error) {

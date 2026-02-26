@@ -26,8 +26,9 @@ function roleHome(role: string): string {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // Always allow API auth routes and public callback routes
-  if (PUBLIC_PATHS.some((p) => path.startsWith(p))) {
+  // Always allow API auth routes, public callback routes, and the root page
+  // (the root page handles Supabase auth redirects for password reset flows)
+  if (PUBLIC_PATHS.some((p) => path.startsWith(p)) || path === "/") {
     return NextResponse.next();
   }
 

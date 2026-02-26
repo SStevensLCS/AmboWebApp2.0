@@ -10,7 +10,7 @@ export async function GET() {
         }
 
         const supabase = createAdminClient();
-        let query = supabase.from("users").select("id, first_name, last_name, role, email");
+        let query = supabase.from("users").select("id, first_name, last_name, role, email, avatar_url");
 
         if (session.role === "student") {
             // Students can only see admins and superadmins

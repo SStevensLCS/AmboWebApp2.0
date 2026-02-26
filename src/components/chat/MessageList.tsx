@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -14,6 +15,7 @@ type Message = {
     sender?: {
         first_name: string;
         last_name: string;
+        avatar_url?: string;
     }
 };
 
@@ -86,7 +88,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                                 setMessages((prev) =>
                                     prev.map((m) =>
                                         m.id === newMsg.id
-                                            ? { ...m, sender: { first_name: sender.first_name, last_name: sender.last_name } }
+                                            ? { ...m, sender: { first_name: sender.first_name, last_name: sender.last_name, avatar_url: sender.avatar_url } }
                                             : m
                                     )
                                 );
@@ -205,35 +207,49 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                         <div className="space-y-2">
                             {messages.map((msg) => {
                                 const isMe = msg.sender_id === currentUserId;
+                                const initials = `${(msg.sender?.first_name || "?")[0]}${(msg.sender?.last_name || "")[0] || ""}`.toUpperCase();
                                 return (
                                     <div
                                         key={msg.id}
                                         className={cn(
-                                            "flex flex-col",
-                                            isMe ? "items-end" : "items-start"
+                                            "flex",
+                                            isMe ? "justify-end" : "justify-start"
                                         )}
                                     >
-                                        {!isMe && msg.sender && (
-                                            <span className="text-[11px] text-muted-foreground mb-0.5 px-3 font-medium">
-                                                {msg.sender.first_name}
-                                            </span>
+                                        {!isMe && (
+                                            <Avatar className="h-7 w-7 mt-5 mr-2 shrink-0">
+                                                {msg.sender?.avatar_url && <AvatarImage src={msg.sender.avatar_url} className="object-cover" />}
+                                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
+                                                    {initials}
+                                                </AvatarFallback>
+                                            </Avatar>
                                         )}
-                                        <div
-                                            className={cn(
-                                                "px-3.5 py-2 text-sm leading-relaxed max-w-[80%]",
-                                                isMe
-                                                    ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-[4px]"
-                                                    : "bg-muted rounded-[18px] rounded-bl-[4px]"
+                                        <div className={cn(
+                                            "flex flex-col",
+                                            isMe ? "items-end" : "items-start"
+                                        )}>
+                                            {!isMe && msg.sender && (
+                                                <span className="text-[11px] text-muted-foreground mb-0.5 px-3 font-medium">
+                                                    {msg.sender.first_name}
+                                                </span>
                                             )}
-                                        >
-                                            {msg.content}
+                                            <div
+                                                className={cn(
+                                                    "px-3.5 py-2 text-sm leading-relaxed max-w-[80%]",
+                                                    isMe
+                                                        ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-[4px]"
+                                                        : "bg-muted rounded-[18px] rounded-bl-[4px]"
+                                                )}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground mt-0.5 px-3">
+                                                {new Date(msg.created_at).toLocaleTimeString([], {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
+                                            </span>
                                         </div>
-                                        <span className="text-[10px] text-muted-foreground mt-0.5 px-3">
-                                            {new Date(msg.created_at).toLocaleTimeString([], {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                            })}
-                                        </span>
                                     </div>
                                 );
                             })}

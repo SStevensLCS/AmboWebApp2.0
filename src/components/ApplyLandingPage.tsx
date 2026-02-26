@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, RotateCcw, ArrowRight, Loader2 } from "lucide-react";
 import { deleteApplication } from "@/actions/application";
+import { SignOutButton } from "@/components/SignOutButton";
 
 interface ApplyLandingPageProps {
     hasApplication: boolean;
@@ -100,6 +101,10 @@ export default function ApplyLandingPage({ hasApplication, currentStep, totalSte
                             Apply to become a Student Ambassador <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     )}
+                </div>
+
+                <div className="mt-6 text-center">
+                    <SignOutButton variant="ghost" className="text-muted-foreground text-sm" />
                 </div>
             </motion.div>
         </div>

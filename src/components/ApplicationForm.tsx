@@ -8,6 +8,7 @@ import { getApplicationByPhone, saveApplicationStep, submitApplication, submitAp
 import { ApplicationData } from "@/types/application";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SignOutButton } from "@/components/SignOutButton";
 
 type StepKey = "contact" | "personal" | "academic" | "references" | "questionnaire";
 
@@ -588,6 +589,12 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
                     </div>
                 </div>
             </div>
+
+            {isAuthenticated && (
+                <div className="mt-6 text-center">
+                    <SignOutButton variant="ghost" className="text-muted-foreground text-sm" />
+                </div>
+            )}
         </div>
     );
 }

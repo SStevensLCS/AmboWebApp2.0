@@ -2,7 +2,21 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ApplicationForm from "@/components/ApplicationForm";
 import ApplyLandingPage from "@/components/ApplyLandingPage";
-import { getApplicationByUserId, getUserData } from "@/actions/application";
+import { getApplicationByUserId, getUserData, refreshSessionIfRoleChanged } from "@/actions/application";
+
+function roleHome(role: string): string {
+  switch (role) {
+    case "basic":
+      return "/apply";
+    case "applicant":
+      return "/status";
+    case "admin":
+    case "superadmin":
+      return "/admin";
+    default:
+      return "/student";
+  }
+}
 
 export default async function ApplyPage() {
   const session = await getSession();
@@ -10,6 +24,15 @@ export default async function ApplyPage() {
   // If user is already an applicant, send them to the status page
   if (session?.role === "applicant") {
     redirect("/status");
+  }
+
+  // Check if the user's role was changed in the DB (e.g. admin promoted to student)
+  // and refresh the session cookie so they get redirected properly
+  if (session?.userId) {
+    const newRole = await refreshSessionIfRoleChanged(session.userId, session.role);
+    if (newRole && newRole !== "basic") {
+      redirect(roleHome(newRole));
+    }
   }
 
   // Logged-in basic user: show landing page with options

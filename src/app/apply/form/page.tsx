@@ -1,7 +1,21 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import ApplicationForm from "@/components/ApplicationForm";
-import { getApplicationByUserId, getUserData } from "@/actions/application";
+import { getApplicationByUserId, getUserData, refreshSessionIfRoleChanged } from "@/actions/application";
+
+function roleHome(role: string): string {
+  switch (role) {
+    case "basic":
+      return "/apply";
+    case "applicant":
+      return "/status";
+    case "admin":
+    case "superadmin":
+      return "/admin";
+    default:
+      return "/student";
+  }
+}
 
 export default async function ApplyFormPage({
   searchParams,
@@ -10,7 +24,17 @@ export default async function ApplyFormPage({
 }) {
   const session = await getSession();
 
-  if (!session?.userId || session.role !== "basic") {
+  if (!session?.userId) {
+    redirect("/apply");
+  }
+
+  // Check if the user's role was changed in the DB (e.g. admin promoted to student)
+  const newRole = await refreshSessionIfRoleChanged(session.userId, session.role);
+  if (newRole && newRole !== "basic") {
+    redirect(roleHome(newRole));
+  }
+
+  if (session.role !== "basic" && !newRole) {
     redirect("/apply");
   }
 

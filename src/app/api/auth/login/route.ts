@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { setSessionCookie } from "@/lib/session";
+import { createSession, setSessionCookie } from "@/lib/session";
 import bcrypt from "bcryptjs";
 
 function redirectForRole(role: string): string {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const identifier = emailOrPhone.trim().toLowerCase();
 
     // Look up user by email or 10-digit phone number
-    let query = supabase.from("users").select("id, role, password_hash, email");
+    let query = supabase.from("users").select("id, first_name, last_name, phone, email, role, password_hash, avatar_url");
     if (/^\d{10}$/.test(identifier)) {
       query = query.eq("phone", identifier);
     } else {
@@ -64,13 +64,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Set session cookie
-    await setSessionCookie({
+    const sessionPayload = {
       userId: user.id,
       role: user.role as "basic" | "student" | "admin" | "superadmin" | "applicant",
-    });
+    };
 
-    return NextResponse.json({ redirect: redirectForRole(user.role) });
+    // Set session cookie (web app)
+    await setSessionCookie(sessionPayload);
+
+    // Also return JWT token + user data in response body (mobile app)
+    const token = await createSession(sessionPayload);
+
+    return NextResponse.json({
+      redirect: redirectForRole(user.role),
+      token,
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        avatar_url: user.avatar_url,
+      },
+    });
   } catch (err) {
     console.error("Login error:", err);
     return NextResponse.json(

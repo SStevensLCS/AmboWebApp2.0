@@ -32,7 +32,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get(COOKIE_NAME)?.value;
+  // Check Authorization header first (mobile app), then fall back to cookie (web app)
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : request.cookies.get(COOKIE_NAME)?.value;
   const session = token ? await verifySessionToken(token) : null;
 
   // ──────────────────────────────────────────
@@ -53,6 +57,10 @@ export async function middleware(request: NextRequest) {
     // /apply is accessible to both guests (public application) and logged-in basic users
     if (path.startsWith("/apply")) {
       return NextResponse.next();
+    }
+    // Return 401 JSON for API routes (mobile app), redirect for page routes (web app)
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }

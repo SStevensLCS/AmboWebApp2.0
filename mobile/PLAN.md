@@ -1,115 +1,79 @@
-# Mobile App (Expo) - Implementation Plan
+# Mobile App (Expo) - Ambassador Portal
 
 ## Overview
 Expo React Native app for Student Ambassadors. MVP scope: Login, Dashboard, Log Hours, Profile.
 Student role only. Consumes the existing Next.js API.
 
-## Phase 1: Project Scaffolding
+## What Was Built (MVP)
 
-### 1.1 Initialize Expo project
-- `npx create-expo-app@latest mobile --template blank-typescript` (or set up manually)
-- Use Expo SDK 52+ with Expo Router for file-based routing
-- Configure for iOS + Android
+### Mobile App (`mobile/`)
+- **Expo SDK 52** with Expo Router (file-based routing)
+- **NativeWind** (Tailwind CSS for React Native) for styling
+- **expo-secure-store** for JWT token storage
+- **expo-image-picker** for avatar uploads
 
-### 1.2 Install core dependencies
-- `expo-router` — file-based navigation (like Next.js App Router)
-- `nativewind` + `tailwindcss` — Tailwind for React Native
-- `expo-secure-store` — secure JWT storage
-- `expo-image-picker` — avatar uploads
-- `@supabase/supabase-js` — for Realtime (chat, later phases)
-- `expo-notifications` — push notifications (later phases)
-- `react-native-safe-area-context` — safe area handling
+### Screens
+| Screen | File | Features |
+|--------|------|----------|
+| Login | `app/login.tsx` | Email/phone + password, error handling |
+| Dashboard | `app/(tabs)/index.tsx` | Stats cards (hours/credits), submissions list, pull-to-refresh |
+| Log Hours | `app/(tabs)/log.tsx` | Service type picker, date/hours/credits form, success state |
+| Profile | `app/(tabs)/profile.tsx` | Avatar upload, user info, sign out |
 
-### 1.3 Project structure
+### API Changes (Web App)
+- **`src/lib/session.ts`**: Added `getSessionFromRequest()` — checks `Authorization: Bearer <token>` header, falls back to cookie
+- **`src/app/api/auth/login/route.ts`**: Now returns `{ token, user, redirect }` in response body
+- **`src/app/api/auth/me/route.ts`**: New endpoint — returns current user profile data
+- **`src/middleware.ts`**: Checks Bearer token header in addition to cookie; returns 401 JSON for unauthorized API requests
+- **`src/app/api/submissions/route.ts`**: Uses `getSessionFromRequest()` for Bearer token support
+- **`src/app/api/users/avatar/route.ts`**: Uses `getSessionFromRequest()`, accepts "avatar" form field name
+- **`tsconfig.json`**: Excludes `mobile/` from Next.js build
+
+## Getting Started
+
+```bash
+# 1. Install dependencies
+cd mobile
+npm install
+
+# 2. Set your API URL
+cp .env.example .env
+# Edit .env — set EXPO_PUBLIC_API_URL to your Next.js server
+
+# 3. Start the dev server
+npx expo start
+
+# 4. Run on device
+# - Scan QR code with Expo Go (Android) or Camera app (iOS)
+# - Or press 'i' for iOS simulator / 'a' for Android emulator
 ```
-mobile/
-├── app/                    # Expo Router (file-based)
-│   ├── _layout.tsx         # Root layout (auth provider, fonts)
-│   ├── login.tsx           # Login screen
-│   └── (tabs)/             # Tab navigator (authenticated)
-│       ├── _layout.tsx     # Tab bar config
-│       ├── index.tsx       # Dashboard
-│       ├── log.tsx         # Log service hours
-│       └── profile.tsx     # Profile & settings
-├── components/             # Shared components
-│   ├── ui/                 # Base UI components
-│   └── ...                 # Feature components
-├── lib/
-│   ├── api.ts              # API client (fetch wrapper with auth headers)
-│   ├── auth.ts             # Auth context + secure storage
-│   └── types.ts            # Shared types (can import from web app)
-├── app.json                # Expo config
-├── tailwind.config.js      # NativeWind config
-├── eas.json                # EAS Build config
-└── package.json
+
+## Building for App Store
+
+```bash
+# Install EAS CLI globally
+npm install -g eas-cli
+
+# Log in to your Expo account
+eas login
+
+# Build for iOS (requires Apple Developer account - $99/year)
+eas build --platform ios
+
+# Build for Android
+eas build --platform android
+
+# Submit to App Store
+eas submit --platform ios
+
+# Submit to Google Play
+eas submit --platform android
 ```
-
-## Phase 2: Auth System
-
-### 2.1 API-side changes (minimal)
-- Update existing API routes to accept `Authorization: Bearer <token>` header
-  as an alternative to the `ambo_session` cookie
-- Modify `getSession()` in `src/lib/session.ts` to check both sources
-- Modify login API to return the JWT token in the response body (in addition to setting cookie)
-
-### 2.2 Mobile auth flow
-- Login screen: email/phone + password form
-- Call `POST /api/auth/login`, receive JWT in response
-- Store JWT in `expo-secure-store`
-- Auth context provider wraps app, provides user state + token
-- All API calls include `Authorization: Bearer <token>` header
-- Auto-redirect: unauthenticated → login, authenticated → dashboard
-
-## Phase 3: Dashboard Screen
-
-### 3.1 Stats cards
-- Total hours and total credits (aggregated from submissions)
-- Fetch from submissions API
-
-### 3.2 Recent submissions list
-- FlatList showing recent submissions
-- Status badges (Approved/Pending/Denied) with color coding
-- Pull-to-refresh
-
-## Phase 4: Log Service Hours Screen
-
-### 4.1 Form
-- Service type picker (from SERVICE_TYPES constant)
-- Date picker (service date)
-- Hours input (numeric, 0.5 increments)
-- Credits input (whole number)
-- Notes textarea
-- Submit → `POST /api/submissions`
-
-### 4.2 Success state
-- Confirmation screen with "Log Another" and "View Dashboard" options
-
-## Phase 5: Profile Screen
-
-### 5.1 User info display
-- Avatar with upload capability (expo-image-picker → /api/users/avatar)
-- Name, email, phone display
-
-### 5.2 Actions
-- Sign out button (clears secure store, redirects to login)
-
-## Phase 6: App Store Prep
-
-### 6.1 Config
-- App icon (1024x1024)
-- Splash screen
-- app.json metadata (name, slug, version, bundle identifiers)
-- eas.json build profiles (development, preview, production)
-
-### 6.2 Build & Submit
-- `eas build --platform ios` → builds in cloud
-- `eas submit --platform ios` → submits to App Store Connect
-- Same for Android/Google Play
 
 ## Future Phases (Post-MVP)
 - Events screen (calendar, RSVP, comments)
 - Posts/Social feed
 - Chat (Supabase Realtime)
 - Resources browser
-- Push notifications (expo-notifications + server changes)
+- Push notifications (expo-notifications)
 - Google Calendar sync

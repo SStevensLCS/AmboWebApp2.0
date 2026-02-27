@@ -1,22 +1,32 @@
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+
 # testing
 /coverage
+
 # next.js
-/.next/
+.next/
 /out/
+
 # production
 /build
+dist/
+
+# turbo
+.turbo/
+
 # misc
 .DS_Store
 *.pem
+
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
 # env
 .env
 .env.local
@@ -29,3 +39,12 @@ token.json
 *.mjs
 .claude/
 supabase/.temp/
+
+# expo
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*

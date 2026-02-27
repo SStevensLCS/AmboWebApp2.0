@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Ambassador Portal",
+    "slug": "ambo-portal",
+    "version": "1.0.0",
+    "scheme": "ambo",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "edu.linfield.ambo"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "edu.linfield.ambo"
+    },
+    "plugins": ["expo-router"]
+  }
+}

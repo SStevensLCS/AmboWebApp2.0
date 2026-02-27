@@ -22,9 +22,12 @@ type Message = {
 interface MessageListProps {
     groupId: string;
     currentUserId: string;
+    currentUserFirstName?: string;
+    currentUserLastName?: string;
+    currentUserAvatarUrl?: string;
 }
 
-export function MessageList({ groupId, currentUserId }: MessageListProps) {
+export function MessageList({ groupId, currentUserId, currentUserFirstName = "", currentUserLastName = "", currentUserAvatarUrl = "" }: MessageListProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -132,7 +135,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
             sender_id: currentUserId,
             content: messageContent,
             created_at: new Date().toISOString(),
-            sender: { first_name: "You", last_name: "" },
+            sender: { first_name: currentUserFirstName, last_name: currentUserLastName, avatar_url: currentUserAvatarUrl || undefined },
         };
         setMessages((prev) => [...prev, optimisticMsg]);
         scrollToBottom();
@@ -207,7 +210,9 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                         <div className="space-y-2">
                             {messages.map((msg) => {
                                 const isMe = msg.sender_id === currentUserId;
-                                const initials = `${(msg.sender?.first_name || "?")[0]}${(msg.sender?.last_name || "")[0] || ""}`.toUpperCase();
+                                const firstName = isMe ? currentUserFirstName : (msg.sender?.first_name || "?");
+                                const lastName = isMe ? currentUserLastName : (msg.sender?.last_name || "");
+                                const initials = `${(firstName || "?")[0]}${(lastName || "")[0] || ""}`.toUpperCase();
                                 return (
                                     <div
                                         key={msg.id}
@@ -252,7 +257,7 @@ export function MessageList({ groupId, currentUserId }: MessageListProps) {
                                         </div>
                                         {isMe && (
                                             <Avatar className="h-7 w-7 mt-1 ml-2 shrink-0">
-                                                {msg.sender?.avatar_url && <AvatarImage src={msg.sender.avatar_url} className="object-cover" />}
+                                                {currentUserAvatarUrl && <AvatarImage src={currentUserAvatarUrl} className="object-cover" />}
                                                 <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                                                     {initials}
                                                 </AvatarFallback>

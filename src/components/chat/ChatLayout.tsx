@@ -13,10 +13,13 @@ import { useSearchParams, usePathname } from "next/navigation";
 
 interface ChatLayoutProps {
     currentUserId: string;
+    currentUserFirstName?: string;
+    currentUserLastName?: string;
+    currentUserAvatarUrl?: string;
     pageTitle?: string;
 }
 
-export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
+export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUserLastName = "", currentUserAvatarUrl = "", pageTitle }: ChatLayoutProps) {
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -234,7 +237,7 @@ export function ChatLayout({ currentUserId, pageTitle }: ChatLayoutProps) {
 
                         {/* Messages + Input area - fills remaining space */}
                         <div className="flex-1 min-h-0">
-                            <MessageList groupId={selectedGroupId} currentUserId={currentUserId} />
+                            <MessageList groupId={selectedGroupId} currentUserId={currentUserId} currentUserFirstName={currentUserFirstName} currentUserLastName={currentUserLastName} currentUserAvatarUrl={currentUserAvatarUrl} />
                         </div>
                     </div>
                 ) : (

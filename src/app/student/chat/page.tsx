@@ -21,7 +21,7 @@ export default async function StudentChatPage() {
     const supabase = createAdminClient();
     const { data: user } = await supabase
         .from("users")
-        .select("first_name, last_name")
+        .select("first_name, last_name, avatar_url")
         .eq("id", session.userId)
         .single();
 
@@ -33,6 +33,7 @@ export default async function StudentChatPage() {
                 currentUserId={session.userId}
                 currentUserFirstName={user?.first_name ?? ""}
                 currentUserLastName={user?.last_name ?? ""}
+                currentUserAvatarUrl={user?.avatar_url ?? ""}
                 pageTitle="Team Chat"
             />
         </div>

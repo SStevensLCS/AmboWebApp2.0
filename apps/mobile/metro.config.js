@@ -1,9 +1,9 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
+const fs = require('fs');
 
 // Find the project and workspace directories
 const projectRoot = __dirname;
-// This can be replaced with `find-yarn-workspace-root`
 const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
@@ -17,7 +17,19 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-// 3. Force Metro to resolve (sub)dependencies only from the root node_modules
-config.resolver.disableHierarchicalLookup = true;
+// 3. Help Metro resolve hoisted packages that aren't in the local node_modules.
+//    npm workspaces hoists everything to the root, so Metro needs explicit pointers.
+const rootModules = path.resolve(monorepoRoot, 'node_modules');
+config.resolver.extraNodeModules = new Proxy(
+  {},
+  {
+    get: (_target, name) => {
+      // Check local node_modules first, then fall back to root
+      const localPath = path.resolve(projectRoot, 'node_modules', String(name));
+      if (fs.existsSync(localPath)) return localPath;
+      return path.resolve(rootModules, String(name));
+    },
+  },
+);
 
 module.exports = config;

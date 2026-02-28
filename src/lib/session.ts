@@ -77,21 +77,4 @@ export async function verifySessionToken(
   }
 }
 
-/**
- * Extract session from an incoming request.
- * Checks the Authorization header (Bearer token) first, then falls back to the cookie.
- * Use this in API route handlers where the request object is available.
- */
-export async function getSessionFromRequest(
-  req: Request
-): Promise<SessionPayload | null> {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice(7);
-    return verifySessionToken(token);
-  }
-
-  return getSession();
-}
-
 export { COOKIE_NAME };

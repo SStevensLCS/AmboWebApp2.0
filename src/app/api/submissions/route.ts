@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getSessionFromRequest } from "@/lib/session";
+import { getSession } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
-  const session = await getSessionFromRequest(req);
+  const session = await getSession();
   if (!session || session.role !== "student") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

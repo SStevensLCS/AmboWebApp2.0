@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Avatar, Card, Text, Button, Divider } from 'react-native-paper';
+import { Card, Text, Button, Divider } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 export default function StudentProfile() {
   const { session, signOut } = useAuth();
   const userId = session?.user?.id || '';
-  const { user, loading } = useProfile(userId);
+  const { user, loading, refetch } = useProfile(userId);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   if (loading) return <LoadingScreen />;
 
@@ -18,15 +20,18 @@ export default function StudentProfile() {
     ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`
     : '?';
 
+  const displayAvatar = avatarUrl || user?.avatar_url;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Avatar & Name */}
       <View style={styles.avatarSection}>
-        {user?.avatar_url ? (
-          <Avatar.Image size={80} source={{ uri: user.avatar_url }} />
-        ) : (
-          <Avatar.Text size={80} label={initials} style={styles.avatar} />
-        )}
+        <AvatarUpload
+          userId={userId}
+          avatarUrl={displayAvatar}
+          initials={initials}
+          onUploaded={(url) => { setAvatarUrl(url); refetch(); }}
+        />
         <Text variant="headlineSmall" style={styles.name}>
           {user?.first_name} {user?.last_name}
         </Text>

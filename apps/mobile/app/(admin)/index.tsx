@@ -86,6 +86,21 @@ export default function AdminDashboard() {
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
         </Card.Content>
       </Card>
+
+      <Card style={styles.navCard} onPress={() => router.push('/(admin)/applications')}>
+        <Card.Content style={styles.navContent}>
+          <View style={styles.navLeft}>
+            <View style={[styles.navIcon, { backgroundColor: '#fefce8' }]}>
+              <MaterialCommunityIcons name="clipboard-text-outline" size={20} color="#ca8a04" />
+            </View>
+            <View>
+              <Text variant="bodyLarge" style={styles.navTitle}>Applications</Text>
+              <Text variant="bodySmall" style={styles.navSubtitle}>Review ambassador applications</Text>
+            </View>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
+        </Card.Content>
+      </Card>
     </ScrollView>
   );
 }

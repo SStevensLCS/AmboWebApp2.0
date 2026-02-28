@@ -23,9 +23,9 @@ export function useEventDetail(eventId: string, userId: string) {
         .eq('event_id', eventId),
     ]);
 
-    if (commentsRes.data) setComments(commentsRes.data as EventComment[]);
+    if (commentsRes.data) setComments(commentsRes.data as unknown as EventComment[]);
     if (rsvpsRes.data) {
-      setRsvps(rsvpsRes.data as EventRSVP[]);
+      setRsvps(rsvpsRes.data as unknown as EventRSVP[]);
       const mine = rsvpsRes.data.find((r: any) => r.user_id === userId);
       setMyRsvp(mine ? (mine.status as RSVPStatus) : null);
     }

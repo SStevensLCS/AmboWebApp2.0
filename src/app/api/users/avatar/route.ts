@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { getSessionFromRequest } from "@/lib/session";
+import { getSession } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
-    const session = await getSessionFromRequest(req);
+    const session = await getSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
         const formData = await req.formData();
-        const file = (formData.get("file") || formData.get("avatar")) as File;
+        const file = formData.get("file") as File;
 
         if (!file) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });

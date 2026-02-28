@@ -1,0 +1,95 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+
+export interface Resource {
+  id: string;
+  title: string;
+  description?: string;
+  file_url: string;
+  file_type?: string;
+  file_size?: number;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export function useResources() {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchResources = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    const { data, error: err } = await supabase
+      .from('resources')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (err) {
+      setError(err.message);
+    } else {
+      setResources((data as Resource[]) || []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchResources();
+  }, [fetchResources]);
+
+  const uploadResource = async (
+    title: string,
+    description: string,
+    fileName: string,
+    fileUri: string,
+    fileType: string,
+    fileSize: number,
+    uploadedBy: string
+  ) => {
+    // Upload file to storage
+    const filePath = `${Date.now()}_${fileName}`;
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+
+    const { error: uploadErr } = await supabase.storage
+      .from('resources')
+      .upload(filePath, blob, { contentType: fileType });
+    if (uploadErr) throw uploadErr;
+
+    // Get public URL
+    const { data: urlData } = supabase.storage.from('resources').getPublicUrl(filePath);
+
+    // Insert metadata
+    const { error: insertErr } = await supabase.from('resources').insert({
+      title,
+      description: description || null,
+      file_url: urlData.publicUrl,
+      file_type: fileType,
+      file_size: fileSize,
+      uploaded_by: uploadedBy,
+    });
+    if (insertErr) throw insertErr;
+
+    await fetchResources();
+  };
+
+  const deleteResource = async (resourceId: string, fileUrl: string) => {
+    // Extract file path from URL
+    const parts = fileUrl.split('/resources/');
+    if (parts.length > 1) {
+      const filePath = parts[parts.length - 1];
+      await supabase.storage.from('resources').remove([filePath]);
+    }
+
+    const { error: err } = await supabase
+      .from('resources')
+      .delete()
+      .eq('id', resourceId);
+    if (err) throw err;
+
+    await fetchResources();
+  };
+
+  return { resources, loading, error, refetch: fetchResources, uploadResource, deleteResource };
+}

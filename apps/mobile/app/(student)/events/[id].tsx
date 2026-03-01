@@ -135,12 +135,12 @@ export default function EventDetail() {
           />
 
           {/* Attendees */}
-          {rsvps.filter((r) => r.status === 'going').length > 0 && (
+          {rsvps.filter((r) => r.status === 'going' && r.users).length > 0 && (
             <View style={styles.attendeesSection}>
               <Text variant="bodySmall" style={styles.attendeesLabel}>Going:</Text>
               <Text variant="bodySmall" style={styles.attendeesText}>
                 {rsvps
-                  .filter((r) => r.status === 'going')
+                  .filter((r) => r.status === 'going' && r.users)
                   .map((r) => `${r.users.first_name} ${r.users.last_name}`)
                   .join(', ')}
               </Text>
@@ -153,11 +153,11 @@ export default function EventDetail() {
             Comments ({comments.length})
           </Text>
 
-          {comments.map((comment) => (
+          {comments.filter((c) => c.users).map((comment) => (
             <View key={comment.id} style={styles.comment}>
               <Avatar.Text
                 size={32}
-                label={`${comment.users.first_name[0]}${comment.users.last_name[0]}`}
+                label={`${comment.users.first_name?.[0] || ''}${comment.users.last_name?.[0] || ''}`}
                 style={styles.commentAvatar}
               />
               <View style={styles.commentBody}>

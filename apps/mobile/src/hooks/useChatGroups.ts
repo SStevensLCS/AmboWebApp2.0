@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export interface ChatGroup {
   id: string;
   name: string | null;
@@ -95,24 +103,27 @@ export function useChatGroups(userId: string) {
   }, [fetchGroups]);
 
   const createGroup = async (name: string | null, participantIds: string[]) => {
-    const { data: group, error: err } = await supabase
+    // Generate ID client-side to avoid needing .select() after insert.
+    // The SELECT policy on chat_groups requires the user to be a participant,
+    // but participants haven't been inserted yet at this point.
+    const groupId = generateUUID();
+
+    const { error: err } = await supabase
       .from('chat_groups')
-      .insert({ name, created_by: userId })
-      .select()
-      .single();
+      .insert({ id: groupId, name, created_by: userId });
     if (err) throw err;
 
-    const rows = participantIds.map((uid) => ({ group_id: group.id, user_id: uid }));
+    const rows = participantIds.map((uid) => ({ group_id: groupId, user_id: uid }));
     // Include the creator as a participant
     if (!participantIds.includes(userId)) {
-      rows.push({ group_id: group.id, user_id: userId });
+      rows.push({ group_id: groupId, user_id: userId });
     }
 
     const { error: pErr } = await supabase.from('chat_participants').insert(rows);
     if (pErr) throw pErr;
 
     await fetchGroups();
-    return group.id as string;
+    return groupId;
   };
 
   return { groups, loading, error, refetch: fetchGroups, createGroup };

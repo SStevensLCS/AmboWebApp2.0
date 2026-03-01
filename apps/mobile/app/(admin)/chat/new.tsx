@@ -27,6 +27,7 @@ export default function AdminNewChat() {
   const [loadingUsers, setLoadingUsers] = useState(true);
 
   useEffect(() => {
+    if (!userId) return;
     const fetchUsers = async () => {
       const { data } = await supabase
         .from('users')

@@ -87,6 +87,8 @@ export function useChatMessages(groupId: string) {
       .from('chat_messages')
       .insert({ group_id: groupId, sender_id: senderId, content });
     if (err) throw err;
+    // Refetch to ensure message appears even if realtime misses the event
+    await fetchMessages();
   };
 
   return { messages, loading, error, refetch: fetchMessages, sendMessage };

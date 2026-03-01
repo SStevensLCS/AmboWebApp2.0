@@ -34,7 +34,7 @@ export function useChatMessages(groupId: string) {
     if (err) {
       setError(err.message);
     } else {
-      setMessages((data as ChatMessage[]) || []);
+      setMessages(((data || []) as ChatMessage[]).filter((m) => m.users != null));
     }
     setLoading(false);
   }, [groupId]);
@@ -63,7 +63,7 @@ export function useChatMessages(groupId: string) {
             .eq('id', payload.new.id)
             .single();
 
-          if (data) {
+          if (data && (data as ChatMessage).users != null) {
             setMessages((prev) => {
               // Avoid duplicates
               if (prev.some((m) => m.id === data.id)) return prev;

@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/EmptyState';
 function getGroupDisplayName(group: ChatGroupWithMeta, currentUserId: string): string {
   if (group.name) return group.name;
   const others = group.participants
-    .filter((p) => p.user_id !== currentUserId)
+    .filter((p) => p.user_id !== currentUserId && p.users)
     .map((p) => p.users.first_name);
   return others.length > 0 ? others.join(', ') : 'Chat';
 }
@@ -36,11 +36,11 @@ export default function AdminChatList() {
 
   const renderGroup = ({ item }: { item: ChatGroupWithMeta }) => {
     const displayName = getGroupDisplayName(item, userId);
-    const otherParticipant = item.participants.find((p) => p.user_id !== userId);
+    const otherParticipant = item.participants.find((p) => p.user_id !== userId && p.users);
     const initials = otherParticipant
       ? `${otherParticipant.users.first_name?.[0] || ''}${otherParticipant.users.last_name?.[0] || ''}`
       : '?';
-    const avatarUrl = otherParticipant?.users.avatar_url;
+    const avatarUrl = otherParticipant?.users?.avatar_url;
 
     return (
       <Pressable style={styles.groupRow} onPress={() => router.push(`/(admin)/chat/${item.id}`)}>

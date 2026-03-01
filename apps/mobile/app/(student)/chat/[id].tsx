@@ -29,13 +29,15 @@ export default function StudentMessageThread() {
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isOwn = item.sender_id === userId;
-    const senderName = `${item.users.first_name} ${item.users.last_name}`;
+    const senderName = item.users
+      ? `${item.users.first_name} ${item.users.last_name}`
+      : 'Unknown';
     return (
       <MessageBubble
         content={item.content}
         createdAt={item.created_at}
         senderName={senderName}
-        senderAvatar={item.users.avatar_url}
+        senderAvatar={item.users?.avatar_url}
         isOwn={isOwn}
       />
     );

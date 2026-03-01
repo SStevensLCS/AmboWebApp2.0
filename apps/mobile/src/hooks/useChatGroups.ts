@@ -71,7 +71,7 @@ export function useChatGroups(userId: string) {
 
     const result: ChatGroupWithMeta[] = (groupData || []).map((group) => {
       const participants = (allParticipants || [])
-        .filter((p) => p.group_id === group.id)
+        .filter((p) => p.group_id === group.id && p.users != null)
         .map((p) => ({ user_id: p.user_id, users: p.users as unknown as { first_name: string; last_name: string; avatar_url?: string } }));
 
       const lastMessage = (lastMessages || []).find((m) => m.group_id === group.id);

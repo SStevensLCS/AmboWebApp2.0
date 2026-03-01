@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatMessages, ChatMessage } from '@/hooks/useChatMessages';
 import { MessageBubble } from '@/components/MessageBubble';
@@ -14,6 +15,7 @@ export default function StudentMessageThread() {
   const userId = session?.user?.id || '';
   const { messages, loading, sendMessage } = useChatMessages(id || '');
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -43,11 +45,14 @@ export default function StudentMessageThread() {
     );
   };
 
+  // Header (~44) + top safe area inset gives the correct offset
+  const keyboardOffset = Platform.OS === 'ios' ? insets.top + 44 : 0;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardOffset}
     >
       <FlatList
         ref={flatListRef}

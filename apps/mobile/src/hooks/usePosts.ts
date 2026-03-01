@@ -34,7 +34,7 @@ export function usePosts() {
     if (err) {
       setError(err.message);
     } else {
-      setPosts((data as Post[]) || []);
+      setPosts(((data || []) as Post[]).filter((p) => p.users != null));
     }
     setLoading(false);
   }, []);

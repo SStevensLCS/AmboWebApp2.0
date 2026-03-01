@@ -36,7 +36,7 @@ export function useComments(postId: string) {
     if (err) {
       setError(err.message);
     } else {
-      setComments((data as Comment[]) || []);
+      setComments(((data || []) as Comment[]).filter((c) => c.users != null));
     }
     setLoading(false);
   }, [postId]);

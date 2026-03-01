@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { Avatar, Text, FAB } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatGroups, ChatGroupWithMeta } from '@/hooks/useChatGroups';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -31,6 +31,9 @@ export default function StudentChatList() {
   const { session } = useAuth();
   const userId = session?.user?.id || '';
   const { groups, loading, refetch } = useChatGroups(userId);
+
+  // Refetch when screen regains focus (e.g. returning from a chat thread or new chat)
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   if (loading && groups.length === 0) return <LoadingScreen />;
 

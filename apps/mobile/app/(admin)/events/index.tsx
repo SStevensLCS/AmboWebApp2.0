@@ -224,24 +224,30 @@ export default function AdminEvents() {
                 dense
                 style={styles.modalInput}
               />
-              <TextInput
-                mode="outlined"
-                label="Start (YYYY-MM-DDTHH:MM)"
-                value={startTime}
-                onChangeText={setStartTime}
-                dense
-                style={styles.modalInput}
-                placeholder="2026-03-15T14:00"
-              />
-              <TextInput
-                mode="outlined"
-                label="End (YYYY-MM-DDTHH:MM)"
-                value={endTime}
-                onChangeText={setEndTime}
-                dense
-                style={styles.modalInput}
-                placeholder="2026-03-15T16:00"
-              />
+              <Text variant="labelMedium" style={styles.dateLabel}>Date & Time</Text>
+              <View style={styles.dateRow}>
+                <TextInput
+                  mode="outlined"
+                  label="Start"
+                  value={startTime}
+                  onChangeText={setStartTime}
+                  dense
+                  style={[styles.modalInput, styles.dateInput]}
+                  placeholder="2026-03-15T14:00"
+                  left={<TextInput.Icon icon="calendar-clock" size={18} />}
+                />
+                <TextInput
+                  mode="outlined"
+                  label="End"
+                  value={endTime}
+                  onChangeText={setEndTime}
+                  dense
+                  style={[styles.modalInput, styles.dateInput]}
+                  placeholder="2026-03-15T16:00"
+                  left={<TextInput.Icon icon="clock-outline" size={18} />}
+                />
+              </View>
+              <Text variant="bodySmall" style={styles.dateHint}>Format: YYYY-MM-DDTHH:MM</Text>
 
               <View style={styles.modalActions}>
                 <Button mode="text" onPress={() => setShowCreate(false)}>Cancel</Button>
@@ -294,5 +300,9 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontWeight: '700', marginBottom: 16 },
   modalInput: { backgroundColor: '#fff', marginBottom: 12 },
+  dateLabel: { fontWeight: '600', color: '#374151', marginBottom: 8 },
+  dateRow: { flexDirection: 'row', gap: 8 },
+  dateInput: { flex: 1 },
+  dateHint: { color: '#9ca3af', marginBottom: 12, marginTop: -8 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 },
 });

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { Textarea } from "@/components/ui/textarea"; // Check if exists, else use Input
 import {
     Dialog,
     DialogContent,
@@ -14,7 +14,8 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { ResourceCard } from "@/components/ResourceCard";
-import { Plus, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Loader2, FileText } from "lucide-react";
 
 
 export default function AdminResourcesPage() {
@@ -22,7 +23,6 @@ export default function AdminResourcesPage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [open, setOpen] = useState(false);
-    // const { toast } = useToast(); // Assuming toaster exists
 
     useEffect(() => {
         fetchResources();
@@ -58,10 +58,12 @@ export default function AdminResourcesPage() {
 
             await fetchResources();
             setOpen(false);
-            // toast({ title: "Success", description: "File uploaded successfully" });
+            toast.success("File uploaded successfully");
         } catch (error) {
             console.error("Upload error", error);
-            alert("Upload failed");
+            toast.error("Upload failed", {
+                description: "Please check the file and try again.",
+            });
         } finally {
             setUploading(false);
         }
@@ -77,9 +79,10 @@ export default function AdminResourcesPage() {
             if (!res.ok) throw new Error("Delete failed");
 
             setResources(prev => prev.filter(r => r.id !== id));
+            toast.success("Resource deleted");
         } catch (error) {
             console.error("Delete error", error);
-            alert("Delete failed");
+            toast.error("Failed to delete resource");
         }
     }
 
@@ -126,12 +129,24 @@ export default function AdminResourcesPage() {
             </div>
 
             {loading ? (
-                <div className="flex justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-32 w-full rounded-xl" />
+                    ))}
                 </div>
             ) : resources.length === 0 ? (
-                <div className="text-center p-8 border rounded-lg bg-muted/50">
-                    <p className="text-muted-foreground">No resources found.</p>
+                <div className="text-center py-16 border rounded-xl bg-muted/30">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 text-muted-foreground">
+                        <FileText className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-lg font-medium">No resources yet</h3>
+                    <p className="text-muted-foreground text-sm mt-1 mb-4">
+                        Upload files for your team to access.
+                    </p>
+                    <Button onClick={() => setOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Upload First File
+                    </Button>
                 </div>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

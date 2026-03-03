@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { SERVICE_TYPES } from "@ambo/database/types";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, AlertCircle, MoreHorizontal, ChevronRight } from "lucide-react";
+import { Check, AlertCircle, MoreHorizontal, ChevronRight, Search, CheckCircle2, XCircle, ClipboardList } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +45,8 @@ type SubRow = {
   created_at?: string;
   users: { first_name: string; last_name: string; email: string } | null;
 };
+
+type StatusFilter = "All" | "Pending" | "Approved" | "Denied";
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -73,6 +76,10 @@ export function SubmissionsControl() {
   const [csvSuccess, setCsvSuccess] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  // Filter & search state
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const fetchSubmissions = async () => {
     const res = await fetch("/api/admin/submissions");
     if (res.ok) {
@@ -85,6 +92,34 @@ export function SubmissionsControl() {
   useEffect(() => {
     fetchSubmissions();
   }, []);
+
+  // Status counts
+  const statusCounts = useMemo(() => {
+    const counts = { All: rows.length, Pending: 0, Approved: 0, Denied: 0 };
+    rows.forEach((r) => {
+      if (r.status === "Pending") counts.Pending++;
+      else if (r.status === "Approved") counts.Approved++;
+      else if (r.status === "Denied") counts.Denied++;
+    });
+    return counts;
+  }, [rows]);
+
+  // Filtered rows
+  const filteredRows = useMemo(() => {
+    let result = rows;
+    if (statusFilter !== "All") {
+      result = result.filter((r) => r.status === statusFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((r) => {
+        const name = r.users ? `${r.users.first_name} ${r.users.last_name}`.toLowerCase() : "";
+        const email = r.users?.email?.toLowerCase() ?? "";
+        return name.includes(q) || email.includes(q) || r.service_type.toLowerCase().includes(q);
+      });
+    }
+    return result;
+  }, [rows, statusFilter, searchQuery]);
 
   const startEdit = (row: SubRow) => {
     setEditingRow(row);
@@ -112,7 +147,26 @@ export function SubmissionsControl() {
     });
     if (res.ok) {
       setEditDialogOpen(false);
+      toast.success("Submission updated");
       fetchSubmissions();
+    } else {
+      toast.error("Failed to update submission");
+    }
+  };
+
+  const quickAction = async (row: SubRow, newStatus: "Approved" | "Denied") => {
+    const res = await fetch(`/api/admin/submissions/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (res.ok) {
+      toast.success(`Submission ${newStatus.toLowerCase()}`, {
+        description: row.users ? `${row.users.first_name} ${row.users.last_name}` : undefined,
+      });
+      fetchSubmissions();
+    } else {
+      toast.error(`Failed to ${newStatus.toLowerCase()} submission`);
     }
   };
 
@@ -137,6 +191,7 @@ export function SubmissionsControl() {
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
+      toast.success(`Uploaded ${data.count ?? 0} row(s)`);
       setCsvSuccess(`Uploaded ${data.count ?? 0} row(s).`);
       fetchSubmissions();
       input.value = "";
@@ -190,21 +245,46 @@ export function SubmissionsControl() {
     {
       id: "actions",
       cell: ({ row }) => {
+        const isPending = row.original.status === "Pending";
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => startEdit(row.original)}>
-                Edit Submission
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            {isPending && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  onClick={() => quickAction(row.original, "Approved")}
+                  title="Approve"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => quickAction(row.original, "Denied")}
+                  title="Deny"
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => startEdit(row.original)}>
+                  Edit Submission
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },
@@ -249,12 +329,52 @@ export function SubmissionsControl() {
         )}
       </Card>
 
+      {/* Filter Chips & Search */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {(["All", "Pending", "Approved", "Denied"] as StatusFilter[]).map((s) => (
+            <Button
+              key={s}
+              variant={statusFilter === s ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(s)}
+              className="gap-1.5"
+            >
+              {s}
+              <Badge
+                variant="secondary"
+                className={`ml-0.5 px-1.5 py-0 text-[10px] min-w-[20px] text-center ${statusFilter === s ? "bg-background/20 text-primary-foreground" : ""}`}
+              >
+                {statusCounts[s]}
+              </Badge>
+            </Button>
+          ))}
+        </div>
+        <div className="relative sm:ml-auto sm:w-64">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search student or type..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+      </div>
+
       {/* Mobile Card List */}
       <div className="md:hidden space-y-2">
-        {rows.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No submissions found.</p>
+        {filteredRows.length === 0 ? (
+          <div className="text-center py-12 border rounded-xl bg-muted/30">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+              <ClipboardList className="w-7 h-7" />
+            </div>
+            <h3 className="font-medium">No submissions found</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {statusFilter !== "All" || searchQuery ? "Try adjusting your filters." : "Submissions will appear here once students log hours."}
+            </p>
+          </div>
         ) : (
-          rows.map((row) => (
+          filteredRows.map((row) => (
             <Link key={row.id} href={`/admin/submissions/${row.id}`}>
               <div className="bg-white border rounded-lg p-3.5 flex items-center gap-3 active:bg-gray-50 hover:bg-gray-50 transition-colors">
                 <div className="min-w-0 flex-1">
@@ -279,7 +399,19 @@ export function SubmissionsControl() {
 
       {/* Desktop Table */}
       <div className="hidden md:block">
-        <DataTable columns={columns} data={rows} />
+        {filteredRows.length === 0 ? (
+          <div className="text-center py-12 border rounded-xl bg-muted/30">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+              <ClipboardList className="w-7 h-7" />
+            </div>
+            <h3 className="font-medium">No submissions found</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {statusFilter !== "All" || searchQuery ? "Try adjusting your filters." : "Submissions will appear here once students log hours."}
+            </p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={filteredRows} />
+        )}
       </div>
 
       {/* Edit Dialog (desktop) */}

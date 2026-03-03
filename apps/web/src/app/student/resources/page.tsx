@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { ResourceCard } from "@/components/ResourceCard";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FileText } from "lucide-react";
 
 export default function StudentResourcesPage() {
     const [resources, setResources] = useState<any[]>([]);
@@ -28,15 +29,26 @@ export default function StudentResourcesPage() {
 
     return (
         <div className="space-y-6">
-
+            <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Resources</h1>
+                <p className="text-muted-foreground text-sm md:text-base">Files and documents shared by your team.</p>
+            </div>
 
             {loading ? (
-                <div className="flex justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-32 w-full rounded-xl" />
+                    ))}
                 </div>
             ) : resources.length === 0 ? (
-                <div className="text-center p-8 border rounded-lg bg-muted/50">
-                    <p className="text-muted-foreground">No resources found.</p>
+                <div className="text-center py-16 border rounded-xl bg-muted/30">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 text-muted-foreground">
+                        <FileText className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-lg font-medium">No resources available</h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                        Your admin team hasn&apos;t uploaded any files yet.
+                    </p>
                 </div>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

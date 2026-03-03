@@ -51,7 +51,7 @@ export default function SubmissionDetailPage() {
           status: data.status,
         });
       })
-      .catch(() => setError("Failed to load submission."))
+      .catch(() => toast.error("Failed to load submission"))
       .finally(() => setLoading(false));
   }, [id]);
 

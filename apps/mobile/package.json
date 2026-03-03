@@ -5,10 +5,21 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",
-    "build": "echo 'Use EAS Build for production builds'",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build:dev": "eas build --profile development --platform all",
+    "build:dev:ios": "eas build --profile development --platform ios",
+    "build:dev:android": "eas build --profile development --platform android",
+    "build:preview": "eas build --profile preview --platform all",
+    "build:preview:ios": "eas build --profile preview --platform ios",
+    "build:preview:android": "eas build --profile preview --platform android",
+    "build:prod": "eas build --profile production --platform all",
+    "build:prod:ios": "eas build --profile production --platform ios",
+    "build:prod:android": "eas build --profile production --platform android",
+    "submit:ios": "eas submit --platform ios",
+    "submit:android": "eas submit --platform android",
+    "update": "eas update"
   },
   "dependencies": {
     "@ambo/database": "*",

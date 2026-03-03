@@ -13,9 +13,13 @@
     "test": "turbo run test",
     "dev:web": "turbo run dev --filter=@ambo/web",
     "dev:mobile": "turbo run dev --filter=@ambo/mobile",
-    "build:web": "turbo run build --filter=@ambo/web"
+    "build:web": "turbo run build --filter=@ambo/web",
+    "build:mobile": "npm run build:prod --prefix apps/mobile",
+    "build:mobile:dev": "npm run build:dev --prefix apps/mobile",
+    "build:mobile:preview": "npm run build:preview --prefix apps/mobile"
   },
   "devDependencies": {
+    "eas-cli": "^18.0.6",
     "turbo": "^2.5.0"
   },
   "packageManager": "npm@10.2.0"

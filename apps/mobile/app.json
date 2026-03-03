@@ -31,14 +31,7 @@
       "policy": "appVersion"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#3b82f6"
-        }
-      ]
+      "expo-router"
     ]
   }
 }

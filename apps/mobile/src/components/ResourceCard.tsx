@@ -51,7 +51,7 @@ export function ResourceCard({
     <Card style={styles.card}>
       <Card.Content style={styles.content}>
         <View style={styles.iconContainer}>
-          <MaterialCommunityIcons name={iconName} size={28} color="#3b82f6" />
+          <MaterialCommunityIcons name={iconName} size={28} color="#111827" />
         </View>
         <View style={styles.info}>
           <Text variant="bodyLarge" style={styles.title} numberOfLines={1}>{title}</Text>
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 10,
-    backgroundColor: '#eff6ff',
+    backgroundColor: '#f3f4f6',
     alignItems: 'center',
     justifyContent: 'center',
   },

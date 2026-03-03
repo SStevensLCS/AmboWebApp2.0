@@ -5,8 +5,8 @@ export const theme: MD3Theme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#3b82f6',
-    primaryContainer: '#eff6ff',
+    primary: '#111827',
+    primaryContainer: '#f3f4f6',
     secondary: '#6366f1',
     secondaryContainer: '#eef2ff',
     error: '#ef4444',

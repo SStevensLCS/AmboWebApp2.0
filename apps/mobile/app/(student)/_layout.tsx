@@ -13,7 +13,7 @@ export default function StudentLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#3b82f6',
+        tabBarActiveTintColor: '#111827',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
           backgroundColor: '#fff',

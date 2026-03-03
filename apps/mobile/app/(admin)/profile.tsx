@@ -165,7 +165,7 @@ export default function AdminProfile() {
       <Card style={styles.pushCard}>
         <Card.Content>
           <View style={styles.pushHeader}>
-            <MaterialCommunityIcons name="bell-ring-outline" size={24} color="#3b82f6" />
+            <MaterialCommunityIcons name="bell-ring-outline" size={24} color="#111827" />
             <View style={styles.pushInfo}>
               <Text variant="bodyLarge" style={styles.pushTitle}>Push Notifications</Text>
               <Text variant="bodySmall" style={styles.pushSubtitle}>
@@ -224,7 +224,7 @@ export default function AdminProfile() {
             <Switch
               value={prefs.chat_messages}
               onValueChange={(v) => updatePref('chat_messages', v)}
-              color="#3b82f6"
+              color="#111827"
             />
           </View>
           <Divider />
@@ -236,7 +236,7 @@ export default function AdminProfile() {
             <Switch
               value={prefs.new_posts}
               onValueChange={(v) => updatePref('new_posts', v)}
-              color="#3b82f6"
+              color="#111827"
             />
           </View>
           <Divider />
@@ -248,7 +248,7 @@ export default function AdminProfile() {
             <Switch
               value={prefs.post_comments}
               onValueChange={(v) => updatePref('post_comments', v)}
-              color="#3b82f6"
+              color="#111827"
             />
           </View>
           <Divider />
@@ -260,7 +260,7 @@ export default function AdminProfile() {
             <Switch
               value={prefs.event_comments}
               onValueChange={(v) => updatePref('event_comments', v)}
-              color="#3b82f6"
+              color="#111827"
             />
           </View>
         </Card.Content>

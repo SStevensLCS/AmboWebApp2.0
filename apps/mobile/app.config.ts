@@ -19,7 +19,7 @@ function tryResolvePlugin(
 export default ({ config }: ConfigContext): ExpoConfig => {
   const notificationsPlugin = tryResolvePlugin('expo-notifications', {
     icon: './assets/icon.png',
-    color: '#3b82f6',
+    color: '#111827',
   });
 
   return {

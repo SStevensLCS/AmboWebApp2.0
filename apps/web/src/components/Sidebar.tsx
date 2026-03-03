@@ -151,22 +151,26 @@ export function Sidebar({ className, items, header, footer, ...props }: SidebarP
 
                             return (
                                 item.href && (
-                                    <Button
-                                        key={item.href}
-                                        variant={isActive ? "secondary" : "ghost"}
-                                        className={cn(
-                                            "w-full justify-start transition-all",
-                                            isCollapsed ? "justify-center px-2" : "px-4",
-                                            isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
+                                    <div key={item.href} className="relative">
+                                        {isActive && (
+                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-foreground rounded-r-full transition-all" />
                                         )}
-                                        title={isCollapsed ? item.label : undefined}
-                                        asChild
-                                    >
-                                        <Link href={item.href}>
-                                            {item.icon && <item.icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />}
-                                            {!isCollapsed && <span>{item.label}</span>}
-                                        </Link>
-                                    </Button>
+                                        <Button
+                                            variant={isActive ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start transition-all",
+                                                isCollapsed ? "justify-center px-2" : "px-4",
+                                                isActive ? "bg-secondary text-secondary-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
+                                            )}
+                                            title={isCollapsed ? item.label : undefined}
+                                            asChild
+                                        >
+                                            <Link href={item.href}>
+                                                {item.icon && <item.icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />}
+                                                {!isCollapsed && <span>{item.label}</span>}
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 )
                             );
                         })}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import { Card, Text, Button, Divider, TextInput, Switch, ActivityIndicator } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { AvatarUpload } from '@/components/AvatarUpload';
@@ -17,6 +18,7 @@ export default function AdminProfile() {
   const { user, loading, refetch } = useProfile(userId);
   const { prefs, loading: prefsLoading, updatePref } = useNotificationPreferences(userId);
   const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
+  const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   // Editable fields
@@ -158,8 +160,60 @@ export default function AdminProfile() {
 
       <Divider style={styles.divider} />
 
-      {/* Notification Preferences */}
+      {/* Notification Permission */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Notifications</Text>
+      <Card style={styles.pushCard}>
+        <Card.Content>
+          <View style={styles.pushHeader}>
+            <MaterialCommunityIcons name="bell-ring-outline" size={24} color="#3b82f6" />
+            <View style={styles.pushInfo}>
+              <Text variant="bodyLarge" style={styles.pushTitle}>Push Notifications</Text>
+              <Text variant="bodySmall" style={styles.pushSubtitle}>
+                {permissionStatus === 'granted'
+                  ? 'Notifications are enabled'
+                  : permissionStatus === 'denied'
+                  ? 'Notifications are blocked in device settings'
+                  : 'Enable to receive alerts for messages, posts, and events'}
+              </Text>
+            </View>
+          </View>
+          {pushLoading ? (
+            <ActivityIndicator style={styles.pushLoader} />
+          ) : permissionStatus === 'granted' ? (
+            <View style={styles.pushStatus}>
+              <MaterialCommunityIcons name="check-circle" size={16} color="#16a34a" />
+              <Text variant="bodySmall" style={styles.pushStatusText}>Enabled</Text>
+            </View>
+          ) : permissionStatus === 'denied' ? (
+            <Button
+              mode="outlined"
+              icon="cog"
+              onPress={() => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              }}
+              compact
+            >
+              Open Settings
+            </Button>
+          ) : (
+            <Button
+              mode="contained"
+              icon="bell"
+              onPress={requestPermission}
+              style={styles.pushEnableButton}
+            >
+              Enable Notifications
+            </Button>
+          )}
+        </Card.Content>
+      </Card>
+
+      {/* Notification Preferences */}
+      <Text variant="titleSmall" style={styles.prefsLabel}>Notification Types</Text>
       <Card style={styles.prefsCard}>
         <Card.Content style={styles.prefsContent}>
           <View style={styles.prefRow}>
@@ -280,6 +334,16 @@ const styles = StyleSheet.create({
   formSection: { gap: 12 },
   input: { backgroundColor: '#fff' },
   saveButton: { borderRadius: 12, marginTop: 4 },
+  pushCard: { backgroundColor: '#f9fafb', marginBottom: 12 },
+  pushHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  pushInfo: { flex: 1 },
+  pushTitle: { fontWeight: '600' },
+  pushSubtitle: { color: '#6b7280' },
+  pushLoader: { marginVertical: 8 },
+  pushStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pushStatusText: { color: '#16a34a', fontWeight: '600' },
+  pushEnableButton: { borderRadius: 8 },
+  prefsLabel: { fontWeight: '600', marginBottom: 8, color: '#6b7280' },
   prefsCard: { backgroundColor: '#f9fafb' },
   prefsContent: { gap: 4 },
   prefRow: {

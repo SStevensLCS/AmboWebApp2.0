@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     fontSize: 16, marginBottom: 12, backgroundColor: '#fafafa',
   },
   button: {
-    backgroundColor: '#3b82f6', borderRadius: 8, padding: 16,
+    backgroundColor: '#111827', borderRadius: 8, padding: 16,
     alignItems: 'center', marginTop: 8,
   },
   buttonDisabled: { opacity: 0.6 },

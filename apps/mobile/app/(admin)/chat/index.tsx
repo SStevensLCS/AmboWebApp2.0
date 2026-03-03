@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#111827',
   },
   lastMessage: { color: '#6b7280', marginTop: 2 },
   lastMessageUnread: { color: '#374151', fontWeight: '600' },
@@ -138,6 +138,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#111827',
   },
 });

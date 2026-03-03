@@ -18,5 +18,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
   subtitle: { fontSize: 16, color: '#666', marginBottom: 24 },
   link: { marginTop: 16 },
-  linkText: { color: '#3b82f6', fontSize: 16 },
+  linkText: { color: '#111827', fontSize: 16 },
 });

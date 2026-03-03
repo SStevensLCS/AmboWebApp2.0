@@ -69,7 +69,7 @@ export function usePushNotifications(userId: string) {
         name: 'Default',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#3b82f6',
+        lightColor: '#111827',
       });
     }
 

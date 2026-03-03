@@ -57,7 +57,7 @@ export default function StudentDashboard() {
           <View style={styles.statsRow}>
             <Card style={styles.statCard}>
               <Card.Content style={styles.statContent}>
-                <MaterialCommunityIcons name="clock-outline" size={20} color="#3b82f6" />
+                <MaterialCommunityIcons name="clock-outline" size={20} color="#111827" />
                 <Text variant="headlineMedium" style={styles.statValue}>
                   {stats.totalHours.toFixed(1)}
                 </Text>

@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   editSection: { marginTop: 8, gap: 8 },
   editActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   commentToggle: { marginTop: 12 },
-  commentToggleText: { color: '#3b82f6', fontWeight: '600' },
+  commentToggleText: { color: '#111827', fontWeight: '600' },
   commentsSection: { marginTop: 4 },
   commentDivider: { marginVertical: 8 },
   loadingText: { color: '#9ca3af', paddingVertical: 8 },

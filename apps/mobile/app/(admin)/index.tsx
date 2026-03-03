@@ -49,7 +49,7 @@ export default function AdminDashboard() {
         <Card style={styles.statCard} onPress={() => router.push('/(admin)/users')}>
           <Card.Content style={styles.statContent}>
             <View style={styles.statHeader}>
-              <MaterialCommunityIcons name="account-group-outline" size={24} color="#3b82f6" />
+              <MaterialCommunityIcons name="account-group-outline" size={24} color="#111827" />
               <MaterialCommunityIcons name="chevron-right" size={18} color="#9ca3af" />
             </View>
             <Text variant="headlineMedium" style={styles.statValue}>{userCount}</Text>
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
         <Card.Content style={styles.navContent}>
           <View style={styles.navLeft}>
             <View style={styles.navIcon}>
-              <MaterialCommunityIcons name="file-document-outline" size={20} color="#3b82f6" />
+              <MaterialCommunityIcons name="file-document-outline" size={20} color="#111827" />
             </View>
             <View>
               <Text variant="bodyLarge" style={styles.navTitle}>Submissions</Text>
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   navCard: { marginBottom: 10, backgroundColor: '#fff' },
   navContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  navIcon: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' },
+  navIcon: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
   navTitle: { fontWeight: '600' },
   navSubtitle: { color: '#6b7280' },
 });

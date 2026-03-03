@@ -214,16 +214,16 @@ export default function AdminEventDetail() {
               <Text variant="headlineSmall" style={styles.title}>{event.title}</Text>
 
               <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="calendar" size={18} color="#3b82f6" />
+                <MaterialCommunityIcons name="calendar" size={18} color="#111827" />
                 <Text variant="bodyMedium">{start.date}</Text>
               </View>
               <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="clock-outline" size={18} color="#3b82f6" />
+                <MaterialCommunityIcons name="clock-outline" size={18} color="#111827" />
                 <Text variant="bodyMedium">{start.time} - {end.time}</Text>
               </View>
               {event.location && (
                 <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="map-marker-outline" size={18} color="#3b82f6" />
+                  <MaterialCommunityIcons name="map-marker-outline" size={18} color="#111827" />
                   <Text variant="bodyMedium">{event.location}</Text>
                 </View>
               )}
@@ -231,7 +231,7 @@ export default function AdminEventDetail() {
               {event.uniform && (
                 <Card style={styles.uniformCard}>
                   <Card.Content style={styles.uniformContent}>
-                    <MaterialCommunityIcons name="tshirt-crew-outline" size={18} color="#3b82f6" />
+                    <MaterialCommunityIcons name="tshirt-crew-outline" size={18} color="#111827" />
                     <Text variant="bodyMedium" style={styles.uniformText}>Uniform: {event.uniform}</Text>
                   </Card.Content>
                 </Card>

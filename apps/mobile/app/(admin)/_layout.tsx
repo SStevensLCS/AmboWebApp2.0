@@ -51,11 +51,30 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
+        name="posts"
+        options={{
+          title: 'Posts',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="message-text-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: 'Chat',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chat-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="resources"
+        options={{
+          title: 'Resources',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="folder-outline" size={size} color={color} />
           ),
         }}
       />
@@ -68,6 +87,7 @@ export default function AdminLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="applications" options={{ href: null, headerShown: false }} />
     </Tabs>
   );
 }

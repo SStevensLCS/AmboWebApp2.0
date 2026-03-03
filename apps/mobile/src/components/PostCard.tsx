@@ -133,8 +133,8 @@ export function PostCard({
         </View>
         {showActions && (
           <View style={styles.actions}>
-            <IconButton icon="pencil-outline" size={18} onPress={() => { setEditing(true); setEditText(content); }} />
-            <IconButton icon="delete-outline" size={18} iconColor="#ef4444" onPress={() => onDelete(id)} />
+            <IconButton icon="pencil-outline" size={16} onPress={() => { setEditing(true); setEditText(content); }} style={styles.actionButton} />
+            <IconButton icon="delete-outline" size={16} iconColor="#ef4444" onPress={() => onDelete(id)} style={styles.actionButton} />
           </View>
         )}
       </View>
@@ -310,7 +310,8 @@ const styles = StyleSheet.create({
   authorName: { fontWeight: '600' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timestamp: { color: '#9ca3af', fontSize: 12 },
-  actions: { flexDirection: 'row' },
+  actions: { flexDirection: 'row', gap: -4, marginRight: -8 },
+  actionButton: { margin: 0 },
   content: { marginTop: 10, lineHeight: 20 },
   editSection: { marginTop: 8, gap: 8 },
   editActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },

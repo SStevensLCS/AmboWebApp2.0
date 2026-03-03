@@ -20,6 +20,7 @@ export interface ChatGroup {
 export interface ChatGroupWithMeta extends ChatGroup {
   participants: { user_id: string; users: { first_name: string; last_name: string; avatar_url?: string } }[];
   lastMessage?: { content: string; created_at: string };
+  hasUnread?: boolean;
 }
 
 export function useChatGroups(userId: string) {
@@ -32,10 +33,10 @@ export function useChatGroups(userId: string) {
     setLoading(true);
     setError(null);
 
-    // Get groups the user participates in
+    // Get groups the user participates in (including last_read_at)
     const { data: participantData, error: pErr } = await supabase
       .from('chat_participants')
-      .select('group_id')
+      .select('group_id, last_read_at')
       .eq('user_id', userId);
 
     if (pErr) {
@@ -49,6 +50,12 @@ export function useChatGroups(userId: string) {
       setGroups([]);
       setLoading(false);
       return;
+    }
+
+    // Build a map of group_id -> last_read_at for unread detection
+    const lastReadMap: Record<string, string | null> = {};
+    for (const p of participantData || []) {
+      lastReadMap[p.group_id] = p.last_read_at;
     }
 
     // Fetch group details with participants
@@ -84,7 +91,13 @@ export function useChatGroups(userId: string) {
 
       const lastMessage = (lastMessages || []).find((m) => m.group_id === group.id);
 
-      return { ...group, participants, lastMessage: lastMessage || undefined };
+      // Determine unread status
+      const lastReadAt = lastReadMap[group.id];
+      const hasUnread = lastMessage
+        ? !lastReadAt || new Date(lastMessage.created_at) > new Date(lastReadAt)
+        : false;
+
+      return { ...group, participants, lastMessage: lastMessage || undefined, hasUnread };
     });
 
     // Sort by last message time or group updated_at

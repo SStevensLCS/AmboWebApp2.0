@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatMessages, ChatMessage } from '@/hooks/useChatMessages';
@@ -8,6 +8,7 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { ChatInput } from '@/components/ChatInput';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminMessageThread() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,6 +17,51 @@ export default function AdminMessageThread() {
   const { messages, loading, sendMessage } = useChatMessages(id || '');
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
+  const [groupName, setGroupName] = useState('Messages');
+
+  // Fetch group name for the header
+  useEffect(() => {
+    if (!id) return;
+    async function fetchGroupName() {
+      const { data: group } = await supabase
+        .from('chat_groups')
+        .select('name')
+        .eq('id', id)
+        .single();
+
+      if (group?.name) {
+        setGroupName(group.name);
+        return;
+      }
+
+      // If no explicit name, build from participant names
+      const { data: participants } = await supabase
+        .from('chat_participants')
+        .select('user_id, users(first_name, last_name)')
+        .eq('group_id', id);
+
+      if (participants) {
+        const others = participants
+          .filter((p: any) => p.user_id !== userId && p.users)
+          .map((p: any) => p.users.first_name);
+        if (others.length > 0) {
+          setGroupName(others.join(', '));
+        }
+      }
+    }
+    fetchGroupName();
+  }, [id, userId]);
+
+  // Mark messages as read when entering the chat
+  useEffect(() => {
+    if (!id || !userId) return;
+    supabase
+      .from('chat_participants')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('group_id', id)
+      .eq('user_id', userId)
+      .then(() => {});
+  }, [id, userId, messages.length]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -49,22 +95,25 @@ export default function AdminMessageThread() {
   const keyboardOffset = Platform.OS === 'ios' ? insets.top + 44 : 0;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={keyboardOffset}
-    >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={messages.length === 0 ? styles.emptyContainer : styles.list}
-        ListEmptyComponent={<EmptyState icon="chat-outline" title="No messages yet" subtitle="Send the first message!" />}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-      />
-      <ChatInput onSend={handleSend} />
-    </KeyboardAvoidingView>
+    <>
+      <Stack.Screen options={{ title: groupName }} />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardOffset}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={messages.length === 0 ? styles.emptyContainer : styles.list}
+          ListEmptyComponent={<EmptyState icon="chat-outline" title="No messages yet" subtitle="Send the first message!" />}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        />
+        <ChatInput onSend={handleSend} />
+      </KeyboardAvoidingView>
+    </>
   );
 }
 

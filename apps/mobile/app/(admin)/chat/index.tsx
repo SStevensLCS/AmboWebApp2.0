@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { Avatar, Text, FAB } from 'react-native-paper';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -31,11 +31,32 @@ export default function AdminChatList() {
   const { session } = useAuth();
   const userId = session?.user?.id || '';
   const { groups, loading, refetch } = useChatGroups(userId);
+  const [refreshing, setRefreshing] = useState(false);
+  const initialLoadDone = useRef(false);
 
-  // Refetch when screen regains focus (e.g. returning from a chat thread or new chat)
-  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+  // Track when initial load completes
+  if (!loading && !initialLoadDone.current) {
+    initialLoadDone.current = true;
+  }
 
-  if (loading && groups.length === 0) return <LoadingScreen />;
+  // Silent refetch on focus (no loading spinner)
+  useFocusEffect(
+    useCallback(() => {
+      if (initialLoadDone.current) {
+        // Silent background refresh - don't trigger loading state
+        refetch();
+      }
+    }, [refetch])
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  // Only show full loading screen on initial load
+  if (loading && groups.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
 
   const renderGroup = ({ item }: { item: ChatGroupWithMeta }) => {
     const displayName = getGroupDisplayName(item, userId);
@@ -44,6 +65,7 @@ export default function AdminChatList() {
       ? `${otherParticipant.users.first_name?.[0] || ''}${otherParticipant.users.last_name?.[0] || ''}`
       : '?';
     const avatarUrl = otherParticipant?.users?.avatar_url;
+    const hasUnread = item.hasUnread === true;
 
     return (
       <Pressable style={styles.groupRow} onPress={() => router.push(`/(admin)/chat/${item.id}`)}>
@@ -53,9 +75,14 @@ export default function AdminChatList() {
           <Avatar.Text size={44} label={initials} style={styles.avatarFallback} />
         )}
         <View style={styles.groupInfo}>
-          <Text variant="bodyLarge" style={styles.groupName} numberOfLines={1}>{displayName}</Text>
+          <View style={styles.groupNameRow}>
+            <Text variant="bodyLarge" style={[styles.groupName, hasUnread && styles.groupNameUnread]} numberOfLines={1}>
+              {displayName}
+            </Text>
+            {hasUnread && <View style={styles.unreadDot} />}
+          </View>
           {item.lastMessage && (
-            <Text variant="bodySmall" style={styles.lastMessage} numberOfLines={1}>
+            <Text variant="bodySmall" style={[styles.lastMessage, hasUnread && styles.lastMessageUnread]} numberOfLines={1}>
               {item.lastMessage.content}
             </Text>
           )}
@@ -75,7 +102,7 @@ export default function AdminChatList() {
         renderItem={renderGroup}
         contentContainerStyle={groups.length === 0 ? styles.emptyContainer : undefined}
         ListEmptyComponent={<EmptyState icon="chat-outline" title="No conversations" subtitle="Start a new chat to get started" />}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
       <FAB icon="plus" style={styles.fab} onPress={() => router.push('/(admin)/chat/new')} />
@@ -93,8 +120,17 @@ const styles = StyleSheet.create({
   },
   avatarFallback: { backgroundColor: '#e5e7eb' },
   groupInfo: { flex: 1 },
-  groupName: { fontWeight: '600' },
+  groupNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  groupName: { fontWeight: '600', flex: 1 },
+  groupNameUnread: { fontWeight: '800' },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#3b82f6',
+  },
   lastMessage: { color: '#6b7280', marginTop: 2 },
+  lastMessageUnread: { color: '#374151', fontWeight: '600' },
   time: { color: '#9ca3af' },
   separator: { height: 1, backgroundColor: '#f3f4f6', marginLeft: 72 },
   emptyContainer: { flex: 1 },

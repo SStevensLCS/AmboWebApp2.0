@@ -110,11 +110,9 @@ export default function AdminNewChat() {
           left={<TextInput.Icon icon="magnify" />}
           style={styles.searchInput}
         />
-        {selected.length > 0 && (
-          <Text variant="bodySmall" style={styles.selectedCount}>
-            {selected.length} selected
-          </Text>
-        )}
+        <Text variant="bodySmall" style={[styles.selectedCount, selected.length === 0 && styles.selectedCountHidden]}>
+          {selected.length > 0 ? `${selected.length} selected` : ' '}
+        </Text>
       </View>
 
       <Divider />
@@ -146,7 +144,8 @@ const styles = StyleSheet.create({
   header: { padding: 16, gap: 8 },
   nameInput: { backgroundColor: '#fff' },
   searchInput: { backgroundColor: '#fff' },
-  selectedCount: { color: '#3b82f6', fontWeight: '600' },
+  selectedCount: { color: '#3b82f6', fontWeight: '600', minHeight: 20 },
+  selectedCountHidden: { opacity: 0 },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',

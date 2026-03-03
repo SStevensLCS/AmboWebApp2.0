@@ -31,22 +31,12 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="submissions"
+        name="events"
         options={{
-          title: 'Submissions',
+          title: 'Events',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="file-document-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="users"
-        options={{
-          title: 'Users',
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account-group-outline" size={size} color={color} />
+            <MaterialCommunityIcons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
@@ -70,15 +60,6 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="resources"
-        options={{
-          title: 'Resources',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="folder-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
@@ -87,6 +68,10 @@ export default function AdminLayout() {
           ),
         }}
       />
+      {/* Hidden from tab bar but still accessible via navigation */}
+      <Tabs.Screen name="submissions" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="users" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="resources" options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="applications" options={{ href: null, headerShown: false }} />
     </Tabs>
   );

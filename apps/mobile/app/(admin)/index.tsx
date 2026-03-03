@@ -46,9 +46,12 @@ export default function AdminDashboard() {
             <Text variant="bodySmall" style={styles.statLabel}>Pending</Text>
           </Card.Content>
         </Card>
-        <Card style={styles.statCard}>
+        <Card style={styles.statCard} onPress={() => router.push('/(admin)/users')}>
           <Card.Content style={styles.statContent}>
-            <MaterialCommunityIcons name="account-group-outline" size={24} color="#3b82f6" />
+            <View style={styles.statHeader}>
+              <MaterialCommunityIcons name="account-group-outline" size={24} color="#3b82f6" />
+              <MaterialCommunityIcons name="chevron-right" size={18} color="#9ca3af" />
+            </View>
             <Text variant="headlineMedium" style={styles.statValue}>{userCount}</Text>
             <Text variant="bodySmall" style={styles.statLabel}>Users</Text>
           </Card.Content>
@@ -72,21 +75,6 @@ export default function AdminDashboard() {
         </Card.Content>
       </Card>
 
-      <Card style={styles.navCard} onPress={() => router.push('/(admin)/users')}>
-        <Card.Content style={styles.navContent}>
-          <View style={styles.navLeft}>
-            <View style={styles.navIcon}>
-              <MaterialCommunityIcons name="account-group-outline" size={20} color="#3b82f6" />
-            </View>
-            <View>
-              <Text variant="bodyLarge" style={styles.navTitle}>Users</Text>
-              <Text variant="bodySmall" style={styles.navSubtitle}>Manage ambassador accounts</Text>
-            </View>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
-        </Card.Content>
-      </Card>
-
       <Card style={styles.navCard} onPress={() => router.push('/(admin)/applications')}>
         <Card.Content style={styles.navContent}>
           <View style={styles.navLeft}>
@@ -96,6 +84,21 @@ export default function AdminDashboard() {
             <View>
               <Text variant="bodyLarge" style={styles.navTitle}>Applications</Text>
               <Text variant="bodySmall" style={styles.navSubtitle}>Review ambassador applications</Text>
+            </View>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.navCard} onPress={() => router.push('/(admin)/resources')}>
+        <Card.Content style={styles.navContent}>
+          <View style={styles.navLeft}>
+            <View style={[styles.navIcon, { backgroundColor: '#f0fdf4' }]}>
+              <MaterialCommunityIcons name="folder-outline" size={20} color="#16a34a" />
+            </View>
+            <View>
+              <Text variant="bodyLarge" style={styles.navTitle}>Resources</Text>
+              <Text variant="bodySmall" style={styles.navSubtitle}>Manage files and documents</Text>
             </View>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
@@ -113,6 +116,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   statCard: { flex: 1, backgroundColor: '#f9fafb' },
   statContent: { alignItems: 'center', gap: 4, paddingVertical: 16 },
+  statHeader: { flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'space-between' },
   statValue: { fontWeight: '700' },
   statLabel: { color: '#6b7280' },
   sectionTitle: { fontWeight: '600', marginBottom: 12 },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TextInput as RNTextInput,
 } from 'react-native';
 import {
   Text,
@@ -18,6 +19,7 @@ import {
   SegmentedButtons,
 } from 'react-native-paper';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEventDetail } from '@/hooks/useEventDetail';
@@ -42,6 +44,7 @@ export default function AdminEventDetail() {
   const [eventLoading, setEventLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [posting, setPosting] = useState(false);
+  const commentInputRef = useRef<RNTextInput>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -50,6 +53,7 @@ export default function AdminEventDetail() {
   const [editDescription, setEditDescription] = useState('');
   const [editLocation, setEditLocation] = useState('');
 
+  const insets = useSafeAreaInsets();
   const { comments, rsvps, myRsvp, loading, updateRsvp, postComment } = useEventDetail(id, userId);
 
   useEffect(() => {
@@ -89,6 +93,7 @@ export default function AdminEventDetail() {
     await postComment(commentText.trim());
     setCommentText('');
     setPosting(false);
+    commentInputRef.current?.focus();
   };
 
   const handleSaveEdit = async () => {
@@ -129,15 +134,21 @@ export default function AdminEventDetail() {
     ]);
   };
 
+  const keyboardOffset = Platform.OS === 'ios' ? insets.top + 44 : 0;
+
   return (
     <>
       <Stack.Screen options={{ title: event.title }} />
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={100}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardOffset}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
           {/* Admin Actions */}
           <View style={styles.adminActions}>
             <Button
@@ -286,26 +297,29 @@ export default function AdminEventDetail() {
               </View>
             </View>
           ))}
-
-          {/* Comment Input */}
-          <View style={styles.commentInput}>
-            <TextInput
-              mode="outlined"
-              placeholder="Add a comment..."
-              value={commentText}
-              onChangeText={setCommentText}
-              style={styles.commentTextInput}
-              dense
-            />
-            <IconButton
-              icon="send"
-              mode="contained"
-              onPress={handlePostComment}
-              disabled={!commentText.trim() || posting}
-              loading={posting}
-            />
-          </View>
         </ScrollView>
+
+        {/* Dock-to-keyboard: Comment input as sticky footer */}
+        <View style={[styles.commentInput, { paddingBottom: Math.max(8, insets.bottom) }]}>
+          <TextInput
+            ref={commentInputRef as any}
+            mode="outlined"
+            placeholder="Add a comment..."
+            value={commentText}
+            onChangeText={setCommentText}
+            style={styles.commentTextInput}
+            dense
+            multiline
+            blurOnSubmit={false}
+          />
+          <IconButton
+            icon="send"
+            mode="contained"
+            onPress={handlePostComment}
+            disabled={!commentText.trim() || posting}
+            loading={posting}
+          />
+        </View>
       </KeyboardAvoidingView>
     </>
   );
@@ -313,7 +327,7 @@ export default function AdminEventDetail() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { padding: 16, paddingBottom: 16 },
   adminActions: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   editSection: { gap: 12, marginBottom: 8 },
   editInput: { backgroundColor: '#fff' },
@@ -335,6 +349,6 @@ const styles = StyleSheet.create({
   commentBody: { flex: 1 },
   commentAuthor: { fontWeight: '600', marginBottom: 2 },
   commentTime: { color: '#9ca3af', marginTop: 4 },
-  commentInput: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
-  commentTextInput: { flex: 1, backgroundColor: '#fff' },
+  commentInput: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, paddingHorizontal: 8, paddingTop: 8, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  commentTextInput: { flex: 1, backgroundColor: '#fff', maxHeight: 100 },
 });

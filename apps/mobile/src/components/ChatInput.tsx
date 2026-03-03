@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { TextInput, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,21 +12,26 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const insets = useSafeAreaInsets();
+  const inputRef = useRef<RNTextInput>(null);
 
   const handleSend = async () => {
     if (!text.trim() || sending) return;
+    const message = text.trim();
     setSending(true);
+    setText('');
     try {
-      await onSend(text.trim());
-      setText('');
+      await onSend(message);
     } finally {
       setSending(false);
+      // Keep keyboard open after sending
+      inputRef.current?.focus();
     }
   };
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(8, insets.bottom) }]}>
       <TextInput
+        ref={inputRef as any}
         mode="outlined"
         placeholder="Type a message..."
         value={text}
@@ -34,6 +39,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         style={styles.input}
         dense
         multiline
+        blurOnSubmit={false}
         disabled={disabled}
       />
       <IconButton

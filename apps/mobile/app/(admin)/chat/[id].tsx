@@ -52,7 +52,7 @@ export default function AdminMessageThread() {
     fetchGroupName();
   }, [id, userId]);
 
-  // Mark messages as read when entering the chat
+  // Mark messages as read when entering the chat (gracefully handles missing column)
   useEffect(() => {
     if (!id || !userId) return;
     supabase
@@ -60,7 +60,8 @@ export default function AdminMessageThread() {
       .update({ last_read_at: new Date().toISOString() })
       .eq('group_id', id)
       .eq('user_id', userId)
-      .then(() => {});
+      .then(() => {})
+      .catch(() => {}); // Silently fail if last_read_at column doesn't exist yet
   }, [id, userId, messages.length]);
 
   useEffect(() => {

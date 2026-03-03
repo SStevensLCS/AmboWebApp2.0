@@ -33,19 +33,34 @@ export function useChatGroups(userId: string) {
     setLoading(true);
     setError(null);
 
-    // Get groups the user participates in (including last_read_at)
-    const { data: participantData, error: pErr } = await supabase
+    // Try to fetch with last_read_at, fall back to without it if the column doesn't exist yet
+    let participantData: any[] | null = null;
+    let hasLastReadAt = true;
+
+    const { data: pData, error: pErr } = await supabase
       .from('chat_participants')
       .select('group_id, last_read_at')
       .eq('user_id', userId);
 
     if (pErr) {
-      setError(pErr.message);
-      setLoading(false);
-      return;
+      // Column might not exist yet (migration not applied) - fall back to basic query
+      const { data: fallbackData, error: fallbackErr } = await supabase
+        .from('chat_participants')
+        .select('group_id')
+        .eq('user_id', userId);
+
+      if (fallbackErr) {
+        setError(fallbackErr.message);
+        setLoading(false);
+        return;
+      }
+      participantData = fallbackData;
+      hasLastReadAt = false;
+    } else {
+      participantData = pData;
     }
 
-    const groupIds = (participantData || []).map((p) => p.group_id);
+    const groupIds = (participantData || []).map((p: any) => p.group_id);
     if (groupIds.length === 0) {
       setGroups([]);
       setLoading(false);
@@ -54,8 +69,10 @@ export function useChatGroups(userId: string) {
 
     // Build a map of group_id -> last_read_at for unread detection
     const lastReadMap: Record<string, string | null> = {};
-    for (const p of participantData || []) {
-      lastReadMap[p.group_id] = p.last_read_at;
+    if (hasLastReadAt) {
+      for (const p of participantData || []) {
+        lastReadMap[p.group_id] = p.last_read_at ?? null;
+      }
     }
 
     // Fetch group details with participants
@@ -91,11 +108,12 @@ export function useChatGroups(userId: string) {
 
       const lastMessage = (lastMessages || []).find((m) => m.group_id === group.id);
 
-      // Determine unread status
-      const lastReadAt = lastReadMap[group.id];
-      const hasUnread = lastMessage
-        ? !lastReadAt || new Date(lastMessage.created_at) > new Date(lastReadAt)
-        : false;
+      // Determine unread status (only if last_read_at column exists)
+      let hasUnread = false;
+      if (hasLastReadAt && lastMessage) {
+        const lastReadAt = lastReadMap[group.id];
+        hasUnread = !lastReadAt || new Date(lastMessage.created_at) > new Date(lastReadAt);
+      }
 
       return { ...group, participants, lastMessage: lastMessage || undefined, hasUnread };
     });
@@ -116,9 +134,6 @@ export function useChatGroups(userId: string) {
   }, [fetchGroups]);
 
   const createGroup = async (name: string | null, participantIds: string[]) => {
-    // Generate ID client-side to avoid needing .select() after insert.
-    // The SELECT policy on chat_groups requires the user to be a participant,
-    // but participants haven't been inserted yet at this point.
     const groupId = generateUUID();
 
     const { error: err } = await supabase
@@ -127,7 +142,6 @@ export function useChatGroups(userId: string) {
     if (err) throw err;
 
     const rows = participantIds.map((uid) => ({ group_id: groupId, user_id: uid }));
-    // Include the creator as a participant
     if (!participantIds.includes(userId)) {
       rows.push({ group_id: groupId, user_id: userId });
     }

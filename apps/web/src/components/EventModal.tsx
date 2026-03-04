@@ -340,8 +340,8 @@ export function EventModal({
                         <div className="flex gap-1 shrink-0">
                             {isEditing ? (
                                 <>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveEvent} disabled={saving}>
-                                        <Check className="h-4 w-4" />
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveEvent} disabled={saving} aria-label="Save event">
+                                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                     </Button>
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(false)}>
                                         <X className="h-4 w-4" />

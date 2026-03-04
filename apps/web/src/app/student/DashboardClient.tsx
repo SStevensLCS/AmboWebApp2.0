@@ -120,7 +120,7 @@ export default function DashboardClient({ submissions }: DashboardClientProps) {
                             <TableBody>
                                 {filteredSubmissions.map((submission) => (
                                     <TableRow key={submission.id}>
-                                        <TableCell>{submission.service_date}</TableCell>
+                                        <TableCell>{new Date(submission.service_date + "T00:00:00").toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</TableCell>
                                         <TableCell>{submission.service_type}</TableCell>
                                         <TableCell>{Number(submission.hours)}</TableCell>
                                         <TableCell>{Number(submission.credits)}</TableCell>
@@ -167,7 +167,7 @@ export default function DashboardClient({ submissions }: DashboardClientProps) {
                         {filteredSubmissions.map((submission) => (
                             <div key={submission.id} className="p-4 space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="font-medium">{submission.service_date}</span>
+                                    <span className="font-medium">{new Date(submission.service_date + "T00:00:00").toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                     <Badge
                                         variant={
                                             submission.status === "Approved"

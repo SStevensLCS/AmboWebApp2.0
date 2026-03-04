@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function AdminApplicationList() {
     const [applications, setApplications] = useState<ApplicationData[]>([]);
@@ -26,6 +27,7 @@ export default function AdminApplicationList() {
             setApplications(data || []);
         } catch (error) {
             console.error("Failed to fetch applications", error);
+            toast.error("Failed to load applications");
         } finally {
             setLoading(false);
         }

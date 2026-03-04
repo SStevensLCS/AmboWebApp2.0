@@ -2,7 +2,7 @@
 
 ## Scope of Changes (WebApp Update 3-3-26)
 
-**Web app only.** All edits in this branch are scoped to the Next.js web application. Do NOT make any changes to the mobile app (PWA service worker behavior, native mobile components, or mobile-specific configurations). Focus exclusively on the web app codebase under `src/`.
+**Web app and PWA only.** All edits in this branch are scoped to the Next.js web application and its PWA features (service worker, manifest, etc.). Do NOT make any changes to native mobile app code or configurations. Focus exclusively on the web app codebase.
 
 ## What is this project?
 

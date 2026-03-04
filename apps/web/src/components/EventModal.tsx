@@ -20,6 +20,7 @@ import { Calendar, Clock, MapPin, Shirt, Send, Loader2, Pencil, Trash2, X, Check
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
     Drawer,
     DrawerContent,
@@ -36,11 +37,13 @@ export function EventModal({
     onClose,
     currentUserId,
     userRole,
+    onEventChanged,
 }: {
     event: EventDetails;
     onClose: () => void;
     currentUserId: string;
     userRole: UserRole;
+    onEventChanged?: () => void;
 }) {
     // Data State
     const [comments, setComments] = useState<EventComment[]>([]);
@@ -218,28 +221,30 @@ export function EventModal({
 
         if (res.ok) {
             toast.success("Event updated");
-            window.location.reload();
+            setIsEditing(false);
+            onEventChanged?.();
+            onClose();
         } else {
             toast.error("Failed to update event");
         }
         setSaving(false);
     };
 
-    const [confirmingDelete, setConfirmingDelete] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const handleDeleteEvent = async () => {
-        if (!confirmingDelete) {
-            setConfirmingDelete(true);
-            return;
-        }
+        setDeleting(true);
         const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
         if (res.ok) {
             toast.success("Event deleted");
-            window.location.reload();
+            setShowDeleteConfirm(false);
+            onEventChanged?.();
+            onClose();
         } else {
             toast.error("Failed to delete event");
-            setConfirmingDelete(false);
         }
+        setDeleting(false);
     };
 
     // --- Utilities ---
@@ -347,20 +352,9 @@ export function EventModal({
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
                                         <Pencil className="h-4 w-4" />
                                     </Button>
-                                    {confirmingDelete ? (
-                                        <div className="flex items-center gap-1">
-                                            <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={handleDeleteEvent}>
-                                                Confirm
-                                            </Button>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setConfirmingDelete(false)}>
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={handleDeleteEvent}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={() => setShowDeleteConfirm(true)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </>
                             )}
                         </div>
@@ -555,20 +549,43 @@ export function EventModal({
 
     if (isDesktop) {
         return (
-            <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:hidden">
-                    {Content}
-                </DialogContent>
-            </Dialog>
+            <>
+                <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+                    <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:hidden">
+                        {Content}
+                    </DialogContent>
+                </Dialog>
+                <ConfirmDialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                    title="Delete event"
+                    description="This will permanently delete this event, including all RSVPs and comments. This action cannot be undone."
+                    confirmLabel="Delete"
+                    variant="destructive"
+                    loading={deleting}
+                    onConfirm={handleDeleteEvent}
+                />
+            </>
         );
     }
 
     return (
-        <Drawer open={true} onOpenChange={(open) => !open && onClose()}>
-            <DrawerContent className="h-[95vh] rounded-t-[20px]">
-                {/* Visual handle is already in DrawerContent */}
-                {Content}
-            </DrawerContent>
-        </Drawer>
+        <>
+            <Drawer open={true} onOpenChange={(open) => !open && onClose()}>
+                <DrawerContent className="h-[95vh] rounded-t-[20px]">
+                    {Content}
+                </DrawerContent>
+            </Drawer>
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete event"
+                description="This will permanently delete this event, including all RSVPs and comments. This action cannot be undone."
+                confirmLabel="Delete"
+                variant="destructive"
+                loading={deleting}
+                onConfirm={handleDeleteEvent}
+            />
+        </>
     );
 }

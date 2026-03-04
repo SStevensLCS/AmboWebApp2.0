@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
     Table,
     TableBody,
@@ -31,19 +30,21 @@ interface DashboardClientProps {
     submissions: Submission[];
 }
 
-export default function DashboardClient({ submissions }: DashboardClientProps) {
-    // Filter states - all true by default
-    const [showApproved, setShowApproved] = useState(true);
-    const [showPending, setShowPending] = useState(true);
-    const [showDenied, setShowDenied] = useState(true);
+const STATUS_FILTERS = ["All", "Approved", "Pending", "Denied"] as const;
+type StatusFilter = typeof STATUS_FILTERS[number];
 
-    // Filter logic
-    const filteredSubmissions = submissions.filter((sub) => {
-        if (sub.status === "Approved" && !showApproved) return false;
-        if (sub.status === "Pending" && !showPending) return false;
-        if (sub.status === "Denied" && !showDenied) return false;
-        return true;
-    });
+export default function DashboardClient({ submissions }: DashboardClientProps) {
+    const [activeFilter, setActiveFilter] = useState<StatusFilter>("All");
+
+    const statusCounts = useMemo(() => {
+        const counts: Record<string, number> = { All: submissions.length, Approved: 0, Pending: 0, Denied: 0 };
+        submissions.forEach((s) => { if (counts[s.status] !== undefined) counts[s.status]++; });
+        return counts;
+    }, [submissions]);
+
+    const filteredSubmissions = activeFilter === "All"
+        ? submissions
+        : submissions.filter((sub) => sub.status === activeFilter);
 
     return (
         <div className="space-y-6">
@@ -79,35 +80,27 @@ export default function DashboardClient({ submissions }: DashboardClientProps) {
             </div>
 
             <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h2 className="text-xl font-semibold tracking-tight">Recent Submissions</h2>
 
-                    {/* Filter Switches */}
-                    <div className="flex items-center gap-4 flex-wrap">
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="filter-approved"
-                                checked={showApproved}
-                                onCheckedChange={setShowApproved}
-                            />
-                            <Label htmlFor="filter-approved" className="text-sm font-medium cursor-pointer">Approved</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="filter-pending"
-                                checked={showPending}
-                                onCheckedChange={setShowPending}
-                            />
-                            <Label htmlFor="filter-pending" className="text-sm font-medium cursor-pointer">Pending</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="filter-denied"
-                                checked={showDenied}
-                                onCheckedChange={setShowDenied}
-                            />
-                            <Label htmlFor="filter-denied" className="text-sm font-medium cursor-pointer">Denied</Label>
-                        </div>
+                    <div className="flex gap-2 flex-wrap">
+                        {STATUS_FILTERS.map((status) => (
+                            <Button
+                                key={status}
+                                variant={activeFilter === status ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setActiveFilter(status)}
+                                className="gap-1.5"
+                            >
+                                {status}
+                                <Badge
+                                    variant="secondary"
+                                    className={`ml-0.5 px-1.5 py-0 text-[10px] min-w-[20px] text-center ${activeFilter === status ? "bg-background/20 text-primary-foreground" : ""}`}
+                                >
+                                    {statusCounts[status]}
+                                </Badge>
+                            </Button>
+                        ))}
                     </div>
                 </div>
 

@@ -3,6 +3,7 @@
 import { CheddarRain } from "@/components/CheddarRain";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     emailRef.current?.focus();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "expired") {
+      toast.info("Your session has expired. Please sign in again.");
+      window.history.replaceState(null, "", "/login");
+    }
   }, []);
 
   const handleCheddarComplete = useCallback(() => setShowCheddar(false), []);
@@ -112,6 +118,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>

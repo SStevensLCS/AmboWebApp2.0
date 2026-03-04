@@ -256,6 +256,7 @@ export function SubmissionsControl() {
                   className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
                   onClick={() => quickAction(row.original, "Approved")}
                   title="Approve"
+                  aria-label="Approve submission"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                 </Button>
@@ -265,6 +266,7 @@ export function SubmissionsControl() {
                   className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                   onClick={() => quickAction(row.original, "Denied")}
                   title="Deny"
+                  aria-label="Deny submission"
                 >
                   <XCircle className="h-4 w-4" />
                 </Button>

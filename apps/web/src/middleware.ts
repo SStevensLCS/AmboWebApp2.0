@@ -54,7 +54,11 @@ export async function middleware(request: NextRequest) {
     if (path.startsWith("/apply")) {
       return NextResponse.next();
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    if (token) {
+      loginUrl.searchParams.set("reason", "expired");
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   // ──────────────────────────────────────────

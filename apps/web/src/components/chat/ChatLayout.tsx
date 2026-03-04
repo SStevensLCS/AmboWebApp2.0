@@ -220,6 +220,7 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         size="icon"
                                         className="md:hidden shrink-0 -ml-1 h-9 w-9"
                                         onClick={() => selectGroup("")}
+                                        aria-label="Back to chat list"
                                     >
                                         <ChevronLeft className="h-5 w-5" />
                                     </Button>

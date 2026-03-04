@@ -474,7 +474,9 @@ export function EventModal({
                                             </span>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-muted-foreground">
-                                                    {new Date(c.created_at).toLocaleTimeString([], {
+                                                    {new Date(c.created_at).toLocaleDateString([], {
+                                                        month: "short",
+                                                        day: "numeric",
                                                         hour: "numeric",
                                                         minute: "2-digit",
                                                     })}

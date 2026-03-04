@@ -207,16 +207,16 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                         <div className="flex gap-1">
                                             {isEditing ? (
                                                 <>
-                                                    <button onClick={handleUpdatePost} className="text-green-600 hover:text-green-700">
+                                                    <button onClick={handleUpdatePost} className="text-green-600 hover:text-green-700" aria-label="Save edit">
                                                         <Check className="h-3 w-3" />
                                                     </button>
-                                                    <button onClick={() => setIsEditing(false)} className="text-muted-foreground hover:text-foreground">
+                                                    <button onClick={() => setIsEditing(false)} className="text-muted-foreground hover:text-foreground" aria-label="Cancel edit">
                                                         <X className="h-3 w-3" />
                                                     </button>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground">
+                                                    <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground" aria-label="Edit post">
                                                         <Pencil className="h-3 w-3" />
                                                     </button>
                                                     <button onClick={() => setShowDeleteConfirm(true)} className="text-muted-foreground hover:text-red-500" aria-label="Delete post">
@@ -290,7 +290,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                                                 </span>
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-[10px] text-muted-foreground">
-                                                                        {new Date(comment.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                                                        {new Date(comment.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                                     </span>
                                                                     {canEditComment(comment) && editingCommentId !== comment.id && (
                                                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

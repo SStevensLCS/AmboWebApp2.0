@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Send, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -167,10 +168,12 @@ export function MessageList({ groupId, currentUserId, currentUserFirstName = "",
             } else {
                 console.error("Failed to send message");
                 setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+                toast.error("Failed to send message");
             }
         } catch (error) {
             console.error("Error sending message", error);
             setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+            toast.error("Failed to send message");
         } finally {
             setSending(false);
         }
@@ -293,6 +296,7 @@ export function MessageList({ groupId, currentUserId, currentUserFirstName = "",
                         className="rounded-full h-9 w-9 shrink-0"
                         disabled={sending || inputEmpty}
                         onClick={handleSend}
+                        aria-label="Send message"
                     >
                         {sending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

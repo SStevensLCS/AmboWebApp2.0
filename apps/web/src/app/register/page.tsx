@@ -208,6 +208,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className={`bg-background ${
                   emailShowError
                     ? "border-red-400 focus-visible:ring-red-400"
@@ -237,6 +238,7 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
                   className="bg-background pr-10"
                 />
                 <button
@@ -263,6 +265,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="bg-background"
               />
             </div>

@@ -43,6 +43,7 @@ export function Sidebar({ className, items, header, footer, ...props }: SidebarP
                     size="icon"
                     className="h-6 w-6 rounded-full border shadow-md bg-background hover:bg-accent"
                     onClick={() => setIsCollapsed(!isCollapsed)}
+                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                     {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
                 </Button>

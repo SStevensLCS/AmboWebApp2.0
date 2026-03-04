@@ -1,29 +1,25 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
-import EventChatWrapper from "./EventChatWrapper";
+import { CreateChatForm } from "@/components/chat/CreateChatForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-export default async function NewEventPage() {
+export default async function StudentNewChatPage() {
     const session = await getSession();
-    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
-        redirect("/login");
-    }
+    if (!session || (session.role !== "student" && session.role !== "applicant")) redirect("/login");
 
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href="/admin/events">
+                    <Link href="/student/chat">
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                 </Button>
-                <h1 className="text-lg font-semibold">Create Event</h1>
+                <h1 className="text-lg font-semibold">New Chat</h1>
             </div>
-            <div className="max-w-2xl">
-                <EventChatWrapper userId={session.userId} />
-            </div>
+            <CreateChatForm backPath="/student/chat" />
         </div>
     );
 }

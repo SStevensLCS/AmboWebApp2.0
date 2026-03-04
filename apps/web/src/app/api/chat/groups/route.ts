@@ -40,7 +40,23 @@ export async function GET() {
             return NextResponse.json({ error: groupsError.message }, { status: 500 });
         }
 
-        return NextResponse.json({ groups: groups || [] });
+        // Fetch last message per group for unread indicators
+        const groupsWithLastMessage = await Promise.all(
+            (groups || []).map(async (group) => {
+                const { data: msgs } = await adminClient
+                    .from("chat_messages")
+                    .select("id, sender_id, content, created_at")
+                    .eq("group_id", group.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1);
+                return {
+                    ...group,
+                    last_message: msgs && msgs.length > 0 ? msgs[0] : undefined,
+                };
+            })
+        );
+
+        return NextResponse.json({ groups: groupsWithLastMessage });
     } catch (error) {
         console.error("Unexpected error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

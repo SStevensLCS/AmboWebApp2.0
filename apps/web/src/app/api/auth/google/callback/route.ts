@@ -9,7 +9,7 @@ import { exchangeCodeForTokens } from "@/lib/googleCalendar";
  */
 export async function GET(req: NextRequest) {
     const session = await getSession();
-    if (!session || session.role !== "admin") {
+    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
         return NextResponse.redirect(new URL("/login", req.url));
     }
 

@@ -1,9 +1,12 @@
 import { Tabs, Redirect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
+import { useBadgeCounts } from '@/hooks/useBadgeCounts';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function AdminLayout() {
-  const { userRole } = useAuth();
+  const { session, userRole } = useAuth();
+  const userId = session?.user?.id || '';
+  const { unreadChats, pendingSubmissions } = useBadgeCounts(userId, 'admin');
 
   if (userRole !== 'admin' && userRole !== 'superadmin') {
     return <Redirect href="/" />;
@@ -28,6 +31,8 @@ export default function AdminLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="view-dashboard-outline" size={size} color={color} />
           ),
+          tabBarBadge: pendingSubmissions > 0 ? pendingSubmissions : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#f59e0b', fontSize: 10 },
         }}
       />
       <Tabs.Screen
@@ -57,6 +62,8 @@ export default function AdminLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chat-outline" size={size} color={color} />
           ),
+          tabBarBadge: unreadChats > 0 ? unreadChats : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#111827', fontSize: 10 },
         }}
       />
       <Tabs.Screen

@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle2, AlertCircle, History } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, History, CalendarDays } from "lucide-react";
+
+const NOTES_MAX_LENGTH = 500;
 
 export function NewSubmissionForm({ userId }: { userId: string }) {
   const router = useRouter();
@@ -159,14 +161,28 @@ export function NewSubmissionForm({ userId }: { userId: string }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes / Feedback</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="notes">Notes / Feedback</Label>
+              <span className={`text-xs ${form.notes.length > NOTES_MAX_LENGTH ? "text-red-500" : "text-muted-foreground"}`}>
+                {form.notes.length}/{NOTES_MAX_LENGTH}
+              </span>
+            </div>
             <Textarea
               id="notes"
               value={form.notes}
-              onChange={(e) => update("notes", e.target.value)}
+              onChange={(e) => {
+                if (e.target.value.length <= NOTES_MAX_LENGTH) {
+                  update("notes", e.target.value);
+                }
+              }}
               placeholder="How did the event go? Any issues?"
               className="resize-none min-h-[100px]"
             />
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+            <CalendarDays className="h-3.5 w-3.5" />
+            <span>Service date: <strong>{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</strong> (today)</span>
           </div>
 
           {error && (

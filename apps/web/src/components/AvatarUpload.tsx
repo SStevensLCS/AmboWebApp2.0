@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface AvatarUploadProps {
     currentAvatarUrl: string | null;
@@ -36,12 +37,13 @@ export function AvatarUpload({ currentAvatarUrl, firstName, lastName }: AvatarUp
             if (res.ok) {
                 const data = await res.json();
                 setAvatarUrl(data.avatar_url);
+                toast.success("Profile photo updated");
             } else {
                 const data = await res.json();
-                alert(data.error || "Failed to upload avatar");
+                toast.error(data.error || "Failed to upload avatar");
             }
         } catch {
-            alert("Network error. Please try again.");
+            toast.error("Network error. Please try again.");
         } finally {
             setUploading(false);
         }

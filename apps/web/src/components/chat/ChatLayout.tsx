@@ -10,6 +10,7 @@ import { MessageList } from "./MessageList";
 import { ChatSettingsDialog } from "./ChatSettingsDialog";
 import { Group } from "./types";
 import { useSearchParams, usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 interface ChatLayoutProps {
     currentUserId: string;
@@ -109,9 +110,11 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                 setGroups(data.groups as Group[]);
             } else {
                 console.error("Error fetching groups:", await res.text());
+                toast.error("Failed to load chat groups");
             }
         } catch (error) {
             console.error("Error fetching groups:", error);
+            toast.error("Failed to load chat groups");
         }
         setLoading(false);
     };
@@ -220,6 +223,7 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         size="icon"
                                         className="md:hidden shrink-0 -ml-1 h-9 w-9"
                                         onClick={() => selectGroup("")}
+                                        aria-label="Back to chat list"
                                     >
                                         <ChevronLeft className="h-5 w-5" />
                                     </Button>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, RotateCcw, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { deleteApplication } from "@/actions/application";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -19,8 +20,11 @@ export default function ApplyLandingPage({ hasApplication, currentStep, totalSte
     const router = useRouter();
     const [isRestarting, setIsRestarting] = useState(false);
 
+    const [confirmingRestart, setConfirmingRestart] = useState(false);
+
     const handleRestart = async () => {
-        if (!confirm("Are you sure you want to restart your application? All previously saved answers will be deleted.")) {
+        if (!confirmingRestart) {
+            setConfirmingRestart(true);
             return;
         }
 
@@ -30,8 +34,9 @@ export default function ApplyLandingPage({ hasApplication, currentStep, totalSte
             router.push("/apply/form");
         } catch (error) {
             console.error(error);
-            alert("Failed to restart application. Please try again.");
+            toast.error("Failed to restart application. Please try again.");
             setIsRestarting(false);
+            setConfirmingRestart(false);
         }
     };
 
@@ -81,17 +86,28 @@ export default function ApplyLandingPage({ hasApplication, currentStep, totalSte
                             </Button>
 
                             <Button
-                                variant="outline"
+                                variant={confirmingRestart ? "destructive" : "outline"}
                                 className="w-full h-12 text-base"
                                 onClick={handleRestart}
                                 disabled={isRestarting}
                             >
                                 {isRestarting ? (
                                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Restarting...</>
+                                ) : confirmingRestart ? (
+                                    "Confirm — Delete all answers and restart?"
                                 ) : (
                                     <><RotateCcw className="w-4 h-4 mr-2" /> Restart Application</>
                                 )}
                             </Button>
+                            {confirmingRestart && (
+                                <Button
+                                    variant="ghost"
+                                    className="w-full text-sm text-muted-foreground"
+                                    onClick={() => setConfirmingRestart(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
                         </>
                     ) : (
                         <Button

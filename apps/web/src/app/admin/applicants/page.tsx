@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import Papa from "papaparse";
 import { uploadApplicants, type ApplicantData } from "@/actions/applicants";
+import { toast } from "sonner";
 
 export default function ApplicantsPage() {
     const [applicants, setApplicants] = useState<ApplicantData[]>([]);
@@ -38,17 +39,22 @@ export default function ApplicantsPage() {
                     // Try to save to server
                     try {
                         const result = await uploadApplicants(newApplicants);
-                        if (!result.success) {
+                        if (result.success) {
+                            toast.success(`${newApplicants.length} applicant${newApplicants.length > 1 ? "s" : ""} uploaded`);
+                        } else {
                             console.error("Failed to sync to database:", result.error);
+                            toast.error("Failed to save applicants to database");
                         }
                     } catch (e) {
                         console.error("Upload failed", e);
+                        toast.error("Failed to upload applicants");
                     }
                 }
                 setLoading(false);
             },
             error: (error) => {
                 console.error("CSV Parse Error:", error);
+                toast.error("Failed to parse CSV file");
                 setLoading(false);
             }
         });
@@ -71,7 +77,7 @@ export default function ApplicantsPage() {
                     />
                     <Button disabled={loading}>
                         {loading ? (
-                            <span className="animate-spin mr-2">⏳</span>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                             <Upload className="h-4 w-4 mr-2" />
                         )}

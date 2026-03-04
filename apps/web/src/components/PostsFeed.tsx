@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MessageSquarePlus, PenLine, AlertCircle } from "lucide-react";
+import { MessageSquarePlus, PenLine, AlertCircle, AlertTriangle, RefreshCw } from "lucide-react";
 
 type Post = {
     id: string;
@@ -28,16 +28,21 @@ export function PostsFeed({ currentUserId, currentUserRole }: { currentUserId: s
     const [newPost, setNewPost] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [fetchError, setFetchError] = useState(false);
 
     const fetchPosts = async () => {
+        setFetchError(false);
         try {
             const res = await fetch("/api/posts");
             if (res.ok) {
                 const data = await res.json();
                 setPosts(data.posts || []);
+            } else {
+                setFetchError(true);
             }
         } catch (error) {
             console.error("Failed to fetch posts", error);
+            setFetchError(true);
         }
         setLoading(false);
     };
@@ -131,6 +136,18 @@ export function PostsFeed({ currentUserId, currentUserRole }: { currentUserId: s
                                 </CardContent>
                             </Card>
                         ))}
+                    </div>
+                ) : fetchError ? (
+                    <div className="text-center py-12 border rounded-xl bg-muted/30">
+                        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3 text-red-500">
+                            <AlertTriangle className="w-7 h-7" />
+                        </div>
+                        <h3 className="font-medium">Failed to load posts</h3>
+                        <p className="text-sm text-muted-foreground mt-1 mb-4">Please check your connection and try again.</p>
+                        <Button variant="outline" size="sm" onClick={fetchPosts}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Retry
+                        </Button>
                     </div>
                 ) : posts.length > 0 ? (
                     posts.map((post) => (

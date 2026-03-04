@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Settings, Trash2, UserPlus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
     Dialog,
     DialogContent,
@@ -31,6 +33,7 @@ export function ChatSettingsDialog({
     const [open, setOpen] = useState(false);
     const [name, setName] = useState(group.name || "");
     const [loading, setLoading] = useState(false);
+    const [removeTarget, setRemoveTarget] = useState<string | null>(null);
     const router = useRouter();
 
     const handleRename = async () => {
@@ -42,10 +45,14 @@ export function ChatSettingsDialog({
                 body: JSON.stringify({ name }),
             });
             if (res.ok) {
+                toast.success("Group renamed");
                 onUpdate();
+            } else {
+                toast.error("Failed to rename group");
             }
         } catch (error) {
             console.error("Failed to rename group", error);
+            toast.error("Failed to rename group");
         } finally {
             setLoading(false);
         }
@@ -61,29 +68,38 @@ export function ChatSettingsDialog({
                 body: JSON.stringify({ addParticipants: [userId] }),
             });
             if (res.ok) {
+                toast.success(`Added ${user.first_name}`);
                 onUpdate();
+            } else {
+                toast.error("Failed to add participant");
             }
         } catch (error) {
             console.error("Failed to add participant", error);
+            toast.error("Failed to add participant");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleRemoveParticipant = async (userId: string) => {
-        if (!confirm("Are you sure you want to remove this user?")) return;
+    const handleRemoveParticipant = async () => {
+        if (!removeTarget) return;
         setLoading(true);
         try {
             const res = await fetch(`/api/chat/groups/${group.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ removeParticipants: [userId] }),
+                body: JSON.stringify({ removeParticipants: [removeTarget] }),
             });
             if (res.ok) {
+                toast.success("Participant removed");
+                setRemoveTarget(null);
                 onUpdate();
+            } else {
+                toast.error("Failed to remove participant");
             }
         } catch (error) {
             console.error("Failed to remove participant", error);
+            toast.error("Failed to remove participant");
         } finally {
             setLoading(false);
         }
@@ -95,7 +111,7 @@ export function ChatSettingsDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Chat settings">
                     <Settings className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
@@ -134,8 +150,9 @@ export function ChatSettingsDialog({
                                             variant="ghost"
                                             size="icon"
                                             className="h-6 w-6 text-destructive"
-                                            onClick={() => handleRemoveParticipant(p.user.id)}
+                                            onClick={() => setRemoveTarget(p.user.id)}
                                             disabled={loading}
+                                            aria-label={`Remove ${p.user.first_name}`}
                                         >
                                             <Trash2 className="h-3 w-3" />
                                         </Button>
@@ -154,6 +171,16 @@ export function ChatSettingsDialog({
                     </div>
                 </div>
             </DialogContent>
+            <ConfirmDialog
+                open={!!removeTarget}
+                onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}
+                title="Remove participant"
+                description="This person will no longer be able to see or send messages in this group."
+                confirmLabel="Remove"
+                variant="destructive"
+                loading={loading}
+                onConfirm={handleRemoveParticipant}
+            />
         </Dialog>
     );
 }

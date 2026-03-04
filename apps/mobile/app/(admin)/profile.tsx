@@ -11,6 +11,7 @@ import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { supabase } from '@/lib/supabase';
+import Constants from 'expo-constants';
 
 export default function AdminProfile() {
   const { session, signOut } = useAuth();
@@ -311,6 +312,28 @@ export default function AdminProfile() {
 
       <Divider style={styles.divider} />
 
+      {/* Support */}
+      <Text variant="titleMedium" style={styles.sectionTitle}>Support</Text>
+      <Card style={styles.supportCard}>
+        <Card.Content style={styles.supportContent}>
+          <View style={styles.supportRow}>
+            <MaterialCommunityIcons name="help-circle-outline" size={20} color="#6b7280" />
+            <Text variant="bodyMedium">Need help?</Text>
+          </View>
+          <Button
+            mode="text"
+            icon="email-outline"
+            onPress={() => Linking.openURL('mailto:ambassadors@linfield.edu')}
+            compact
+            style={styles.supportButton}
+          >
+            Contact Support
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <Divider style={styles.divider} />
+
       {/* Sign Out */}
       <Button
         mode="contained"
@@ -321,6 +344,10 @@ export default function AdminProfile() {
       >
         Sign Out
       </Button>
+
+      <Text variant="bodySmall" style={styles.versionText}>
+        Ambassador Portal v{Constants.expoConfig?.version || '1.0.0'}
+      </Text>
     </ScrollView>
   );
 }
@@ -363,5 +390,10 @@ const styles = StyleSheet.create({
   gcalStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   gcalStatusText: { color: '#16a34a', fontWeight: '600' },
   gcalConnectButton: { borderRadius: 8 },
+  supportCard: { backgroundColor: '#f9fafb' },
+  supportContent: { gap: 8 },
+  supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  supportButton: { alignSelf: 'flex-start' },
   signOutButton: { borderRadius: 12 },
+  versionText: { color: '#d1d5db', textAlign: 'center', marginTop: 16 },
 });

@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { MessageSquare, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Comment = {
     id: string;
@@ -70,17 +72,23 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
         return isMyComment || isSuperAdmin || (isAdmin && commentOwnerRole === "student");
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingPost, setDeletingPost] = useState(false);
+
     if (isDeleted) return null;
 
     const handleDeletePost = async () => {
-        if (!confirm("Are you sure you want to delete this post?")) return;
+        setDeletingPost(true);
         const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
         if (res.ok) {
             setIsDeleted(true);
+            setShowDeleteConfirm(false);
+            toast.success("Post deleted");
         } else {
             const data = await res.json();
-            alert(data.error || "Failed to delete post");
+            toast.error(data.error || "Failed to delete post");
         }
+        setDeletingPost(false);
     };
 
     const handleUpdatePost = async () => {
@@ -91,8 +99,9 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
         });
         if (res.ok) {
             setIsEditing(false);
+            toast.success("Post updated");
         } else {
-            alert("Failed to update post");
+            toast.error("Failed to update post");
         }
     };
 
@@ -107,6 +116,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                 }
             } catch (error) {
                 console.error("Failed to load comments", error);
+                toast.error("Failed to load comments");
             }
             setLoadingComments(false);
         }
@@ -133,19 +143,20 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
             }
         } catch (error) {
             console.error("Failed to post comment", error);
+            toast.error("Failed to post comment");
         }
         setSubmitting(false);
     };
 
     const deleteComment = async (commentId: string) => {
-        if (!confirm("Delete comment?")) return;
         const res = await fetch(`/api/posts/${post.id}/comments/${commentId}`, { method: "DELETE" });
         if (res.ok) {
             setComments(comments.filter(c => c.id !== commentId));
             setCommentCount(prev => Math.max(0, prev - 1));
+            toast.success("Comment deleted");
         } else {
             const data = await res.json();
-            alert(data.error || "Failed to delete comment");
+            toast.error(data.error || "Failed to delete comment");
         }
     };
 
@@ -196,19 +207,19 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                         <div className="flex gap-1">
                                             {isEditing ? (
                                                 <>
-                                                    <button onClick={handleUpdatePost} className="text-green-600 hover:text-green-700">
+                                                    <button onClick={handleUpdatePost} className="text-green-600 hover:text-green-700" aria-label="Save edit">
                                                         <Check className="h-3 w-3" />
                                                     </button>
-                                                    <button onClick={() => setIsEditing(false)} className="text-muted-foreground hover:text-foreground">
+                                                    <button onClick={() => setIsEditing(false)} className="text-muted-foreground hover:text-foreground" aria-label="Cancel edit">
                                                         <X className="h-3 w-3" />
                                                     </button>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground">
+                                                    <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground" aria-label="Edit post">
                                                         <Pencil className="h-3 w-3" />
                                                     </button>
-                                                    <button onClick={handleDeletePost} className="text-muted-foreground hover:text-red-500">
+                                                    <button onClick={() => setShowDeleteConfirm(true)} className="text-muted-foreground hover:text-red-500" aria-label="Delete post">
                                                         <Trash2 className="h-3 w-3" />
                                                     </button>
                                                 </>
@@ -279,7 +290,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                                                 </span>
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-[10px] text-muted-foreground">
-                                                                        {new Date(comment.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                                                        {new Date(comment.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                                     </span>
                                                                     {canEditComment(comment) && editingCommentId !== comment.id && (
                                                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -361,6 +372,16 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                     )}
                 </AnimatePresence>
             </Card>
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete post"
+                description="This will permanently delete this post and all its comments."
+                confirmLabel="Delete"
+                variant="destructive"
+                loading={deletingPost}
+                onConfirm={handleDeletePost}
+            />
         </motion.div>
     );
 }

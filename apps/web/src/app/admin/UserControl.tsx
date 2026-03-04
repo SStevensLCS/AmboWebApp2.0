@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -28,9 +29,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserPlus, Check, AlertCircle, MoreHorizontal, ChevronRight } from "lucide-react";
+import { UserPlus, Check, AlertCircle, MoreHorizontal, ChevronRight, Search, Users } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type UserRow = {
   id: string;
@@ -53,6 +55,7 @@ export function UserControl() {
   const [uploading, setUploading] = useState(false);
 
   const [myRole, setMyRole] = useState<string>("student");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [addForm, setAddForm] = useState({
     first_name: "",
@@ -64,6 +67,8 @@ export function UserControl() {
   const [addError, setAddError] = useState("");
 
   const [editForm, setEditForm] = useState<Partial<UserRow>>({});
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   const fetchUsers = async () => {
     const meRes = await fetch("/api/auth/session");
@@ -84,6 +89,15 @@ export function UserControl() {
     fetchUsers();
   }, []);
 
+  const filteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return rows;
+    const q = searchQuery.toLowerCase();
+    return rows.filter((u) => {
+      const name = `${u.first_name} ${u.last_name}`.toLowerCase();
+      return name.includes(q) || u.email.toLowerCase().includes(q) || u.phone.includes(q) || u.role.includes(q);
+    });
+  }, [rows, searchQuery]);
+
   const onAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError("");
@@ -101,6 +115,7 @@ export function UserControl() {
     if (res.ok) {
       setAddDialogOpen(false);
       setAddForm({ first_name: "", last_name: "", phone: "", email: "", role: "student" });
+      toast.success("User created", { description: `${addForm.first_name} ${addForm.last_name}` });
       fetchUsers();
     } else {
       setAddError(data.error || "Failed to add user.");
@@ -129,19 +144,26 @@ export function UserControl() {
     });
     if (res.ok) {
       setEditDialogOpen(false);
+      toast.success("User updated");
       fetchUsers();
+    } else {
+      toast.error("Failed to update user");
     }
   };
 
-  const deleteUser = async (user: UserRow) => {
-    if (!confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}?`)) return;
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+  const deleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeletingUser(true);
+    const res = await fetch(`/api/admin/users/${deleteTarget.id}`, { method: "DELETE" });
     if (res.ok) {
+      toast.success("User deleted");
+      setDeleteTarget(null);
       fetchUsers();
     } else {
       const data = await res.json();
-      alert(data.error || "Failed to delete user");
+      toast.error(data.error || "Failed to delete user");
     }
+    setDeletingUser(false);
   };
 
   const onCsvSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -226,7 +248,7 @@ export function UserControl() {
                 Edit User
               </DropdownMenuItem>
               {(myRole === "superadmin" || (myRole === "admin" && user.role !== "admin" && user.role !== "superadmin")) && (
-                <DropdownMenuItem onClick={() => deleteUser(user)} className="text-red-600">
+                <DropdownMenuItem onClick={() => setDeleteTarget(user)} className="text-red-600">
                   Delete User
                 </DropdownMenuItem>
               )}
@@ -359,12 +381,31 @@ export function UserControl() {
         )}
       </Card>
 
+      {/* Search */}
+      <div className="relative sm:w-64">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, email, or role..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 h-9"
+        />
+      </div>
+
       {/* Mobile Card List */}
       <div className="md:hidden space-y-2">
-        {rows.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No users found.</p>
+        {filteredRows.length === 0 ? (
+          <div className="text-center py-12 border rounded-xl bg-muted/30">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+              <Users className="w-7 h-7" />
+            </div>
+            <h3 className="font-medium">No users found</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {searchQuery ? "Try a different search term." : "Add your first team member to get started."}
+            </p>
+          </div>
         ) : (
-          rows.map((user) => (
+          filteredRows.map((user) => (
             <Link key={user.id} href={`/admin/users/${user.id}`}>
               <div className="bg-white border rounded-lg p-3.5 flex items-center gap-3 active:bg-gray-50 hover:bg-gray-50 transition-colors">
                 <div className="min-w-0 flex-1">
@@ -387,8 +428,32 @@ export function UserControl() {
 
       {/* Desktop Table */}
       <div className="hidden md:block">
-        <DataTable columns={columns} data={rows} />
+        {filteredRows.length === 0 ? (
+          <div className="text-center py-12 border rounded-xl bg-muted/30">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+              <Users className="w-7 h-7" />
+            </div>
+            <h3 className="font-medium">No users found</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {searchQuery ? "Try a different search term." : "Add your first team member to get started."}
+            </p>
+          </div>
+        ) : (
+          <DataTable columns={columns} data={filteredRows} />
+        )}
       </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete user"
+        description={deleteTarget ? `This will permanently delete ${deleteTarget.first_name} ${deleteTarget.last_name} and all their data.` : ""}
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={deletingUser}
+        onConfirm={deleteUser}
+      />
 
       {/* Edit Dialog (desktop) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

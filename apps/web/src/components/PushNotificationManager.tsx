@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -72,9 +73,12 @@ export function PushNotificationManager() {
             });
 
             setSubscription(sub);
+            toast.success("Notifications enabled");
         } catch (error) {
             console.error("Failed to subscribe:", error);
-            alert("Failed to enable notifications. Please make sure you are using a supported browser (Chrome, Safari on iOS PWA).");
+            toast.error("Failed to enable notifications", {
+                description: "Make sure you are using a supported browser (Chrome, Safari on iOS PWA).",
+            });
         } finally {
             setLoading(false);
         }
@@ -93,9 +97,11 @@ export function PushNotificationManager() {
 
                 await subscription.unsubscribe();
                 setSubscription(null);
+                toast.success("Notifications disabled");
             }
         } catch (error) {
             console.error("Failed to unsubscribe:", error);
+            toast.error("Failed to disable notifications");
         } finally {
             setLoading(false);
         }

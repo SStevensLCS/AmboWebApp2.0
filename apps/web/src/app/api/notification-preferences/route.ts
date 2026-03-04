@@ -18,31 +18,39 @@ export async function GET() {
 
     const supabase = createAdminClient();
 
-    // Upsert default row if it doesn't exist
-    const { data, error } = await supabase
+    // Try to fetch existing preferences first
+    const { data: existing } = await supabase
         .from("notification_preferences")
-        .upsert(
-            { user_id: session.userId, ...DEFAULTS },
-            { onConflict: "user_id", ignoreDuplicates: true }
-        )
-        .select()
+        .select("chat_messages, new_posts, post_comments, events, event_comments")
+        .eq("user_id", session.userId)
         .single();
 
-    if (error) {
-        // Upsert with ignoreDuplicates may not return data; try a select
-        const { data: existing, error: selectError } = await supabase
-            .from("notification_preferences")
-            .select("*")
-            .eq("user_id", session.userId)
-            .single();
-
-        if (selectError || !existing) {
-            return NextResponse.json({ error: "Failed to load preferences" }, { status: 500 });
-        }
+    if (existing) {
         return NextResponse.json({ preferences: existing });
     }
 
-    return NextResponse.json({ preferences: data });
+    // No row exists — insert defaults
+    const { data: inserted, error: insertError } = await supabase
+        .from("notification_preferences")
+        .insert({ user_id: session.userId, ...DEFAULTS })
+        .select("chat_messages, new_posts, post_comments, events, event_comments")
+        .single();
+
+    if (insertError) {
+        // Race condition: row was created between select and insert — just fetch it
+        const { data: retry, error: retryError } = await supabase
+            .from("notification_preferences")
+            .select("chat_messages, new_posts, post_comments, events, event_comments")
+            .eq("user_id", session.userId)
+            .single();
+
+        if (retryError || !retry) {
+            return NextResponse.json({ error: "Failed to load preferences" }, { status: 500 });
+        }
+        return NextResponse.json({ preferences: retry });
+    }
+
+    return NextResponse.json({ preferences: inserted });
 }
 
 export async function PUT(req: Request) {
@@ -69,11 +77,9 @@ export async function PUT(req: Request) {
 
     const { data, error } = await supabase
         .from("notification_preferences")
-        .upsert(
-            { user_id: session.userId, ...updates, updated_at: new Date().toISOString() },
-            { onConflict: "user_id" }
-        )
-        .select()
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("user_id", session.userId)
+        .select("chat_messages, new_posts, post_comments, events, event_comments")
         .single();
 
     if (error) {

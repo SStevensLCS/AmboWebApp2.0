@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   chat_messages BOOLEAN NOT NULL DEFAULT TRUE,
   new_posts BOOLEAN NOT NULL DEFAULT TRUE,
   post_comments BOOLEAN NOT NULL DEFAULT TRUE,
+  events BOOLEAN NOT NULL DEFAULT TRUE,
   event_comments BOOLEAN NOT NULL DEFAULT TRUE,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

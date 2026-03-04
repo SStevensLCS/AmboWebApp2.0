@@ -35,6 +35,7 @@ export default async function StudentChatPage() {
                 currentUserLastName={user?.last_name ?? ""}
                 currentUserAvatarUrl={user?.avatar_url ?? ""}
                 pageTitle="Team Chat"
+                basePath="/student/chat"
             />
         </div>
     );

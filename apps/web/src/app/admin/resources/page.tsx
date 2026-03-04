@@ -93,11 +93,7 @@ export default function AdminResourcesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Resources</h1>
-                    <p className="text-muted-foreground text-sm md:text-base">Manage files accessible to all users.</p>
-                </div>
+            <div className="flex justify-end">
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
                         <Button className="self-start sm:self-auto">

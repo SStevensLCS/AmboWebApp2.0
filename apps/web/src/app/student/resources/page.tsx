@@ -33,11 +33,6 @@ export default function StudentResourcesPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Resources</h1>
-                <p className="text-muted-foreground text-sm md:text-base">Files and documents shared by your team.</p>
-            </div>
-
             {loading ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {[1, 2, 3].map((i) => (

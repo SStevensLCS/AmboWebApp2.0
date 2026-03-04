@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Calendar, MessageSquare, UserCircle, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function StudentNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   // Store the viewport height captured before any keyboard opens.
   // On iOS Safari, window.innerHeight tracks the visual viewport (shrinks with
@@ -68,6 +69,12 @@ export default function StudentNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={(e) => {
+                if (item.href === "/student/chat" && pathname.startsWith("/student/chat")) {
+                  e.preventDefault();
+                  router.push("/student/chat");
+                }
+              }}
               className={cn(
                 "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
                 isActive

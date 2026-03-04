@@ -1,5 +1,9 @@
 # CLAUDE.md - Ambassador Portal (AmboWebApp2.0)
 
+## Scope of Changes (WebApp Update 3-3-26)
+
+**Web app only.** All edits in this branch are scoped to the Next.js web application. Do NOT make any changes to the mobile app (PWA service worker behavior, native mobile components, or mobile-specific configurations). Focus exclusively on the web app codebase under `src/`.
+
 ## What is this project?
 
 Ambassador Portal is a web app for Student Ambassadors at Linfield University to log service hours, track tour credits, manage events, and communicate. It supports four user roles: **student**, **admin**, **superadmin**, and **applicant**.

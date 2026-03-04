@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, MapPin, Shirt, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -135,18 +136,23 @@ export function EventModal({
                 const data = await res.json();
                 setComments(data.comments || []);
                 setNewComment("");
+            } else {
+                toast.error("Failed to post comment");
             }
         } catch (e) {
             console.error("Failed to post comment", e);
+            toast.error("Failed to post comment");
         }
         setLoadingComment(false);
     };
 
     const deleteComment = async (commentId: string) => {
-        if (!confirm("Delete this comment?")) return;
         const res = await fetch(`/api/events/comments/${commentId}`, { method: "DELETE" });
         if (res.ok) {
             setComments(comments.filter(c => c.id !== commentId));
+            toast.success("Comment deleted");
+        } else {
+            toast.error("Failed to delete comment");
         }
     };
 
@@ -165,6 +171,9 @@ export function EventModal({
             const data = await res.json();
             setComments(comments.map(c => c.id === commentId ? { ...c, content: data.comment.content } : c));
             setEditingCommentId(null);
+            toast.success("Comment updated");
+        } else {
+            toast.error("Failed to update comment");
         }
     };
 
@@ -187,9 +196,12 @@ export function EventModal({
             if (res.ok) {
                 const data = await res.json();
                 setRsvps(data.rsvps || []);
+            } else {
+                toast.error("Failed to update RSVP");
             }
         } catch (e) {
             console.error("Failed to update RSVP", e);
+            toast.error("Failed to update RSVP");
         }
         setLoadingRsvp(false);
     };
@@ -205,18 +217,29 @@ export function EventModal({
         });
 
         if (res.ok) {
-            window.location.reload(); // Refresh to see changes
+            toast.success("Event updated");
+            window.location.reload();
         } else {
-            alert("Failed to update event");
+            toast.error("Failed to update event");
         }
         setSaving(false);
     };
 
-    const handleDeleteEvent = async () => {
-        if (!confirm("Are you sure you want to delete this event? This cannot be undone.")) return;
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-        await fetch(`/api/events/${event.id}`, { method: "DELETE" });
-        window.location.reload();
+    const handleDeleteEvent = async () => {
+        if (!confirmingDelete) {
+            setConfirmingDelete(true);
+            return;
+        }
+        const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
+        if (res.ok) {
+            toast.success("Event deleted");
+            window.location.reload();
+        } else {
+            toast.error("Failed to delete event");
+            setConfirmingDelete(false);
+        }
     };
 
     // --- Utilities ---
@@ -324,9 +347,20 @@ export function EventModal({
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
                                         <Pencil className="h-4 w-4" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={handleDeleteEvent}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    {confirmingDelete ? (
+                                        <div className="flex items-center gap-1">
+                                            <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={handleDeleteEvent}>
+                                                Confirm
+                                            </Button>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setConfirmingDelete(false)}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={handleDeleteEvent}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                 </>
                             )}
                         </div>

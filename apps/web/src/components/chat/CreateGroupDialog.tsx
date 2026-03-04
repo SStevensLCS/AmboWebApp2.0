@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { User } from "./types";
 
 interface CreateGroupDialogProps {
@@ -81,7 +82,7 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
                 });
             } else {
                 const err = await res.json();
-                alert(err.error || "Failed to create group");
+                toast.error(err.error || "Failed to create group");
             }
         } catch (error) {
             console.error("Failed to create group", error);

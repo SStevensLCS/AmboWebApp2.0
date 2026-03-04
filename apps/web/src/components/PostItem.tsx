@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { MessageSquare, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Comment = {
@@ -73,13 +74,13 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
     if (isDeleted) return null;
 
     const handleDeletePost = async () => {
-        if (!confirm("Are you sure you want to delete this post?")) return;
         const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
         if (res.ok) {
             setIsDeleted(true);
+            toast.success("Post deleted");
         } else {
             const data = await res.json();
-            alert(data.error || "Failed to delete post");
+            toast.error(data.error || "Failed to delete post");
         }
     };
 
@@ -91,8 +92,9 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
         });
         if (res.ok) {
             setIsEditing(false);
+            toast.success("Post updated");
         } else {
-            alert("Failed to update post");
+            toast.error("Failed to update post");
         }
     };
 
@@ -138,14 +140,14 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
     };
 
     const deleteComment = async (commentId: string) => {
-        if (!confirm("Delete comment?")) return;
         const res = await fetch(`/api/posts/${post.id}/comments/${commentId}`, { method: "DELETE" });
         if (res.ok) {
             setComments(comments.filter(c => c.id !== commentId));
             setCommentCount(prev => Math.max(0, prev - 1));
+            toast.success("Comment deleted");
         } else {
             const data = await res.json();
-            alert(data.error || "Failed to delete comment");
+            toast.error(data.error || "Failed to delete comment");
         }
     };
 

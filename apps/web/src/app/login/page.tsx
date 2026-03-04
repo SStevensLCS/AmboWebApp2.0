@@ -1,7 +1,7 @@
 "use client";
 
 import { CheddarRain } from "@/components/CheddarRain";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showCheddar, setShowCheddar] = useState(false);
   const router = useRouter();
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
 
   const handleCheddarComplete = useCallback(() => setShowCheddar(false), []);
 
@@ -73,18 +78,25 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="emailOrPhone">Email or Phone Number</Label>
               <Input
+                ref={emailRef}
                 id="emailOrPhone"
                 type="text"
                 placeholder="name@student.linfield.com"
                 value={emailOrPhone}
                 onChange={(e) => setEmailOrPhone(e.target.value)}
                 required
+                autoComplete="email"
                 className="bg-background"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <a href="/forgot-password" className="text-xs text-primary hover:underline font-medium">
+                  Forgot password?
+                </a>
+              </div>
               <div className="relative">
                 <Input
                   id="password"
@@ -93,6 +105,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                   className="bg-background pr-10"
                 />
                 <button
@@ -135,17 +148,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="text-center space-y-2">
-            <div>
-              <a href="/register" className="text-sm text-primary hover:underline font-medium">
-                Create an Account
-              </a>
-            </div>
-            <div>
-              <a href="/forgot-password" className="text-sm text-muted-foreground hover:underline">
-                Forgot Password?
-              </a>
-            </div>
+          <div className="text-center">
+            <a href="/register" className="text-sm text-primary hover:underline font-medium">
+              Create an Account
+            </a>
           </div>
         </CardContent>
       </Card>

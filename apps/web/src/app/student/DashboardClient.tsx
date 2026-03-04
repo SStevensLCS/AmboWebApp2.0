@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { PlusCircle, FileText } from "lucide-react";
+import { PlusCircle, FileText, ClipboardList } from "lucide-react";
 
 interface Submission {
     id: string;
@@ -152,8 +152,16 @@ export default function DashboardClient({ submissions }: DashboardClientProps) {
                                 ))}
                                 {filteredSubmissions.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            No submissions found.
+                                        <TableCell colSpan={5} className="text-center h-32">
+                                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                <ClipboardList className="h-8 w-8 opacity-40" />
+                                                <p className="font-medium">
+                                                    {submissions.length === 0 ? "No submissions yet" : "No matching submissions"}
+                                                </p>
+                                                {submissions.length === 0 && (
+                                                    <p className="text-xs">Log your first activity to get started.</p>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -200,8 +208,14 @@ export default function DashboardClient({ submissions }: DashboardClientProps) {
                             </div>
                         ))}
                         {filteredSubmissions.length === 0 && (
-                            <div className="p-8 text-center text-muted-foreground text-sm">
-                                No submissions found.
+                            <div className="p-8 text-center text-muted-foreground">
+                                <ClipboardList className="h-8 w-8 opacity-40 mx-auto mb-2" />
+                                <p className="font-medium text-sm">
+                                    {submissions.length === 0 ? "No submissions yet" : "No matching submissions"}
+                                </p>
+                                {submissions.length === 0 && (
+                                    <p className="text-xs mt-1">Log your first activity to get started.</p>
+                                )}
                             </div>
                         )}
                     </div>

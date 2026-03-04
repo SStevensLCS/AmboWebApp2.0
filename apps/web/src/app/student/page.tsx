@@ -2,7 +2,8 @@ import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Award } from "lucide-react";
+import { Clock, Award, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import DashboardClient from "./DashboardClient";
 
 interface Submission {
@@ -37,19 +38,19 @@ export default async function StudentDashboard() {
   const submissions = (submissionsResponse.data as Submission[]) || [];
 
   // Calculate stats
-  const totalHours =
-    submissions.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0) || 0;
-  const totalCredits =
-    submissions.reduce((acc, curr) => acc + (Number(curr.credits) || 0), 0) || 0;
+  const approvedSubs = submissions.filter(s => s.status === "Approved");
+  const pendingCount = submissions.filter(s => s.status === "Pending").length;
+  const totalHours = approvedSubs.reduce((acc, curr) => acc + (Number(curr.hours) || 0), 0) || 0;
+  const totalCredits = approvedSubs.reduce((acc, curr) => acc + (Number(curr.credits) || 0), 0) || 0;
   const stats = [
     {
-      label: "Total Hours",
+      label: "Approved Hours",
       value: totalHours.toFixed(1),
       icon: Clock,
       color: "text-blue-600",
     },
     {
-      label: "Total Credits",
+      label: "Approved Credits",
       value: totalCredits.toFixed(1),
       icon: Award,
       color: "text-purple-600",
@@ -57,8 +58,18 @@ export default async function StudentDashboard() {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
-
+    <div className="space-y-6 animate-fade-in">
+      {pendingCount > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>
+            <strong>{pendingCount}</strong> submission{pendingCount !== 1 ? "s" : ""} awaiting review
+          </span>
+          <Badge variant="secondary" className="ml-auto bg-yellow-100 text-yellow-800 border-yellow-200">
+            Pending
+          </Badge>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         {stats.map((stat) => {

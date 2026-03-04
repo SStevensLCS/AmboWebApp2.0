@@ -16,6 +16,7 @@ import {
 import { ResourceCard } from "@/components/ResourceCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Loader2, FileText } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 
 export default function AdminResourcesPage() {
@@ -23,6 +24,8 @@ export default function AdminResourcesPage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [open, setOpen] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+    const [deletingResource, setDeletingResource] = useState(false);
 
     useEffect(() => {
         fetchResources();
@@ -69,21 +72,23 @@ export default function AdminResourcesPage() {
         }
     }
 
-    async function handleDelete(id: string) {
-        if (!confirm("Are you sure you want to delete this resource?")) return;
-
+    async function handleDelete() {
+        if (!deleteTargetId) return;
+        setDeletingResource(true);
         try {
-            const res = await fetch(`/api/resources/${id}`, {
+            const res = await fetch(`/api/resources/${deleteTargetId}`, {
                 method: "DELETE",
             });
             if (!res.ok) throw new Error("Delete failed");
 
-            setResources(prev => prev.filter(r => r.id !== id));
+            setResources(prev => prev.filter(r => r.id !== deleteTargetId));
+            setDeleteTargetId(null);
             toast.success("Resource deleted");
         } catch (error) {
             console.error("Delete error", error);
             toast.error("Failed to delete resource");
         }
+        setDeletingResource(false);
     }
 
     return (
@@ -155,11 +160,22 @@ export default function AdminResourcesPage() {
                             key={resource.id}
                             resource={resource}
                             isAdmin={true}
-                            onDelete={handleDelete}
+                            onDelete={(id) => setDeleteTargetId(id)}
                         />
                     ))}
                 </div>
             )}
+
+            <ConfirmDialog
+                open={!!deleteTargetId}
+                onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+                title="Delete resource"
+                description="This will permanently delete this file. This action cannot be undone."
+                confirmLabel="Delete"
+                variant="destructive"
+                loading={deletingResource}
+                onConfirm={handleDelete}
+            />
         </div>
     );
 }

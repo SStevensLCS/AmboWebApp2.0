@@ -32,6 +32,7 @@ import {
 import { UserPlus, Check, AlertCircle, MoreHorizontal, ChevronRight, Search, Users } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type UserRow = {
   id: string;
@@ -66,6 +67,8 @@ export function UserControl() {
   const [addError, setAddError] = useState("");
 
   const [editForm, setEditForm] = useState<Partial<UserRow>>({});
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   const fetchUsers = async () => {
     const meRes = await fetch("/api/auth/session");
@@ -148,16 +151,19 @@ export function UserControl() {
     }
   };
 
-  const deleteUser = async (user: UserRow) => {
-    if (!confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}?`)) return;
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+  const deleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeletingUser(true);
+    const res = await fetch(`/api/admin/users/${deleteTarget.id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("User deleted");
+      setDeleteTarget(null);
       fetchUsers();
     } else {
       const data = await res.json();
       toast.error(data.error || "Failed to delete user");
     }
+    setDeletingUser(false);
   };
 
   const onCsvSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -242,7 +248,7 @@ export function UserControl() {
                 Edit User
               </DropdownMenuItem>
               {(myRole === "superadmin" || (myRole === "admin" && user.role !== "admin" && user.role !== "superadmin")) && (
-                <DropdownMenuItem onClick={() => deleteUser(user)} className="text-red-600">
+                <DropdownMenuItem onClick={() => setDeleteTarget(user)} className="text-red-600">
                   Delete User
                 </DropdownMenuItem>
               )}
@@ -436,6 +442,18 @@ export function UserControl() {
           <DataTable columns={columns} data={filteredRows} />
         )}
       </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete user"
+        description={deleteTarget ? `This will permanently delete ${deleteTarget.first_name} ${deleteTarget.last_name} and all their data.` : ""}
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={deletingUser}
+        onConfirm={deleteUser}
+      />
 
       {/* Edit Dialog (desktop) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

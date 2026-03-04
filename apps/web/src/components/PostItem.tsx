@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { MessageSquare, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Comment = {
     id: string;
@@ -71,17 +72,23 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
         return isMyComment || isSuperAdmin || (isAdmin && commentOwnerRole === "student");
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingPost, setDeletingPost] = useState(false);
+
     if (isDeleted) return null;
 
     const handleDeletePost = async () => {
+        setDeletingPost(true);
         const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
         if (res.ok) {
             setIsDeleted(true);
+            setShowDeleteConfirm(false);
             toast.success("Post deleted");
         } else {
             const data = await res.json();
             toast.error(data.error || "Failed to delete post");
         }
+        setDeletingPost(false);
     };
 
     const handleUpdatePost = async () => {
@@ -109,6 +116,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                 }
             } catch (error) {
                 console.error("Failed to load comments", error);
+                toast.error("Failed to load comments");
             }
             setLoadingComments(false);
         }
@@ -135,6 +143,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
             }
         } catch (error) {
             console.error("Failed to post comment", error);
+            toast.error("Failed to post comment");
         }
         setSubmitting(false);
     };
@@ -210,7 +219,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                                     <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground">
                                                         <Pencil className="h-3 w-3" />
                                                     </button>
-                                                    <button onClick={handleDeletePost} className="text-muted-foreground hover:text-red-500">
+                                                    <button onClick={() => setShowDeleteConfirm(true)} className="text-muted-foreground hover:text-red-500" aria-label="Delete post">
                                                         <Trash2 className="h-3 w-3" />
                                                     </button>
                                                 </>
@@ -363,6 +372,16 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                     )}
                 </AnimatePresence>
             </Card>
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete post"
+                description="This will permanently delete this post and all its comments."
+                confirmLabel="Delete"
+                variant="destructive"
+                loading={deletingPost}
+                onConfirm={handleDeletePost}
+            />
         </motion.div>
     );
 }

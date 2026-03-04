@@ -43,6 +43,7 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
                 }
             } catch (error) {
                 console.error("Failed to fetch users", error);
+                toast.error("Failed to load users");
             } finally {
                 setUsersLoading(false);
             }
@@ -86,6 +87,7 @@ export function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
             }
         } catch (error) {
             console.error("Failed to create group", error);
+            toast.error("Failed to create group");
         } finally {
             setLoading(false);
         }

@@ -4,6 +4,7 @@ import { createAdminClient } from "@ambo/database/admin-client";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { GoogleCalendarSetup } from "@/components/GoogleCalendarSetup";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { SignOutButton } from "@/components/SignOutButton";
 
 export default async function AdminProfilePage() {
@@ -31,6 +32,8 @@ export default async function AdminProfilePage() {
                 <GoogleCalendarSetup />
 
                 <PushNotificationManager />
+
+                <NotificationPreferences />
 
                 <div className="pt-6 border-t">
                     <h2 className="text-lg font-semibold mb-4">Account Actions</h2>

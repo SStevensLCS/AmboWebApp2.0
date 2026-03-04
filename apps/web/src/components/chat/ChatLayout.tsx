@@ -2,12 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { MessageSquare, Loader2, Plus, ChevronLeft } from "lucide-react";
+import { MessageSquare, Loader2, Plus, ChevronLeft, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MessageList } from "./MessageList";
-import { ChatSettingsDialog } from "./ChatSettingsDialog";
 import { Group } from "./types";
 import { useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -75,7 +74,7 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
     // Sync with URL param
     useEffect(() => {
         const groupId = searchParams.get("group");
-        if (groupId) setSelectedGroupId(groupId);
+        setSelectedGroupId(groupId || null);
     }, [searchParams]);
 
     const selectGroup = (id: string) => {
@@ -258,11 +257,11 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         {selectedGroup.name || "Chat"}
                                     </h3>
                                 </div>
-                                <ChatSettingsDialog
-                                    group={selectedGroup}
-                                    currentUserId={currentUserId}
-                                    onUpdate={fetchGroups}
-                                />
+                                <Link href={`${basePath}/${selectedGroupId}/edit`}>
+                                    <Button variant="ghost" size="icon" aria-label="Chat settings">
+                                        <Settings className="h-4 w-4" />
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
 

@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Calendar, MessageSquare, MessageCircle, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminMobileBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   // Store the viewport height captured before any keyboard opens.
   // On iOS Safari, window.innerHeight tracks the visual viewport (shrinks with
@@ -71,6 +72,13 @@ export default function AdminMobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={(e) => {
+                // If already on the chat page, force navigate to clear ?group= param
+                if (item.href === "/admin/chat" && pathname.startsWith("/admin/chat")) {
+                  e.preventDefault();
+                  router.push("/admin/chat");
+                }
+              }}
               className={cn(
                 "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
                 isActive

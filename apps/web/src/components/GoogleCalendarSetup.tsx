@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarCheck2, Loader2, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 export function GoogleCalendarSetup() {
     const [connected, setConnected] = useState<boolean | null>(null);
@@ -31,12 +32,14 @@ export function GoogleCalendarSetup() {
             const res = await fetch("/api/events/sync", { method: "POST" });
             const data = await res.json();
             if (data.error) {
-                alert("Sync failed: " + data.error);
+                toast.error("Sync failed: " + data.error);
             } else {
-                alert(`Sync Complete!\nSynced: ${data.stats.synced}\nCreated: ${data.stats.created}\nErrors: ${data.stats.errors}`);
+                toast.success("Sync complete", {
+                    description: `Synced: ${data.stats.synced}, Created: ${data.stats.created}, Errors: ${data.stats.errors}`,
+                });
             }
         } catch (e) {
-            alert("Sync failed to start.");
+            toast.error("Sync failed to start");
         } finally {
             setSyncing(false);
         }

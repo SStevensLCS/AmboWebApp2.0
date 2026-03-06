@@ -13,6 +13,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "image": "latest",
       "ios": {
         "simulator": false
       }

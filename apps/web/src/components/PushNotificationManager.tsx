@@ -40,7 +40,17 @@ export function PushNotificationManager() {
             const registration = await navigator.serviceWorker.ready;
             const sub = await registration.pushManager.getSubscription();
 
-
+            if (sub) {
+                // Re-sync subscription to server on every load.
+                // iOS can silently renew push subscriptions, so the
+                // server may have a stale endpoint. Upserting here
+                // keeps it fresh.
+                await fetch("/api/web-push/subscription", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ subscription: sub }),
+                });
+            }
 
             setSubscription(sub);
         } catch (error) {

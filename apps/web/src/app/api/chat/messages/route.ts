@@ -114,7 +114,8 @@ export async function POST(req: Request) {
                 sendNotificationToUser(recipient.user_id, {
                     title: "New Message",
                     body: content.length > 50 ? `${content.substring(0, 50)}...` : content,
-                    url: `/student/chat`, // Or specific chat URL
+                    url: `/student/chat`,
+                    mobilePath: "/(student)/chat",
                 })
             );
 

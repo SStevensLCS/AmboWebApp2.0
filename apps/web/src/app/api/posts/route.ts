@@ -80,6 +80,7 @@ export async function POST(req: Request) {
         title: "New Post from " + data.users.first_name,
         body: content.substring(0, 100),
         url: "/admin/posts",
+        mobilePath: "/(admin)/posts",
     }, session.userId);
 
     // 2. If sender is Admin/Superadmin, ALSO notify Students
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
             title: "New Announcement from " + data.users.first_name,
             body: content.substring(0, 100),
             url: "/student/posts",
+            mobilePath: "/(student)/posts",
         }, session.userId);
     }
 

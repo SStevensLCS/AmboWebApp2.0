@@ -87,7 +87,8 @@ export async function POST(
         await sendNotificationToUser(post.user_id, {
             title: "New Comment on: " + post.title,
             body: data.users.first_name + ": " + content.substring(0, 50),
-            url: "/student/posts", // Or specific post URL
+            url: "/student/posts",
+            mobilePath: "/(student)/posts",
         });
     }
 
@@ -98,6 +99,7 @@ export async function POST(
         title: "New Comment by " + data.users.first_name,
         body: `On "${post?.title || "Post"}": ${content.substring(0, 50)}`,
         url: "/admin/posts",
+        mobilePath: "/(admin)/posts",
     }, session.userId);
 
     return NextResponse.json({ comment: data });

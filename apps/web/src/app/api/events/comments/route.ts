@@ -83,7 +83,8 @@ export async function POST(req: Request) {
         await sendNotificationToRole("admin", {
             title: `New Event Comment: ${event.title}`,
             body: `${userName}: ${content.substring(0, 50)}`,
-            url: `/admin/events/${event_id}`, // Assuming admin event view exists
+            url: `/admin/events/${event_id}`,
+            mobilePath: "/(admin)",
         }, session.userId);
     }
 

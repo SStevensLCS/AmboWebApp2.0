@@ -113,6 +113,7 @@ export async function POST(req: Request) {
                     title: "New Message",
                     body: content.length > 50 ? `${content.substring(0, 50)}...` : content,
                     url: `/student/chat`,
+                    mobilePath: "/(student)/chat",
                 })
             );
 

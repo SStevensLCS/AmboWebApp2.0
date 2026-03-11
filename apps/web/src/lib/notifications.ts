@@ -14,10 +14,11 @@ if (
     );
 }
 
-type PushPayload = {
+export type PushPayload = {
     title: string;
     body: string;
     url?: string;
+    mobilePath?: string;
 };
 
 /**
@@ -45,7 +46,10 @@ async function sendExpoNotifications(
             sound: "default" as const,
             title: payload.title,
             body: payload.body,
-            data: payload.url ? { url: payload.url } : undefined,
+            data: {
+                url: payload.url,
+                mobilePath: payload.mobilePath,
+            },
         }));
 
     if (messages.length === 0) return;
@@ -171,12 +175,15 @@ export async function sendNotificationToRole(
     }
 
     const userIds = users.map((u) => u.id);
+    const targetUserIds = excludeUserId
+        ? userIds.filter((id) => id !== excludeUserId)
+        : userIds;
 
-    // 2. Fetch subscriptions for these users
+    // 2. Web push: Fetch subscriptions for these users
     const { data: subscriptions, error: subError } = await supabase
         .from("push_subscriptions")
         .select("*")
-        .in("user_id", userIds);
+        .in("user_id", targetUserIds);
 
     if (subError) {
         await supabase.from("debug_logs").insert({
@@ -184,7 +191,6 @@ export async function sendNotificationToRole(
             message: "Failed to fetch subscriptions",
             data: { error: subError },
         });
-        return;
     }
 
     // Send to Web Push subscriptions (if any exist)
@@ -231,6 +237,6 @@ export async function sendNotificationToRole(
         await Promise.all(promises);
     }
 
-    // Send to Expo push tokens (mobile)
+    // 3. Send to Expo push tokens (mobile)
     await sendExpoNotifications(userIds, payload, excludeUserId);
 }

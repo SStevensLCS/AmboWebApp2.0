@@ -2,6 +2,9 @@ import { useEffect, useRef } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import { NetworkProvider } from '@/providers/NetworkProvider';
+import { PushNotificationsProvider } from '@/providers/PushNotificationsProvider';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { theme } from '@/lib/theme';
 
 function RootNavigator() {
@@ -40,14 +43,23 @@ function RootNavigator() {
     }
   }, [session, userRole, isLoading, segments]);
 
-  return <Slot />;
+  return (
+    <>
+      <OfflineBanner />
+      <Slot />
+    </>
+  );
 }
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <PaperProvider theme={theme}>
-        <RootNavigator />
+        <NetworkProvider>
+          <PushNotificationsProvider>
+            <RootNavigator />
+          </PushNotificationsProvider>
+        </NetworkProvider>
       </PaperProvider>
     </AuthProvider>
   );

@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, Clock, MapPin, Shirt, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
+import { Calendar, Clock, Shirt, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -112,7 +112,6 @@ export function EventModal({
         setEditForm({
             title: event.title,
             description: event.description,
-            location: event.location,
             uniform: event.uniform,
             start_time: event.start_time,
             end_time: event.end_time
@@ -304,11 +303,6 @@ export function EventModal({
                                     onChange={e => setEditForm({ ...editForm, end_time: new Date(e.target.value).toISOString() })}
                                 />
                             </div>
-                            <Input
-                                value={editForm.location}
-                                onChange={e => setEditForm({ ...editForm, location: e.target.value })}
-                                placeholder="Location"
-                            />
                         </div>
                     ) : (
                         <div>
@@ -326,12 +320,6 @@ export function EventModal({
                                     <Clock className="h-4 w-4" />
                                     <span>{formatTime(event.start_time)} – {formatTime(event.end_time)}</span>
                                 </div>
-                                {event.location && (
-                                    <div className="flex items-center gap-1.5">
-                                        <MapPin className="h-4 w-4" />
-                                        <span>{event.location}</span>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )}

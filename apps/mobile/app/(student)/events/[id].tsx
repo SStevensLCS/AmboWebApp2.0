@@ -97,13 +97,6 @@ export default function EventDetail() {
             <MaterialCommunityIcons name="clock-outline" size={18} color="#111827" />
             <Text variant="bodyMedium">{start.time} - {end.time}</Text>
           </View>
-          {event.location && (
-            <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="map-marker-outline" size={18} color="#111827" />
-              <Text variant="bodyMedium">{event.location}</Text>
-            </View>
-          )}
-
           {event.uniform && (
             <Card style={styles.uniformCard}>
               <Card.Content style={styles.uniformContent}>

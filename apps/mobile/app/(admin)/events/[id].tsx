@@ -51,7 +51,6 @@ export default function AdminEventDetail() {
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLocation, setEditLocation] = useState('');
 
   const insets = useSafeAreaInsets();
   const { comments, rsvps, myRsvp, loading, updateRsvp, postComment } = useEventDetail(id, userId);
@@ -68,7 +67,6 @@ export default function AdminEventDetail() {
         setEvent(e);
         setEditTitle(e.title);
         setEditDescription(e.description || '');
-        setEditLocation(e.location || '');
       }
       setEventLoading(false);
     }
@@ -103,7 +101,6 @@ export default function AdminEventDetail() {
       .update({
         title: editTitle.trim(),
         description: editDescription.trim() || null,
-        location: editLocation.trim() || null,
       })
       .eq('id', id);
 
@@ -111,7 +108,7 @@ export default function AdminEventDetail() {
     if (error) {
       Alert.alert('Error', error.message);
     } else {
-      setEvent({ ...event, title: editTitle.trim(), description: editDescription.trim() || null, location: editLocation.trim() || null });
+      setEvent({ ...event, title: editTitle.trim(), description: editDescription.trim() || null });
       setEditing(false);
     }
   };
@@ -191,14 +188,6 @@ export default function AdminEventDetail() {
                 dense
                 style={styles.editInput}
               />
-              <TextInput
-                mode="outlined"
-                label="Location"
-                value={editLocation}
-                onChangeText={setEditLocation}
-                dense
-                style={styles.editInput}
-              />
               <Button
                 mode="contained"
                 onPress={handleSaveEdit}
@@ -221,13 +210,6 @@ export default function AdminEventDetail() {
                 <MaterialCommunityIcons name="clock-outline" size={18} color="#111827" />
                 <Text variant="bodyMedium">{start.time} - {end.time}</Text>
               </View>
-              {event.location && (
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="map-marker-outline" size={18} color="#111827" />
-                  <Text variant="bodyMedium">{event.location}</Text>
-                </View>
-              )}
-
               {event.uniform && (
                 <Card style={styles.uniformCard}>
                   <Card.Content style={styles.uniformContent}>

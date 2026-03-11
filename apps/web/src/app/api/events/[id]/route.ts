@@ -20,7 +20,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { title, description, start_time, end_time, location, type, uniform } =
+    const { title, description, start_time, end_time, type, uniform } =
         body;
 
     const supabase = createAdminClient();
@@ -33,7 +33,6 @@ export async function PUT(
             ...(description !== undefined && { description }),
             ...(start_time !== undefined && { start_time }),
             ...(end_time !== undefined && { end_time }),
-            ...(location !== undefined && { location }),
             ...(type !== undefined && { type }),
             ...(uniform !== undefined && { uniform }),
         })

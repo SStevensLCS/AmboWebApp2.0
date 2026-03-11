@@ -17,8 +17,10 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, MapPin, Shirt, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
     Drawer,
     DrawerContent,
@@ -35,11 +37,13 @@ export function EventModal({
     onClose,
     currentUserId,
     userRole,
+    onEventChanged,
 }: {
     event: EventDetails;
     onClose: () => void;
     currentUserId: string;
     userRole: UserRole;
+    onEventChanged?: () => void;
 }) {
     // Data State
     const [comments, setComments] = useState<EventComment[]>([]);
@@ -135,18 +139,23 @@ export function EventModal({
                 const data = await res.json();
                 setComments(data.comments || []);
                 setNewComment("");
+            } else {
+                toast.error("Failed to post comment");
             }
         } catch (e) {
             console.error("Failed to post comment", e);
+            toast.error("Failed to post comment");
         }
         setLoadingComment(false);
     };
 
     const deleteComment = async (commentId: string) => {
-        if (!confirm("Delete this comment?")) return;
         const res = await fetch(`/api/events/comments/${commentId}`, { method: "DELETE" });
         if (res.ok) {
             setComments(comments.filter(c => c.id !== commentId));
+            toast.success("Comment deleted");
+        } else {
+            toast.error("Failed to delete comment");
         }
     };
 
@@ -165,6 +174,9 @@ export function EventModal({
             const data = await res.json();
             setComments(comments.map(c => c.id === commentId ? { ...c, content: data.comment.content } : c));
             setEditingCommentId(null);
+            toast.success("Comment updated");
+        } else {
+            toast.error("Failed to update comment");
         }
     };
 
@@ -187,9 +199,12 @@ export function EventModal({
             if (res.ok) {
                 const data = await res.json();
                 setRsvps(data.rsvps || []);
+            } else {
+                toast.error("Failed to update RSVP");
             }
         } catch (e) {
             console.error("Failed to update RSVP", e);
+            toast.error("Failed to update RSVP");
         }
         setLoadingRsvp(false);
     };
@@ -205,18 +220,31 @@ export function EventModal({
         });
 
         if (res.ok) {
-            window.location.reload(); // Refresh to see changes
+            toast.success("Event updated");
+            setIsEditing(false);
+            onEventChanged?.();
+            onClose();
         } else {
-            alert("Failed to update event");
+            toast.error("Failed to update event");
         }
         setSaving(false);
     };
 
-    const handleDeleteEvent = async () => {
-        if (!confirm("Are you sure you want to delete this event? This cannot be undone.")) return;
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
-        await fetch(`/api/events/${event.id}`, { method: "DELETE" });
-        window.location.reload();
+    const handleDeleteEvent = async () => {
+        setDeleting(true);
+        const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
+        if (res.ok) {
+            toast.success("Event deleted");
+            setShowDeleteConfirm(false);
+            onEventChanged?.();
+            onClose();
+        } else {
+            toast.error("Failed to delete event");
+        }
+        setDeleting(false);
     };
 
     // --- Utilities ---
@@ -312,8 +340,8 @@ export function EventModal({
                         <div className="flex gap-1 shrink-0">
                             {isEditing ? (
                                 <>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveEvent} disabled={saving}>
-                                        <Check className="h-4 w-4" />
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveEvent} disabled={saving} aria-label="Save event">
+                                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                     </Button>
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(false)}>
                                         <X className="h-4 w-4" />
@@ -324,7 +352,7 @@ export function EventModal({
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
                                         <Pencil className="h-4 w-4" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={handleDeleteEvent}>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={() => setShowDeleteConfirm(true)}>
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </>
@@ -446,7 +474,9 @@ export function EventModal({
                                             </span>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs text-muted-foreground">
-                                                    {new Date(c.created_at).toLocaleTimeString([], {
+                                                    {new Date(c.created_at).toLocaleDateString([], {
+                                                        month: "short",
+                                                        day: "numeric",
                                                         hour: "numeric",
                                                         minute: "2-digit",
                                                     })}
@@ -521,20 +551,43 @@ export function EventModal({
 
     if (isDesktop) {
         return (
-            <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:hidden">
-                    {Content}
-                </DialogContent>
-            </Dialog>
+            <>
+                <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+                    <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden [&>button]:hidden">
+                        {Content}
+                    </DialogContent>
+                </Dialog>
+                <ConfirmDialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                    title="Delete event"
+                    description="This will permanently delete this event, including all RSVPs and comments. This action cannot be undone."
+                    confirmLabel="Delete"
+                    variant="destructive"
+                    loading={deleting}
+                    onConfirm={handleDeleteEvent}
+                />
+            </>
         );
     }
 
     return (
-        <Drawer open={true} onOpenChange={(open) => !open && onClose()}>
-            <DrawerContent className="h-[95vh] rounded-t-[20px]">
-                {/* Visual handle is already in DrawerContent */}
-                {Content}
-            </DrawerContent>
-        </Drawer>
+        <>
+            <Drawer open={true} onOpenChange={(open) => !open && onClose()}>
+                <DrawerContent className="h-[95vh] rounded-t-[20px]">
+                    {Content}
+                </DrawerContent>
+            </Drawer>
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete event"
+                description="This will permanently delete this event, including all RSVPs and comments. This action cannot be undone."
+                confirmLabel="Delete"
+                variant="destructive"
+                loading={deleting}
+                onConfirm={handleDeleteEvent}
+            />
+        </>
     );
 }

@@ -2,6 +2,7 @@ import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { GoogleCalendarConnect } from "@/components/GoogleCalendarConnect";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -29,6 +30,8 @@ export default async function StudentProfilePage() {
                 />
 
                 <PushNotificationManager />
+
+                <NotificationPreferences />
 
                 <GoogleCalendarConnect />
 

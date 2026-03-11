@@ -108,8 +108,6 @@ export async function POST(req: Request) {
         if (!partError && participants) {
             const recipients = participants.filter((p) => p.user_id !== session.userId);
 
-            // We can run this in background or await. 
-            // For Vercel/Serverless, better to await or use waitUntil if available, but here await is safer.
             const notificationPromises = recipients.map((recipient) =>
                 sendNotificationToUser(recipient.user_id, {
                     title: "New Message",
@@ -119,9 +117,7 @@ export async function POST(req: Request) {
                 })
             );
 
-            Promise.allSettled(notificationPromises).then((results) => {
-                // Log errors if any (optional)
-            });
+            await Promise.allSettled(notificationPromises);
         }
 
         return NextResponse.json({ message });

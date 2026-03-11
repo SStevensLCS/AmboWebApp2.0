@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Alert } from 'react-native';
-import { FAB, Portal, Dialog, TextInput, Button } from 'react-native-paper';
+import { FAB, Portal, Dialog, TextInput, Button, Text, ProgressBar } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '@/providers/AuthProvider';
 import { useResources, Resource } from '@/hooks/useResources';
@@ -102,6 +103,20 @@ export default function AdminResources() {
         <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
           <Dialog.Title>Upload Resource</Dialog.Title>
           <Dialog.Content style={styles.dialogContent}>
+            {selectedFile && (
+              <View style={styles.filePreview}>
+                <MaterialCommunityIcons name="file-outline" size={20} color="#6b7280" />
+                <View style={styles.fileInfo}>
+                  <Text variant="bodySmall" style={styles.fileName} numberOfLines={1}>
+                    {selectedFile.name}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.fileSize}>
+                    {selectedFile.size ? formatFileSize(selectedFile.size) : ''}
+                    {selectedFile.mimeType ? ` · ${selectedFile.mimeType.split('/').pop()}` : ''}
+                  </Text>
+                </View>
+              </View>
+            )}
             <TextInput
               mode="outlined"
               label="Title"
@@ -117,9 +132,12 @@ export default function AdminResources() {
               multiline
               dense
             />
+            {uploading && (
+              <ProgressBar indeterminate style={styles.progressBar} />
+            )}
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDialogVisible(false)}>Cancel</Button>
+            <Button onPress={() => setDialogVisible(false)} disabled={uploading}>Cancel</Button>
             <Button
               mode="contained"
               onPress={handleUpload}
@@ -135,6 +153,12 @@ export default function AdminResources() {
   );
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   list: { padding: 16 },
@@ -143,7 +167,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#111827',
   },
   dialogContent: { gap: 12 },
+  filePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#f9fafb',
+    padding: 10,
+    borderRadius: 8,
+  },
+  fileInfo: { flex: 1 },
+  fileName: { fontWeight: '600', color: '#374151' },
+  fileSize: { color: '#9ca3af' },
+  progressBar: { borderRadius: 4 },
 });

@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getApplications } from "@/actions/admin";
 import { ApplicationData } from "@ambo/database/application-types";
-import { Loader2, Search, Filter, Eye, ChevronRight } from "lucide-react";
+import { Loader2, Search, Eye, ChevronRight, ClipboardList } from "lucide-react";
 import { ApplicationDetailModal } from "./ApplicationDetailModal";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function AdminApplicationList() {
     const [applications, setApplications] = useState<ApplicationData[]>([]);
@@ -22,6 +27,7 @@ export default function AdminApplicationList() {
             setApplications(data || []);
         } catch (error) {
             console.error("Failed to fetch applications", error);
+            toast.error("Failed to load applications");
         } finally {
             setLoading(false);
         }
@@ -30,6 +36,14 @@ export default function AdminApplicationList() {
     useEffect(() => {
         fetchApplications();
     }, []);
+
+    const statusCounts = useMemo(() => {
+        const counts: Record<string, number> = { all: applications.length, submitted: 0, draft: 0, approved: 0, rejected: 0 };
+        applications.forEach((app) => {
+            if (app.status && counts[app.status] !== undefined) counts[app.status]++;
+        });
+        return counts;
+    }, [applications]);
 
     const filteredApps = applications.filter(app => {
         const matchesSearch =
@@ -58,42 +72,56 @@ export default function AdminApplicationList() {
 
     return (
         <div className="space-y-4">
-            {/* Search & Filter */}
-            <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-lg border shadow-sm">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
+            {/* Filter Chips & Search */}
+            <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex gap-2 flex-wrap">
+                    {(["all", "submitted", "draft", "approved", "rejected"] as const).map((s) => (
+                        <Button
+                            key={s}
+                            variant={statusFilter === s ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setStatusFilter(s)}
+                            className="gap-1.5 capitalize"
+                        >
+                            {s === "all" ? "All" : s}
+                            <Badge
+                                variant="secondary"
+                                className={`ml-0.5 px-1.5 py-0 text-[10px] min-w-[20px] text-center ${statusFilter === s ? "bg-background/20 text-primary-foreground" : ""}`}
+                            >
+                                {statusCounts[s]}
+                            </Badge>
+                        </Button>
+                    ))}
+                </div>
+                <div className="relative sm:ml-auto sm:w-64">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
                         placeholder="Search applicants..."
-                        className="pl-9 h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 h-9"
                     />
-                </div>
-                <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <select
-                        className="h-10 flex-1 sm:flex-none rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="submitted">Submitted</option>
-                        <option value="draft">Draft</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
                 </div>
             </div>
 
             {/* Mobile Card List */}
             <div className="md:hidden space-y-2">
                 {loading ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                        Loading applications...
+                    <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                        ))}
                     </div>
                 ) : filteredApps.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No applications found.</p>
+                    <div className="text-center py-12 border rounded-xl bg-muted/30">
+                        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+                            <ClipboardList className="w-7 h-7" />
+                        </div>
+                        <h3 className="font-medium">No applications found</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {statusFilter !== "all" || searchTerm ? "Try adjusting your filters." : "Applications will appear here."}
+                        </p>
+                    </div>
                 ) : (
                     filteredApps.map((app) => (
                         <button
@@ -139,15 +167,24 @@ export default function AdminApplicationList() {
                         <tbody className="divide-y">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                                        Loading applications...
+                                    <td colSpan={5} className="py-4">
+                                        <div className="space-y-3 px-4">
+                                            {[1, 2, 3].map((i) => (
+                                                <Skeleton key={i} className="h-10 w-full" />
+                                            ))}
+                                        </div>
                                     </td>
                                 </tr>
                             ) : filteredApps.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                                        No applications found.
+                                    <td colSpan={5} className="text-center py-12">
+                                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                            <ClipboardList className="h-8 w-8 opacity-40" />
+                                            <p className="font-medium">No applications found</p>
+                                            <p className="text-xs">
+                                                {statusFilter !== "all" || searchTerm ? "Try adjusting your filters." : "Applications will appear here."}
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (

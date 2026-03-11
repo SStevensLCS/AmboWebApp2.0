@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { SERVICE_TYPES } from "@ambo/database/types";
 
 type Submission = {
@@ -32,8 +34,6 @@ export default function SubmissionDetailPage() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
 
   const [form, setForm] = useState<Partial<Submission>>({});
 
@@ -51,26 +51,27 @@ export default function SubmissionDetailPage() {
           status: data.status,
         });
       })
-      .catch(() => setError("Failed to load submission."))
+      .catch(() => toast.error("Failed to load submission"))
       .finally(() => setLoading(false));
   }, [id]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setError("");
-    setSaved(false);
     const res = await fetch(`/api/admin/submissions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, feedback: form.feedback || null }),
     });
     if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success("Submission updated", {
+        description: `Status set to ${form.status}`,
+      });
     } else {
       const data = await res.json().catch(() => ({}));
-      setError(data.error || "Save failed.");
+      toast.error("Failed to save", {
+        description: data.error || "Please try again.",
+      });
     }
     setSaving(false);
   };
@@ -106,6 +107,7 @@ export default function SubmissionDetailPage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
+      <Breadcrumbs />
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -198,9 +200,6 @@ export default function SubmissionDetailPage() {
             rows={3}
           />
         </div>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {saved && <p className="text-sm text-green-600">Changes saved.</p>}
 
         <Button type="submit" className="w-full" disabled={saving}>
           {saving ? "Saving..." : "Save Changes"}

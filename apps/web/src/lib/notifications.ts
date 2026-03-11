@@ -22,66 +22,73 @@ export type PushPayload = {
 };
 
 /**
- * Send Expo push notifications to mobile devices.
- * Uses the Expo Push API to deliver to native tokens.
+ * Send push notifications to Expo mobile devices for a list of user IDs.
+ * Uses the Expo Push API (https://exp.host/--/api/v2/push/send).
  */
 async function sendExpoNotifications(
-    tokens: string[],
-    payload: PushPayload
+    userIds: string[],
+    payload: PushPayload,
+    excludeUserId?: string
 ) {
-    if (tokens.length === 0) return;
+    const supabase = createAdminClient();
 
-    const messages = tokens.map((token) => ({
-        to: token,
-        title: payload.title,
-        body: payload.body,
-        data: {
-            url: payload.url,
-            mobilePath: payload.mobilePath,
-        },
-        sound: "default" as const,
-    }));
+    const { data: tokens } = await supabase
+        .from("expo_push_tokens")
+        .select("id, user_id, token")
+        .in("user_id", userIds);
 
-    try {
-        const response = await fetch("https://exp.host/--/api/v2/push/send", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+    if (!tokens || tokens.length === 0) return;
+
+    const messages = tokens
+        .filter((t) => t.user_id !== excludeUserId)
+        .map((t) => ({
+            to: t.token,
+            sound: "default" as const,
+            title: payload.title,
+            body: payload.body,
+            data: {
+                url: payload.url,
+                mobilePath: payload.mobilePath,
             },
-            body: JSON.stringify(messages),
-        });
+        }));
 
-        if (!response.ok) {
-            console.error(
-                "[Push/Expo] API error:",
-                response.status,
-                await response.text()
-            );
-        }
-    } catch (err) {
-        console.error("[Push/Expo] Failed to send:", err);
+    if (messages.length === 0) return;
+
+    // Expo Push API accepts batches of up to 100
+    const chunks: typeof messages[] = [];
+    for (let i = 0; i < messages.length; i += 100) {
+        chunks.push(messages.slice(i, i + 100));
     }
-}
 
-/**
- * Send mobile push notifications to a specific user's devices.
- */
-async function sendMobileNotificationsToUser(
-    supabase: ReturnType<typeof createAdminClient>,
-    userId: string,
-    payload: PushPayload
-) {
-    const { data: mobileTokens } = await supabase
-        .from("mobile_push_tokens")
-        .select("token")
-        .eq("user_id", userId);
+    for (const chunk of chunks) {
+        try {
+            const res = await fetch("https://exp.host/--/api/v2/push/send", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                body: JSON.stringify(chunk),
+            });
 
-    if (mobileTokens && mobileTokens.length > 0) {
-        await sendExpoNotifications(
-            mobileTokens.map((t) => t.token),
-            payload
-        );
+            const result = await res.json();
+
+            // Clean up invalid tokens (DeviceNotRegistered)
+            if (result.data) {
+                for (let i = 0; i < result.data.length; i++) {
+                    if (result.data[i].status === "error" &&
+                        result.data[i].details?.error === "DeviceNotRegistered") {
+                        const badToken = chunk[i].to;
+                        await supabase
+                            .from("expo_push_tokens")
+                            .delete()
+                            .eq("token", badToken);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("[ExpoPush] Failed to send:", err);
+        }
     }
 }
 
@@ -94,7 +101,7 @@ export async function sendNotificationToUser(
 ) {
     const supabase = createAdminClient();
 
-    // 1. Web push subscriptions
+    // 1. Send to Web Push subscriptions
     const { data: subscriptions, error } = await supabase
         .from("push_subscriptions")
         .select("*")
@@ -116,26 +123,18 @@ export async function sendNotificationToUser(
                 await webpush.sendNotification(pushSubscription, payloadString);
             } catch (err: any) {
                 console.error(`[Push] Failed to send to ${sub.id}:`, err);
-
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                    console.log(
-                        `[Push] Deleting expired subscription ${sub.id}`
-                    );
-                    await supabase
-                        .from("push_subscriptions")
-                        .delete()
-                        .eq("id", sub.id);
+                    console.log(`[Push] Deleting expired subscription ${sub.id}`);
+                    await supabase.from("push_subscriptions").delete().eq("id", sub.id);
                 }
             }
         });
 
         await Promise.all(promises);
-    } else {
-        console.log(`[Push] No web subscriptions found for user ${userId}`);
     }
 
-    // 2. Mobile push tokens (Expo)
-    await sendMobileNotificationsToUser(supabase, userId, payload);
+    // 2. Send to Expo push tokens (mobile)
+    await sendExpoNotifications([userId], payload);
 }
 
 /**
@@ -194,71 +193,50 @@ export async function sendNotificationToRole(
         });
     }
 
+    // Send to Web Push subscriptions (if any exist)
     if (subscriptions && subscriptions.length > 0) {
-        // Log attempt
         await supabase.from("debug_logs").insert({
             level: "info",
-            message: `Attempting to send to ${subscriptions.length} web subscriptions`,
+            message: `Attempting to send to ${subscriptions.length} web push subscriptions`,
             data: { role, excludeUserId, payload },
         });
 
         const payloadString = JSON.stringify(payload);
 
-        const promises = subscriptions.map(async (sub) => {
-            const pushSubscription = {
-                endpoint: sub.endpoint,
-                keys: {
-                    p256dh: sub.p256dh,
-                    auth: sub.auth,
-                },
-            };
-
-            try {
-                await webpush.sendNotification(
-                    pushSubscription,
-                    payloadString
-                );
-                await supabase.from("debug_logs").insert({
-                    level: "info",
-                    message: "Push sent successfully",
-                    data: {
-                        endpoint: sub.endpoint,
-                        userId: sub.user_id,
+        const promises = subscriptions
+            .filter((sub) => sub.user_id !== excludeUserId)
+            .map(async (sub) => {
+                const pushSubscription = {
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: sub.p256dh,
+                        auth: sub.auth,
                     },
-                });
-            } catch (err: any) {
-                await supabase.from("debug_logs").insert({
-                    level: "error",
-                    message: "Push failed",
-                    data: {
-                        endpoint: sub.endpoint,
-                        error: err.toString(),
-                        statusCode: err.statusCode,
-                    },
-                });
+                };
 
-                if (err.statusCode === 410 || err.statusCode === 404) {
-                    await supabase
-                        .from("push_subscriptions")
-                        .delete()
-                        .eq("id", sub.id);
+                try {
+                    await webpush.sendNotification(pushSubscription, payloadString);
+                    await supabase.from("debug_logs").insert({
+                        level: "info",
+                        message: "Push sent successfully",
+                        data: { endpoint: sub.endpoint, userId: sub.user_id },
+                    });
+                } catch (err: any) {
+                    await supabase.from("debug_logs").insert({
+                        level: "error",
+                        message: "Push failed",
+                        data: { endpoint: sub.endpoint, error: err.toString(), statusCode: err.statusCode },
+                    });
+
+                    if (err.statusCode === 410 || err.statusCode === 404) {
+                        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+                    }
                 }
-            }
-        });
+            });
 
         await Promise.all(promises);
     }
 
-    // 3. Mobile push tokens (Expo)
-    const { data: mobileTokens } = await supabase
-        .from("mobile_push_tokens")
-        .select("token")
-        .in("user_id", targetUserIds);
-
-    if (mobileTokens && mobileTokens.length > 0) {
-        await sendExpoNotifications(
-            mobileTokens.map((t) => t.token),
-            payload
-        );
-    }
+    // 3. Send to Expo push tokens (mobile)
+    await sendExpoNotifications(userIds, payload, excludeUserId);
 }

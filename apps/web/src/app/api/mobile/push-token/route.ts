@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let body: { token: string; platform: string; device_name?: string };
+    let body: { token: string };
     try {
         body = await req.json();
     } catch {
@@ -54,33 +54,22 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const { token, platform, device_name } = body;
-    if (!token || !platform) {
+    const { token } = body;
+    if (!token) {
         return NextResponse.json(
-            { error: "token and platform are required" },
-            { status: 400 }
-        );
-    }
-    if (platform !== "ios" && platform !== "android") {
-        return NextResponse.json(
-            { error: "platform must be ios or android" },
+            { error: "token is required" },
             { status: 400 }
         );
     }
 
     const supabase = createAdminClient();
 
+    // Upsert into expo_push_tokens (unique on token)
     const { error } = await supabase
-        .from("mobile_push_tokens")
+        .from("expo_push_tokens")
         .upsert(
-            {
-                user_id: userId,
-                token,
-                platform,
-                device_name: device_name || null,
-                updated_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,token" }
+            { user_id: userId, token },
+            { onConflict: "token" }
         );
 
     if (error) {
@@ -125,7 +114,7 @@ export async function DELETE(req: NextRequest) {
     const supabase = createAdminClient();
 
     await supabase
-        .from("mobile_push_tokens")
+        .from("expo_push_tokens")
         .delete()
         .eq("user_id", userId)
         .eq("token", token);

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Check, ChevronRight, ChevronLeft, Loader2, Save, Upload, FileText } from "lucide-react";
+import { Check, ChevronRight, ChevronLeft, Loader2, Save, Upload, FileText, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { getApplicationByPhone, saveApplicationStep, submitApplication, submitApplicationForUser, uploadTranscript } from "@/actions/application";
 import { ApplicationData } from "@ambo/database/application-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SignOutButton } from "@/components/SignOutButton";
 
 type StepKey = "contact" | "personal" | "academic" | "references" | "questionnaire";
@@ -89,6 +91,7 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [stepError, setStepError] = useState<string | null>(null);
 
     const currentStepKey = stepKeys[currentStepIndex];
 
@@ -143,9 +146,10 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
                 ...resumeData,
                 current_step: currentStepIndex + 1
             });
+            toast.success("Progress saved");
         } catch (error) {
             console.error(error);
-            alert("Failed to save progress.");
+            toast.error("Failed to save progress");
         } finally {
             setIsSaving(false);
         }
@@ -154,10 +158,11 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
     const handleNext = async () => {
         const error = validateStep(currentStepKey);
         if (error) {
-            alert(error);
+            setStepError(error);
             return;
         }
 
+        setStepError(null);
         setIsSaving(true);
         try {
             if (currentStepKey === "contact") {
@@ -194,7 +199,7 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
             }
         } catch (error) {
             console.error(error);
-            alert("Failed to save progress. Please try again.");
+            toast.error("Failed to save progress. Please try again.");
         } finally {
             setIsSaving(false);
         }
@@ -204,17 +209,26 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
         if (currentStepIndex > 0) {
             setDirection(-1);
             setCurrentStepIndex(prev => prev - 1);
+            setStepError(null);
+            setConfirmingSubmit(false);
         }
     };
+
+    const [confirmingSubmit, setConfirmingSubmit] = useState(false);
 
     const handleSubmit = async () => {
         const error = validateStep(currentStepKey);
         if (error) {
-            alert(error);
+            setStepError(error);
             return;
         }
 
-        if (!confirm("Are you sure you want to submit your application? This cannot be undone.")) return;
+        setStepError(null);
+
+        if (!confirmingSubmit) {
+            setConfirmingSubmit(true);
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -227,9 +241,10 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
             setIsSubmitted(true);
         } catch (error) {
             console.error(error);
-            alert("Failed to submit application.");
+            toast.error("Failed to submit application");
         } finally {
             setIsSubmitting(false);
+            setConfirmingSubmit(false);
         }
     };
 
@@ -238,11 +253,11 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
         const file = e.target.files[0];
 
         if (file.size > 5 * 1024 * 1024) {
-            alert("File is too large. Max 5MB.");
+            toast.error("File is too large. Max 5MB.");
             return;
         }
         if (!['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) {
-            alert("Only PDF, JPG, and PNG files are allowed.");
+            toast.error("Only PDF, JPG, and PNG files are allowed.");
             return;
         }
 
@@ -257,7 +272,7 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
             await saveApplicationStep({ phone_number: resumeData.phone_number, transcript_url: publicUrl });
         } catch (error) {
             console.error(error);
-            alert("Failed to upload file.");
+            toast.error("Failed to upload file");
         } finally {
             setUploading(false);
         }
@@ -546,6 +561,24 @@ export default function ApplicationForm({ userId, userData, initialData, resumeS
                         )}
                     </motion.div>
                 </AnimatePresence>
+
+                {/* Validation Error */}
+                {stepError && (
+                    <Alert variant="destructive" className="mt-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{stepError}</AlertDescription>
+                    </Alert>
+                )}
+
+                {/* Confirm Submit Banner */}
+                {confirmingSubmit && (
+                    <Alert className="mt-4 bg-amber-50 border-amber-200 text-amber-800">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <AlertDescription>
+                            Are you sure? This cannot be undone. Click <strong>Submit</strong> again to confirm.
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {/* Footer */}
                 <div className="mt-8 pt-6 border-t flex justify-between items-center bg-card">

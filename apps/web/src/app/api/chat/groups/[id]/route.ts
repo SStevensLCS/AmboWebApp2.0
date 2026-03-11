@@ -2,6 +2,53 @@ import { createAdminClient } from "@ambo/database/admin-client";
 import { getSession } from "@/lib/session";
 import { NextResponse } from "next/server";
 
+export async function GET(
+    _req: Request,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id } = params;
+        const supabase = createAdminClient();
+
+        // Check membership (or admin)
+        const { data: membership } = await supabase
+            .from("chat_participants")
+            .select("group_id")
+            .eq("group_id", id)
+            .eq("user_id", session.userId)
+            .single();
+
+        if (!membership && session.role !== "superadmin" && session.role !== "admin") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const { data: group, error } = await supabase
+            .from("chat_groups")
+            .select(`
+                *,
+                participants:chat_participants(
+                    user:users(id, first_name, last_name, email, role)
+                )
+            `)
+            .eq("id", id)
+            .single();
+
+        if (error || !group) {
+            return NextResponse.json({ error: "Group not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ group });
+    } catch (error) {
+        console.error("Unexpected error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
 export async function PATCH(
     req: Request,
     { params }: { params: { id: string } }

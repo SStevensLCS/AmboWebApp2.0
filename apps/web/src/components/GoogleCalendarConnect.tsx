@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export function GoogleCalendarConnect() {
     const [connected, setConnected] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [disconnecting, setDisconnecting] = useState(false);
 
     useEffect(() => {
         fetch("/api/auth/google/student/status")
@@ -22,14 +24,19 @@ export function GoogleCalendarConnect() {
     };
 
     const handleDisconnect = async () => {
-        setLoading(true);
+        setDisconnecting(true);
         try {
-            await fetch("/api/auth/google/student/status", { method: "DELETE" });
-            setConnected(false);
+            const res = await fetch("/api/auth/google/student/status", { method: "DELETE" });
+            if (res.ok) {
+                setConnected(false);
+                toast.success("Google Calendar disconnected");
+            } else {
+                toast.error("Failed to disconnect calendar");
+            }
         } catch {
-            // ignore
+            toast.error("Failed to disconnect calendar");
         } finally {
-            setLoading(false);
+            setDisconnecting(false);
         }
     };
 
@@ -59,10 +66,15 @@ export function GoogleCalendarConnect() {
                         <Button
                             variant="outline"
                             onClick={handleDisconnect}
+                            disabled={disconnecting}
                             className="w-full sm:w-auto text-destructive hover:text-destructive"
                         >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Disconnect Calendar
+                            {disconnecting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <XCircle className="mr-2 h-4 w-4" />
+                            )}
+                            {disconnecting ? "Disconnecting..." : "Disconnect Calendar"}
                         </Button>
                     </div>
                 ) : (

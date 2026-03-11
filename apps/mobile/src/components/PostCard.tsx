@@ -133,8 +133,8 @@ export function PostCard({
         </View>
         {showActions && (
           <View style={styles.actions}>
-            <IconButton icon="pencil-outline" size={18} onPress={() => { setEditing(true); setEditText(content); }} />
-            <IconButton icon="delete-outline" size={18} iconColor="#ef4444" onPress={() => onDelete(id)} />
+            <IconButton icon="pencil-outline" size={16} onPress={() => { setEditing(true); setEditText(content); }} style={styles.actionButton} />
+            <IconButton icon="delete-outline" size={16} iconColor="#ef4444" onPress={() => onDelete(id)} style={styles.actionButton} />
           </View>
         )}
       </View>
@@ -292,7 +292,12 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   header: {
     flexDirection: 'row',
@@ -310,12 +315,13 @@ const styles = StyleSheet.create({
   authorName: { fontWeight: '600' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timestamp: { color: '#9ca3af', fontSize: 12 },
-  actions: { flexDirection: 'row' },
+  actions: { flexDirection: 'row', gap: -4, marginRight: -8 },
+  actionButton: { margin: 0 },
   content: { marginTop: 10, lineHeight: 20 },
   editSection: { marginTop: 8, gap: 8 },
   editActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   commentToggle: { marginTop: 12 },
-  commentToggleText: { color: '#3b82f6', fontWeight: '600' },
+  commentToggleText: { color: '#111827', fontWeight: '600' },
   commentsSection: { marginTop: 4 },
   commentDivider: { marginVertical: 8 },
   loadingText: { color: '#9ca3af', paddingVertical: 8 },

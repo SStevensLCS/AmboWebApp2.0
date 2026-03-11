@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, RefreshCw, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import type { EventDetails } from "@ambo/database/types";
 
@@ -25,11 +26,14 @@ const itemVariants = {
 
 export function EventCalendar({
     onEventClick,
+    onRefreshRef,
 }: {
     onEventClick: (e: EventDetails) => void;
+    onRefreshRef?: (fn: () => void) => void;
 }) {
     const [events, setEvents] = useState<EventDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const upcomingRef = useRef<HTMLDivElement>(null);
 
     const fetchEvents = async () => {
@@ -38,9 +42,13 @@ export function EventCalendar({
             if (res.ok) {
                 const data = await res.json();
                 setEvents(data.events || []);
+                setError(false);
+            } else {
+                setError(true);
             }
         } catch (e) {
             console.error("Failed to fetch events", e);
+            setError(true);
         }
         setLoading(false);
     };
@@ -50,6 +58,11 @@ export function EventCalendar({
         const interval = setInterval(fetchEvents, 30000);
         return () => clearInterval(interval);
     }, []);
+
+    // Expose refresh function to parent
+    useEffect(() => {
+        onRefreshRef?.(fetchEvents);
+    }, [onRefreshRef]);
 
     // Scroll to upcoming events after initial load
     useEffect(() => {
@@ -102,6 +115,22 @@ export function EventCalendar({
                         <Skeleton className="h-24 w-full" />
                     </div>
                 ))}
+            </div>
+        );
+    }
+
+    if (error && events.length === 0) {
+        return (
+            <div className="text-center py-12 border rounded-xl bg-muted/30">
+                <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3 text-red-500">
+                    <AlertTriangle className="w-7 h-7" />
+                </div>
+                <h3 className="font-medium">Failed to load events</h3>
+                <p className="text-sm text-muted-foreground mt-1 mb-4">Please check your connection and try again.</p>
+                <Button variant="outline" size="sm" onClick={fetchEvents}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                </Button>
             </div>
         );
     }

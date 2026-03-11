@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   header: { padding: 16, gap: 8 },
   nameInput: { backgroundColor: '#fff' },
   searchInput: { backgroundColor: '#fff' },
-  selectedCount: { color: '#3b82f6', fontWeight: '600' },
+  selectedCount: { color: '#111827', fontWeight: '600' },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -19,10 +19,7 @@ export default async function NewEventPage() {
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                 </Button>
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Create Event</h1>
-                    <p className="text-muted-foreground">Schedule a new event for ambassadors.</p>
-                </div>
+                <h1 className="text-lg font-semibold">Create Event</h1>
             </div>
             <div className="max-w-2xl">
                 <EventChatWrapper userId={session.userId} />

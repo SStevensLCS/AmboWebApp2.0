@@ -5,6 +5,7 @@ import { ApplicationData, ApplicationStatus } from "@ambo/database/application-t
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { updateApplicationStatus } from "@/actions/admin";
 import { Loader2, Check, X, Clock, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ApplicationDetailModalProps {
@@ -24,11 +25,12 @@ export function ApplicationDetailModal({ application, open, onOpenChange, onStat
         setUpdating(true);
         try {
             await updateApplicationStatus(application.id, newStatus);
+            toast.success(`Application ${newStatus}`);
             onStatusUpdate();
             onOpenChange(false);
         } catch (error) {
             console.error("Failed to update status", error);
-            alert("Failed to update status");
+            toast.error("Failed to update status");
         } finally {
             setUpdating(false);
         }

@@ -31,6 +31,7 @@ export default async function AdminChatPage() {
                 currentUserLastName={user?.last_name ?? ""}
                 currentUserAvatarUrl={user?.avatar_url ?? ""}
                 pageTitle="Ambassador Chat"
+                basePath="/admin/chat"
             />
         </div>
     );

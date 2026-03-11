@@ -27,6 +27,7 @@ export const metadata = {
 };
 
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -50,6 +51,14 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <ServiceWorkerRegister />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: { fontFamily: "Inter, sans-serif" },
+          }}
+          richColors
+          closeButton
+        />
         {children}
       </body>
     </html>

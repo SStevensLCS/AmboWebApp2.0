@@ -1,0 +1,151 @@
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+
+interface SkeletonProps {
+  width?: number | string;
+  height?: number;
+  borderRadius?: number;
+  style?: ViewStyle;
+}
+
+function SkeletonItem({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.skeleton,
+        { width: width as any, height, borderRadius, opacity },
+        style,
+      ]}
+    />
+  );
+}
+
+export function CardSkeleton() {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <SkeletonItem width={40} height={40} borderRadius={20} />
+        <View style={styles.cardHeaderText}>
+          <SkeletonItem width={120} height={14} />
+          <SkeletonItem width={80} height={10} style={{ marginTop: 6 }} />
+        </View>
+      </View>
+      <SkeletonItem height={14} style={{ marginTop: 12 }} />
+      <SkeletonItem width="75%" height={14} style={{ marginTop: 8 }} />
+    </View>
+  );
+}
+
+export function ListItemSkeleton() {
+  return (
+    <View style={styles.listItem}>
+      <SkeletonItem width={36} height={36} borderRadius={18} />
+      <View style={styles.listItemText}>
+        <SkeletonItem width={140} height={14} />
+        <SkeletonItem width={200} height={10} style={{ marginTop: 6 }} />
+      </View>
+    </View>
+  );
+}
+
+export function StatCardSkeleton() {
+  return (
+    <View style={styles.statCard}>
+      <SkeletonItem width={24} height={24} borderRadius={4} />
+      <SkeletonItem width={48} height={28} style={{ marginTop: 8 }} />
+      <SkeletonItem width={64} height={10} style={{ marginTop: 6 }} />
+    </View>
+  );
+}
+
+export function DashboardSkeleton() {
+  return (
+    <View style={styles.dashboardContainer}>
+      <SkeletonItem width={180} height={24} />
+      <SkeletonItem width={240} height={14} style={{ marginTop: 8 }} />
+      <View style={styles.statsRow}>
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </View>
+      <SkeletonItem width={120} height={18} style={{ marginTop: 24 }} />
+      <CardSkeleton />
+      <CardSkeleton />
+      <CardSkeleton />
+    </View>
+  );
+}
+
+export function SubmissionListSkeleton() {
+  return (
+    <View style={styles.dashboardContainer}>
+      <View style={styles.statsRow}>
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </View>
+      {[1, 2, 3, 4].map((i) => (
+        <ListItemSkeleton key={i} />
+      ))}
+    </View>
+  );
+}
+
+export { SkeletonItem };
+
+const styles = StyleSheet.create({
+  skeleton: {
+    backgroundColor: '#e5e7eb',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  cardHeaderText: {
+    flex: 1,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  listItemText: {
+    flex: 1,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  dashboardContainer: {
+    padding: 16,
+  },
+});

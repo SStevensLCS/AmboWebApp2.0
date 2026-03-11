@@ -7,9 +7,6 @@ export default async function StudentPostsPage() {
     if (!session || session.role !== "student") redirect("/");
 
     return (
-        <div className="space-y-6">
-
-            <PostsFeed currentUserId={session.userId} currentUserRole={session.role} />
-        </div>
+        <PostsFeed currentUserId={session.userId} currentUserRole={session.role} basePath="/student/posts" />
     );
 }

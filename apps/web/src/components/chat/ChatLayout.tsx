@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { MessageSquare, Loader2, ArrowLeft, ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { MessageSquare, Loader2, Plus, ChevronLeft, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { CreateGroupDialog } from "./CreateGroupDialog";
 import { MessageList } from "./MessageList";
-import { ChatSettingsDialog } from "./ChatSettingsDialog";
 import { Group } from "./types";
 import { useSearchParams, usePathname } from "next/navigation";
+import { toast } from "sonner";
 
 interface ChatLayoutProps {
     currentUserId: string;
@@ -17,19 +17,18 @@ interface ChatLayoutProps {
     currentUserLastName?: string;
     currentUserAvatarUrl?: string;
     pageTitle?: string;
+    basePath: string;
 }
 
-export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUserLastName = "", currentUserAvatarUrl = "", pageTitle }: ChatLayoutProps) {
+export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUserLastName = "", currentUserAvatarUrl = "", pageTitle, basePath }: ChatLayoutProps) {
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+    const [unreadGroups, setUnreadGroups] = useState<Set<string>>(new Set());
     const searchParams = useSearchParams();
     const pathname = usePathname();
 
     // ── Dynamic viewport height for mobile keyboard handling ──
-    // On Safari PWA, CSS viewport units (dvh/vh) are unreliable when the
-    // virtual keyboard opens. We use the visualViewport API to get the
-    // actual visible height and size the container precisely.
     const [mobileStyle, setMobileStyle] = useState<React.CSSProperties | null>(null);
     const baseHeightRef = useRef(0);
 
@@ -39,30 +38,25 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
 
         baseHeightRef.current = vv.height;
 
-        // Read the mobile nav height from our CSS variable (includes safe-area-inset-bottom)
         const computedNavHeight =
             parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--mobile-nav-height")) || 80;
 
         const update = () => {
-            // Only apply JS-driven height on mobile
             if (window.innerWidth >= 768) {
                 setMobileStyle(null);
                 return;
             }
 
-            // Update baseline when the viewport grows (orientation change, keyboard fully closed)
             if (vv.height > baseHeightRef.current * 0.9) {
                 baseHeightRef.current = Math.max(baseHeightRef.current, vv.height);
             }
 
             const isKeyboardOpen = vv.height < baseHeightRef.current * 0.75;
-            // When keyboard is open, the bottom nav hides itself, so use full visible height.
-            // When closed, subtract the nav height so the chat sits above the nav bar.
             const height = isKeyboardOpen ? vv.height : vv.height - computedNavHeight;
 
             setMobileStyle({
                 height: `${height}px`,
-                top: `${vv.offsetTop}px`, // follow Safari auto-scroll offset
+                top: `${vv.offsetTop}px`,
             });
         };
 
@@ -80,16 +74,26 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
     // Sync with URL param
     useEffect(() => {
         const groupId = searchParams.get("group");
-        if (groupId) setSelectedGroupId(groupId);
+        setSelectedGroupId(groupId || null);
     }, [searchParams]);
 
     const selectGroup = (id: string) => {
         setSelectedGroupId(id || null);
-        // Use history.replaceState instead of router.replace to avoid triggering
-        // a Next.js soft navigation. Soft navigation re-executes the server
-        // component, and the loading.tsx Suspense boundary unmounts ChatLayout,
-        // destroying all client state (groups, selectedGroupId). On mobile this
-        // leaves the user stuck on "Select a chat" with no back button.
+        // Mark group as read when selected
+        if (id) {
+            setUnreadGroups(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+            // Persist last-read timestamp
+            try {
+                const key = `chat_last_read_${currentUserId}`;
+                const stored = JSON.parse(localStorage.getItem(key) || "{}");
+                stored[id] = new Date().toISOString();
+                localStorage.setItem(key, JSON.stringify(stored));
+            } catch {}
+        }
         const params = new URLSearchParams(window.location.search);
         if (id) {
             params.set("group", id);
@@ -106,12 +110,32 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
             const res = await fetch("/api/chat/groups");
             if (res.ok) {
                 const data = await res.json();
-                setGroups(data.groups as Group[]);
+                const fetchedGroups = data.groups as Group[];
+                setGroups(fetchedGroups);
+
+                // Compute unread groups based on last_message vs stored last-read
+                try {
+                    const key = `chat_last_read_${currentUserId}`;
+                    const stored = JSON.parse(localStorage.getItem(key) || "{}");
+                    const unread = new Set<string>();
+                    for (const g of fetchedGroups) {
+                        const lastMsg = g.last_message;
+                        if (lastMsg && lastMsg.sender_id !== currentUserId) {
+                            const lastReadTime = stored[g.id];
+                            if (!lastReadTime || new Date(lastMsg.created_at) > new Date(lastReadTime)) {
+                                unread.add(g.id);
+                            }
+                        }
+                    }
+                    setUnreadGroups(unread);
+                } catch {}
             } else {
                 console.error("Error fetching groups:", await res.text());
+                toast.error("Failed to load chat groups");
             }
         } catch (error) {
             console.error("Error fetching groups:", error);
+            toast.error("Failed to load chat groups");
         }
         setLoading(false);
     };
@@ -142,21 +166,6 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                             )}
                             <h2 className="font-semibold text-lg leading-none">Chats</h2>
                         </div>
-                        <CreateGroupDialog onGroupCreated={(id, groupData) => {
-                            // Optimistically add the new group to state so it's
-                            // available immediately — avoids RLS/timing issues where
-                            // the browser Supabase client can't see the new group yet
-                            // (e.g. Safari PWA with isolated cookie context)
-                            const optimisticGroup: Group = {
-                                id,
-                                name: groupData.name,
-                                created_by: groupData.created_by,
-                                created_at: groupData.created_at,
-                                participants: groupData.participants.map(u => ({ user: u })),
-                            };
-                            setGroups(prev => [optimisticGroup, ...prev]);
-                            selectGroup(id);
-                        }} />
                     </div>
                     <ScrollArea className="flex-1">
                         {loading ? (
@@ -178,6 +187,8 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         displayName = others.length > 0 ? others.slice(0, 2).join(", ") + (others.length > 2 ? ` +${others.length - 2}` : "") : "Empty Group";
                                     }
 
+                                    const isUnread = unreadGroups.has(group.id);
+
                                     return (
                                         <Button
                                             key={group.id}
@@ -190,17 +201,35 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         >
                                             <MessageSquare className="mr-2 h-4 w-4 shrink-0" />
                                             <div className="overflow-hidden text-left w-full">
-                                                <div className="font-medium truncate">{displayName}</div>
+                                                <div className={cn(
+                                                    "truncate",
+                                                    isUnread ? "font-bold" : "font-medium"
+                                                )}>
+                                                    {displayName}
+                                                </div>
                                                 <div className="text-xs text-muted-foreground truncate">
                                                     {new Date(group.updated_at || group.created_at).toLocaleDateString()}
                                                 </div>
                                             </div>
+                                            {isUnread && (
+                                                <span className="ml-auto h-2.5 w-2.5 rounded-full bg-foreground shrink-0" />
+                                            )}
                                         </Button>
                                     );
                                 })}
                             </div>
                         )}
                     </ScrollArea>
+
+                    {/* Floating + button inside sidebar on mobile, bottom-right */}
+                    <div className="absolute bottom-6 right-6 md:bottom-4 md:right-4 z-50">
+                        <Link
+                            href={`${basePath}/new`}
+                            className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        >
+                            <Plus className="h-6 w-6" />
+                        </Link>
+                    </div>
                 </div>
             </div>
 
@@ -220,6 +249,7 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         size="icon"
                                         className="md:hidden shrink-0 -ml-1 h-9 w-9"
                                         onClick={() => selectGroup("")}
+                                        aria-label="Back to chat list"
                                     >
                                         <ChevronLeft className="h-5 w-5" />
                                     </Button>
@@ -227,11 +257,11 @@ export function ChatLayout({ currentUserId, currentUserFirstName = "", currentUs
                                         {selectedGroup.name || "Chat"}
                                     </h3>
                                 </div>
-                                <ChatSettingsDialog
-                                    group={selectedGroup}
-                                    currentUserId={currentUserId}
-                                    onUpdate={fetchGroups}
-                                />
+                                <Link href={`${basePath}/${selectedGroupId}/edit`}>
+                                    <Button variant="ghost" size="icon" aria-label="Chat settings">
+                                        <Settings className="h-4 w-4" />
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
 

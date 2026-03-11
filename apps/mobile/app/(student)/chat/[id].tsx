@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatMessages, ChatMessage } from '@/hooks/useChatMessages';
@@ -8,10 +8,12 @@ import { MessageBubble } from '@/components/MessageBubble';
 import { ChatInput } from '@/components/ChatInput';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from 'react-native-paper';
 import { supabase } from '@/lib/supabase';
 
 export default function StudentMessageThread() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { session } = useAuth();
   const userId = session?.user?.id || '';
   const { messages, loading, sendMessage } = useChatMessages(id || '');
@@ -97,7 +99,12 @@ export default function StudentMessageThread() {
 
   return (
     <>
-      <Stack.Screen options={{ title: groupName }} />
+      <Stack.Screen options={{
+        title: groupName,
+        headerRight: () => (
+          <IconButton icon="dots-vertical" onPress={() => router.push({ pathname: '/(student)/chat/edit', params: { id } })} />
+        ),
+      }} />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

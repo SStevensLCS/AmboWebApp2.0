@@ -49,6 +49,7 @@ export default function AdminLayout() {
         name="posts"
         options={{
           title: 'Posts',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="message-text-outline" size={size} color={color} />
           ),

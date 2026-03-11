@@ -1,8 +1,8 @@
 # CLAUDE.md - Ambassador Portal (AmboWebApp2.0)
 
-## Scope of Changes (WebApp Update 3-3-26)
+## Scope of Changes (Mobile App Update 3-10-26)
 
-**Web app and PWA only.** All edits in this branch are scoped to the Next.js web application and its PWA features (service worker, manifest, etc.). Do NOT make any changes to native mobile app code or configurations. Focus exclusively on the web app codebase.
+**Native mobile app + shared packages.** All edits in this branch are scoped to the React Native / Expo mobile application (`apps/mobile/`) and shared packages (`packages/database/`). Web API routes may also be updated when cross-cutting changes (e.g., DB column removal) require consistency.
 
 ## What is this project?
 

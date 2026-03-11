@@ -17,7 +17,6 @@ interface UpcomingEvent {
   id: string;
   title: string;
   start_time: string;
-  location: string | null;
 }
 
 export default function StudentDashboard() {
@@ -32,7 +31,7 @@ export default function StudentDashboard() {
     async function fetchUpcoming() {
       const { data } = await supabase
         .from('events')
-        .select('id, title, start_time, location')
+        .select('id, title, start_time')
         .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(3);
@@ -156,14 +155,6 @@ export default function StudentDashboard() {
                           <Text variant="bodySmall" style={styles.eventMetaText}>
                             {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </Text>
-                          {event.location && (
-                            <>
-                              <MaterialCommunityIcons name="map-marker-outline" size={14} color="#6b7280" />
-                              <Text variant="bodySmall" style={styles.eventMetaText} numberOfLines={1}>
-                                {event.location}
-                              </Text>
-                            </>
-                          )}
                         </View>
                       </View>
                       <MaterialCommunityIcons name="chevron-right" size={20} color="#d1d5db" />

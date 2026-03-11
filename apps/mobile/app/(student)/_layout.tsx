@@ -47,6 +47,7 @@ export default function StudentLayout() {
         name="posts"
         options={{
           title: 'Posts',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="message-text-outline" size={size} color={color} />
           ),
@@ -73,15 +74,7 @@ export default function StudentLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="resources"
-        options={{
-          title: 'Resources',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="folder-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="resources" options={{ href: null }} />
       <Tabs.Screen name="new-submission" options={{ href: null }} />
     </Tabs>
   );

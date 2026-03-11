@@ -64,12 +64,6 @@ export default function StudentEvents() {
                   {formatTime(item.start_time)} - {formatTime(item.end_time)}
                 </Text>
               </View>
-              {item.location && (
-                <View style={styles.metaItem}>
-                  <MaterialCommunityIcons name="map-marker-outline" size={14} color="#6b7280" />
-                  <Text variant="bodySmall" style={styles.metaText}>{item.location}</Text>
-                </View>
-              )}
             </View>
             {item.description && (
               <Text variant="bodySmall" style={styles.eventDescription} numberOfLines={2}>

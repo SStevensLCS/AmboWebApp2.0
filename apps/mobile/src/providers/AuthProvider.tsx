@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { UserRole } from '@ambo/database/types';
 import type { Session } from '@supabase/supabase-js';
+
+// Max time to wait for initial auth check before unblocking the UI
+const AUTH_TIMEOUT_MS = 4000;
 
 interface AuthState {
   session: Session | null;
@@ -22,10 +25,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userRole: null,
     isLoading: true,
   });
+  const initialAuthResolved = useRef(false);
 
   useEffect(() => {
+    // Timeout: unblock the UI if auth takes too long (cold-start hang fix).
+    // The onAuthStateChange listener below will still update state if the
+    // session resolves after the timeout, so the user won't be locked out.
+    const timeout = setTimeout(() => {
+      if (!initialAuthResolved.current) {
+        initialAuthResolved.current = true;
+        setState(prev => {
+          if (prev.isLoading) {
+            return { ...prev, isLoading: false };
+          }
+          return prev;
+        });
+      }
+    }, AUTH_TIMEOUT_MS);
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (initialAuthResolved.current) return; // timeout already fired
+      initialAuthResolved.current = true;
+      clearTimeout(timeout);
+
       if (session) {
         fetchUserRole(session.user.id);
       } else {
@@ -33,7 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Listen for auth changes
+    // Listen for auth changes — this keeps working even after a timeout,
+    // so a late-arriving session still logs the user in.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session) {
@@ -44,7 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchUserRole(userId: string) {

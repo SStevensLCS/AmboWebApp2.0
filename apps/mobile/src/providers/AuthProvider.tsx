@@ -6,7 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 // Max time to wait for initial auth check before unblocking the UI
 const AUTH_TIMEOUT_MS = 4000;
 // Max time to wait for a sign-in attempt before aborting
-const SIGN_IN_TIMEOUT_MS = 15000;
+const SIGN_IN_TIMEOUT_MS = 20000;
 
 interface AuthState {
   session: Session | null;
@@ -60,17 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes — this keeps working even after a timeout,
     // so a late-arriving session still logs the user in.
+    // IMPORTANT: Do NOT await inside this callback — it can block
+    // signInWithPassword from resolving its promise.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        try {
-          if (session) {
-            await fetchUserRole(session.user.id);
-          } else {
-            setState({ session: null, userRole: null, isLoading: false });
-          }
-        } catch (err) {
-          console.error('[Auth] onAuthStateChange error:', err);
-          setState(prev => ({ ...prev, isLoading: false }));
+      (_event, session) => {
+        if (session) {
+          fetchUserRole(session.user.id).catch(err =>
+            console.error('[Auth] onAuthStateChange fetchUserRole error:', err)
+          );
+        } else {
+          setState({ session: null, userRole: null, isLoading: false });
         }
       }
     );

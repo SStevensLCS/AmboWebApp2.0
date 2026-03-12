@@ -105,7 +105,7 @@ export default function AdminChatList() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <FAB icon="plus" style={styles.fab} onPress={() => router.push('/(admin)/chat/new')} />
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={() => router.push('/(admin)/chat/new')} />
     </View>
   );
 }

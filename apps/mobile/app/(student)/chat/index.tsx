@@ -44,6 +44,7 @@ export default function StudentChatList() {
       ? `${otherParticipant.users.first_name?.[0] || ''}${otherParticipant.users.last_name?.[0] || ''}`
       : '?';
     const avatarUrl = otherParticipant?.users?.avatar_url;
+    const hasUnread = item.hasUnread === true;
 
     return (
       <Pressable style={styles.groupRow} onPress={() => router.push(`/(student)/chat/${item.id}`)}>
@@ -53,9 +54,14 @@ export default function StudentChatList() {
           <Avatar.Text size={44} label={initials} style={styles.avatarFallback} />
         )}
         <View style={styles.groupInfo}>
-          <Text variant="bodyLarge" style={styles.groupName} numberOfLines={1}>{displayName}</Text>
+          <View style={styles.groupNameRow}>
+            <Text variant="bodyLarge" style={[styles.groupName, hasUnread && styles.groupNameUnread]} numberOfLines={1}>
+              {displayName}
+            </Text>
+            {hasUnread && <View style={styles.unreadDot} />}
+          </View>
           {item.lastMessage && (
-            <Text variant="bodySmall" style={styles.lastMessage} numberOfLines={1}>
+            <Text variant="bodySmall" style={[styles.lastMessage, hasUnread && styles.lastMessageUnread]} numberOfLines={1}>
               {item.lastMessage.content}
             </Text>
           )}
@@ -78,7 +84,7 @@ export default function StudentChatList() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <FAB icon="plus" style={styles.fab} onPress={() => router.push('/(student)/chat/new')} />
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={() => router.push('/(student)/chat/new')} />
     </View>
   );
 }
@@ -93,8 +99,17 @@ const styles = StyleSheet.create({
   },
   avatarFallback: { backgroundColor: '#e5e7eb' },
   groupInfo: { flex: 1 },
-  groupName: { fontWeight: '600' },
+  groupNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  groupName: { fontWeight: '600', flex: 1 },
+  groupNameUnread: { fontWeight: '800' },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#111827',
+  },
   lastMessage: { color: '#6b7280', marginTop: 2 },
+  lastMessageUnread: { color: '#374151', fontWeight: '600' },
   time: { color: '#9ca3af' },
   separator: { height: 1, backgroundColor: '#f3f4f6', marginLeft: 72 },
   emptyContainer: { flex: 1 },

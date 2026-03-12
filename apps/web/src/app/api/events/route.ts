@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, start_time, end_time, location, type } = body;
+    const { title, description, start_time, end_time, type } = body;
 
     if (!title || !start_time || !end_time) {
         return NextResponse.json(
@@ -42,7 +42,6 @@ export async function POST(req: Request) {
         description: description || null,
         start_time,
         end_time,
-        location: location || "TBD",
         type: type || "Event",
         created_by: session.userId,
         uniform: body.uniform || "Ambassador Polo with Navy Pants.",

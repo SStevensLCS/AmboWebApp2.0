@@ -41,7 +41,6 @@ export async function POST(req: Request) {
                     description: event.description,
                     start_time: event.start_time,
                     end_time: event.end_time,
-                    location: event.location,
                     type: event.type,
                     uniform: event.uniform,
                 });

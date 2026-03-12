@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { SectionList, View, StyleSheet, RefreshControl, Alert, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
-import { Card, Text, FAB, Portal, Modal, TextInput, Button, IconButton } from 'react-native-paper';
+import { Card, Text, FAB, Portal, Modal, TextInput, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEvents } from '@/hooks/useEvents';
@@ -35,7 +35,6 @@ export default function AdminEvents() {
   // Create event form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
   const [uniform, setUniform] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -58,7 +57,6 @@ export default function AdminEvents() {
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setLocation('');
     setUniform('');
     const now = new Date();
     const later = new Date(now.getTime() + 60 * 60 * 1000);
@@ -85,7 +83,6 @@ export default function AdminEvents() {
     const { error } = await supabase.from('events').insert({
       title: title.trim(),
       description: description.trim() || null,
-      location: location.trim() || null,
       uniform: uniform.trim() || null,
       start_time: new Date(startTime).toISOString(),
       end_time: new Date(endTime).toISOString(),
@@ -99,24 +96,6 @@ export default function AdminEvents() {
       setShowCreate(false);
       refetch();
     }
-  };
-
-  const handleDelete = (eventId: string, eventTitle: string) => {
-    Alert.alert('Delete Event', `Are you sure you want to delete "${eventTitle}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const { error } = await supabase.from('events').delete().eq('id', eventId);
-          if (error) {
-            Alert.alert('Error', error.message);
-          } else {
-            refetch();
-          }
-        },
-      },
-    ]);
   };
 
   if (loading && events.length === 0) return <LoadingScreen />;
@@ -135,21 +114,11 @@ export default function AdminEvents() {
           <Card
             style={styles.eventCard}
             onPress={() => router.push({ pathname: '/(admin)/events/[id]', params: { id: item.id } })}
-            onLongPress={() => handleDelete(item.id, item.title)}
           >
             <Card.Content>
-              <View style={styles.eventHeader}>
-                <Text variant="titleMedium" style={styles.eventTitle} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <IconButton
-                  icon="delete-outline"
-                  size={16}
-                  iconColor="#ef4444"
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item.id, item.title)}
-                />
-              </View>
+              <Text variant="titleMedium" style={styles.eventTitle} numberOfLines={2}>
+                {item.title}
+              </Text>
               <View style={styles.eventMeta}>
                 <View style={styles.metaItem}>
                   <MaterialCommunityIcons name="clock-outline" size={14} color="#6b7280" />
@@ -157,12 +126,6 @@ export default function AdminEvents() {
                     {formatTime(item.start_time)} - {formatTime(item.end_time)}
                   </Text>
                 </View>
-                {item.location && (
-                  <View style={styles.metaItem}>
-                    <MaterialCommunityIcons name="map-marker-outline" size={14} color="#6b7280" />
-                    <Text variant="bodySmall" style={styles.metaText}>{item.location}</Text>
-                  </View>
-                )}
               </View>
               {item.description && (
                 <Text variant="bodySmall" style={styles.eventDescription} numberOfLines={2}>
@@ -177,7 +140,7 @@ export default function AdminEvents() {
         }
       />
 
-      <FAB icon="plus" style={styles.fab} onPress={handleOpenCreate} />
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={handleOpenCreate} />
 
       {/* Create Event Modal */}
       <Portal>
@@ -205,14 +168,6 @@ export default function AdminEvents() {
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={3}
-                dense
-                style={styles.modalInput}
-              />
-              <TextInput
-                mode="outlined"
-                label="Location"
-                value={location}
-                onChangeText={setLocation}
                 dense
                 style={styles.modalInput}
               />
@@ -278,9 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   eventCard: { marginBottom: 10, backgroundColor: '#fff' },
-  eventHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  eventTitle: { fontWeight: '600', marginBottom: 6, flex: 1 },
-  deleteButton: { margin: -8 },
+  eventTitle: { fontWeight: '600', marginBottom: 6 },
   eventMeta: { gap: 4, marginBottom: 6 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaText: { color: '#6b7280' },

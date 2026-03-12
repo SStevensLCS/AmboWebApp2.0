@@ -30,7 +30,6 @@ export interface EventDetails {
   description: string;
   start_time: string;
   end_time: string;
-  location: string;
   type: string;
   created_by: string;
   uniform?: string;

@@ -5,6 +5,8 @@ import type { Session } from '@supabase/supabase-js';
 
 // Max time to wait for initial auth check before unblocking the UI
 const AUTH_TIMEOUT_MS = 4000;
+// Max time to wait for a sign-in attempt before aborting
+const SIGN_IN_TIMEOUT_MS = 15000;
 
 interface AuthState {
   session: Session | null;
@@ -60,10 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // so a late-arriving session still logs the user in.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (session) {
-          await fetchUserRole(session.user.id);
-        } else {
-          setState({ session: null, userRole: null, isLoading: false });
+        try {
+          if (session) {
+            await fetchUserRole(session.user.id);
+          } else {
+            setState({ session: null, userRole: null, isLoading: false });
+          }
+        } catch (err) {
+          console.error('[Auth] onAuthStateChange error:', err);
+          setState(prev => ({ ...prev, isLoading: false }));
         }
       }
     );
@@ -75,24 +82,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function fetchUserRole(userId: string) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
 
-    const session = (await supabase.auth.getSession()).data.session;
+      if (error) {
+        console.error('[Auth] fetchUserRole error:', error.message);
+      }
 
-    setState({
-      session,
-      userRole: error ? null : (data.role as UserRole),
-      isLoading: false,
-    });
+      const session = (await supabase.auth.getSession()).data.session;
+
+      setState({
+        session,
+        userRole: error ? null : (data.role as UserRole),
+        isLoading: false,
+      });
+    } catch (err) {
+      console.error('[Auth] fetchUserRole unexpected error:', err);
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    const result = await Promise.race([
+      supabase.auth.signInWithPassword({ email, password }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Sign-in timed out. Please check your connection and try again.')), SIGN_IN_TIMEOUT_MS)
+      ),
+    ]);
+    if (result.error) throw result.error;
+
+    // Directly fetch role instead of relying on onAuthStateChange,
+    // which can race against the client's internal session propagation.
+    if (result.data?.session) {
+      await fetchUserRole(result.data.session.user.id);
+    }
   }
 
   async function signOut() {

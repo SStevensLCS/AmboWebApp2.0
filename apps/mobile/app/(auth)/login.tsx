@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -8,11 +8,26 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    // Log Supabase config on mount to aid debugging
+    const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    console.log('[Login] Supabase URL configured:', url ? url.substring(0, 30) + '...' : 'MISSING');
+    console.log('[Login] Supabase anon key configured:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'yes' : 'MISSING');
+  }, []);
+
   async function handleLogin() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      Alert.alert('Login Error', 'Please enter both email and password.');
+      return;
+    }
     setLoading(true);
+    console.log('[Login] Attempting sign-in for:', trimmedEmail);
     try {
-      await signIn(email, password);
+      await signIn(trimmedEmail, password);
+      console.log('[Login] signIn resolved successfully');
     } catch (error: any) {
+      console.error('[Login] signIn error:', error.message);
       Alert.alert('Login Error', error.message);
     } finally {
       setLoading(false);

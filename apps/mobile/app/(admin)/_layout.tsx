@@ -1,7 +1,7 @@
 import { Tabs, Redirect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useBadgeCounts } from '@/hooks/useBadgeCounts';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { LayoutDashboard, Calendar, MessageSquare, MessageCircle, UserCircle } from 'lucide-react-native';
 
 export default function AdminLayout() {
   const { session, userRole } = useAuth();
@@ -29,7 +29,7 @@ export default function AdminLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="view-dashboard-outline" size={size} color={color} />
+            <LayoutDashboard size={size} color={color} />
           ),
           tabBarBadge: pendingSubmissions > 0 ? pendingSubmissions : undefined,
           tabBarBadgeStyle: { backgroundColor: '#f59e0b', fontSize: 10 },
@@ -41,7 +41,7 @@ export default function AdminLayout() {
           title: 'Events',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="calendar-outline" size={size} color={color} />
+            <Calendar size={size} color={color} />
           ),
         }}
       />
@@ -51,7 +51,7 @@ export default function AdminLayout() {
           title: 'Posts',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="message-text-outline" size={size} color={color} />
+            <MessageSquare size={size} color={color} />
           ),
         }}
       />
@@ -61,7 +61,7 @@ export default function AdminLayout() {
           title: 'Chat',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chat-outline" size={size} color={color} />
+            <MessageCircle size={size} color={color} />
           ),
           tabBarBadge: unreadChats > 0 ? unreadChats : undefined,
           tabBarBadgeStyle: { backgroundColor: '#111827', fontSize: 10 },
@@ -72,7 +72,7 @@ export default function AdminLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account-outline" size={size} color={color} />
+            <UserCircle size={size} color={color} />
           ),
         }}
       />

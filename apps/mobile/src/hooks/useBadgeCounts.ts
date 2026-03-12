@@ -63,10 +63,26 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
   useEffect(() => {
     fetchCounts();
 
-    // Refresh periodically
+    // Refresh periodically as a fallback
     const interval = setInterval(fetchCounts, 30000);
-    return () => clearInterval(interval);
-  }, [fetchCounts]);
+
+    // Subscribe to new chat messages for instant badge updates
+    const channel = supabase
+      .channel(`badge-counts-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        () => {
+          fetchCounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchCounts, userId]);
 
   return { ...counts, refetch: fetchCounts };
 }

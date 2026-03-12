@@ -1,8 +1,8 @@
 # CLAUDE.md - Ambassador Portal (AmboWebApp2.0)
 
-## Scope of Changes (Mobile App Update 3-10-26)
+## Scope of Changes
 
-**Native mobile app + shared packages.** All edits in this branch are scoped to the React Native / Expo mobile application (`apps/mobile/`) and shared packages (`packages/database/`). Web API routes may also be updated when cross-cutting changes (e.g., DB column removal) require consistency.
+Both the **web app (PWA)** and the **native mobile app** are in scope for edits.
 
 ## What is this project?
 

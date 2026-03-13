@@ -23,6 +23,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useComments, Comment } from '@/hooks/useComments';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { FormattedText } from '@/components/FormattedText';
 import type { UserRole } from '@ambo/database';
 
 function canModify(
@@ -268,9 +269,9 @@ export default function StudentPostDetail() {
               </View>
             </View>
           ) : (
-            <Text variant="bodyLarge" style={styles.content}>
+            <FormattedText style={styles.content}>
               {post.content}
-            </Text>
+            </FormattedText>
           )}
 
           {/* Comments section */}
@@ -351,7 +352,7 @@ export default function StudentPostDetail() {
                         </View>
                       </View>
                     ) : (
-                      <Text variant="bodyMedium">{comment.content}</Text>
+                      <FormattedText style={{ fontSize: 14 }}>{comment.content}</FormattedText>
                     )}
                   </View>
                   {canActOnComment && !isEditingThis && (

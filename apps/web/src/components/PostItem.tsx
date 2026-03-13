@@ -12,6 +12,7 @@ import { MessageSquare, Send, Loader2, Pencil, Trash2, X, Check } from "lucide-r
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FormattedText } from "@/components/FormattedText";
 
 type Comment = {
     id: string;
@@ -236,7 +237,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                 />
                             ) : (
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                    {isEditing ? editContent : post.content}
+                                    <FormattedText text={post.content} />
                                 </p>
                             )}
                         </div>
@@ -320,7 +321,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                                                 </div>
                                                             ) : (
                                                                 <p className="text-sm text-muted-foreground">
-                                                                    {comment.content}
+                                                                    <FormattedText text={comment.content} />
                                                                 </p>
                                                             )}
                                                         </div>

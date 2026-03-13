@@ -65,9 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session) {
-          fetchUserRole(session.user.id).catch(err =>
-            console.error('[Auth] onAuthStateChange fetchUserRole error:', err)
-          );
+          fetchUserRole(session.user.id).catch(err => {
+            if (__DEV__) console.error('[Auth] onAuthStateChange fetchUserRole error:', err);
+          });
         } else {
           setState({ session: null, userRole: null, isLoading: false });
         }
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.error('[Auth] fetchUserRole error:', error.message);
+        if (__DEV__) console.error('[Auth] fetchUserRole error:', error.message);
       }
 
       const session = (await supabase.auth.getSession()).data.session;
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
     } catch (err) {
-      console.error('[Auth] fetchUserRole unexpected error:', err);
+      if (__DEV__) console.error('[Auth] fetchUserRole unexpected error:', err);
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }

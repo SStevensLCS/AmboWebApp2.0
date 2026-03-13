@@ -74,7 +74,7 @@ export function AvatarUpload({ userId, avatarUrl, initials, size = 80, onUploade
   }
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable onPress={handlePress} accessibilityLabel="Change profile photo" accessibilityRole="button">
       {avatarUrl ? (
         <Avatar.Image size={size} source={{ uri: avatarUrl }} />
       ) : (

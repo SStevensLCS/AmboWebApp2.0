@@ -4,11 +4,13 @@ import { useResources, Resource } from '@/hooks/useResources';
 import { ResourceCard } from '@/components/ResourceCard';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 
 export default function StudentResources() {
-  const { resources, loading, refetch } = useResources();
+  const { resources, loading, error, refetch } = useResources();
 
   if (loading && resources.length === 0) return <LoadingScreen />;
+  if (error && resources.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <View style={styles.container}>

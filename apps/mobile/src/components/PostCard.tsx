@@ -36,7 +36,7 @@ export function PostCard({ content, createdAt, author, commentCount, onPress }: 
   const initials = `${author.first_name?.[0] || ''}${author.last_name?.[0] || ''}`;
 
   return (
-    <Pressable onPress={onPress} style={styles.card}>
+    <Pressable onPress={onPress} style={styles.card} accessibilityLabel={`Post by ${author.first_name} ${author.last_name}, ${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`} accessibilityRole="button">
       <View style={styles.header}>
         {author.avatar_url ? (
           <Avatar.Image size={36} source={{ uri: author.avatar_url }} />

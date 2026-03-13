@@ -6,6 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useChatGroups, ChatGroupWithMeta } from '@/hooks/useChatGroups';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 
 function getGroupDisplayName(group: ChatGroupWithMeta, currentUserId: string): string {
   if (group.name) return group.name;
@@ -30,7 +31,7 @@ export default function AdminChatList() {
   const router = useRouter();
   const { session } = useAuth();
   const userId = session?.user?.id || '';
-  const { groups, loading, refetch } = useChatGroups(userId);
+  const { groups, loading, error, refetch } = useChatGroups(userId);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
 
@@ -57,6 +58,7 @@ export default function AdminChatList() {
 
   // Only show full loading screen on initial load
   if (loading && groups.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
+  if (error && groups.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   const renderGroup = ({ item }: { item: ChatGroupWithMeta }) => {
     const displayName = getGroupDisplayName(item, userId);
@@ -105,7 +107,7 @@ export default function AdminChatList() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <FAB icon="plus" color="#fff" style={styles.fab} onPress={() => router.push('/(admin)/chat/new')} />
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={() => router.push('/(admin)/chat/new')} accessibilityLabel="Start new chat" />
     </View>
   );
 }

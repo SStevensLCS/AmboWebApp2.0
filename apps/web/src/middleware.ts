@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/forgot-password",
   "/reset-password",
+  "/privacy",
 ];
 
 function roleHome(role: string): string {

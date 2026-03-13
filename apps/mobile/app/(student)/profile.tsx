@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import { Card, Text, Button, Divider, TextInput, Switch, ActivityIndicator } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -25,6 +25,7 @@ export default function StudentProfile() {
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -70,6 +71,58 @@ export default function StudentProfile() {
       refetch();
     }
   };
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all associated data including submissions, posts, comments, and messages. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete My Account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              const { data: { session: currentSession } } = await supabase.auth.getSession();
+              const accessToken = currentSession?.access_token;
+              if (!accessToken) {
+                Alert.alert('Error', 'You must be signed in to delete your account.');
+                setDeleting(false);
+                return;
+              }
+
+              const baseUrl = process.env.EXPO_PUBLIC_WEB_URL || process.env.EXPO_PUBLIC_API_BASE_URL;
+              if (!baseUrl) {
+                Alert.alert('Error', 'Server URL is not configured.');
+                setDeleting(false);
+                return;
+              }
+
+              const res = await fetch(`${baseUrl}/api/mobile/delete-account`, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              });
+
+              if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Failed to delete account');
+              }
+
+              // Sign out after successful deletion
+              await signOut();
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete account. Please try again.');
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [signOut]);
 
   if (loading) return <LoadingScreen />;
 
@@ -236,6 +289,18 @@ export default function StudentProfile() {
           >
             Report Bug / App Idea
           </Button>
+          <Button
+            mode="text"
+            icon="shield-lock-outline"
+            onPress={() => {
+              const webUrl = process.env.EXPO_PUBLIC_WEB_URL || 'https://ambo-portal.vercel.app';
+              Linking.openURL(`${webUrl}/privacy`);
+            }}
+            compact
+            style={styles.supportButton}
+          >
+            Privacy Policy
+          </Button>
         </Card.Content>
       </Card>
 
@@ -250,6 +315,19 @@ export default function StudentProfile() {
         style={styles.signOutButton}
       >
         Sign Out
+      </Button>
+
+      {/* Delete Account */}
+      <Button
+        mode="text"
+        textColor="#ef4444"
+        icon="delete-outline"
+        onPress={handleDeleteAccount}
+        loading={deleting}
+        disabled={deleting}
+        style={styles.deleteButton}
+      >
+        Delete Account
       </Button>
 
       <Text variant="bodySmall" style={styles.versionText}>
@@ -288,5 +366,6 @@ const styles = StyleSheet.create({
   supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   supportButton: { alignSelf: 'flex-start' },
   signOutButton: { borderRadius: 12 },
+  deleteButton: { marginTop: 12 },
   versionText: { color: '#d1d5db', textAlign: 'center', marginTop: 16 },
 });

@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { StatusBadge } from '@/components/StatusBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 import type { SubmissionStatus } from '@ambo/database';
 
 const FILTERS: SubmissionStatus[] = ['Approved', 'Pending', 'Denied'];
@@ -22,7 +23,7 @@ interface UpcomingEvent {
 export default function StudentDashboard() {
   const { session } = useAuth();
   const userId = session?.user?.id || '';
-  const { submissions, loading, refetch } = useSubmissions(userId);
+  const { submissions, loading, error, refetch } = useSubmissions(userId);
   const [activeFilters, setActiveFilters] = useState<Set<SubmissionStatus>>(new Set(FILTERS));
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const router = useRouter();
@@ -66,6 +67,7 @@ export default function StudentDashboard() {
   };
 
   if (loading && submissions.length === 0) return <LoadingScreen />;
+  if (error && submissions.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <FlatList

@@ -6,12 +6,14 @@ import { usePosts } from '@/hooks/usePosts';
 import { PostCard } from '@/components/PostCard';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 
 export default function StudentPostsFeed() {
   const router = useRouter();
-  const { posts, loading, refetch } = usePosts();
+  const { posts, loading, error, refetch } = usePosts();
 
   if (loading && posts.length === 0) return <LoadingScreen />;
+  if (error && posts.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <View style={styles.container}>
@@ -43,6 +45,7 @@ export default function StudentPostsFeed() {
         color="#fff"
         style={styles.fab}
         onPress={() => router.push('/(student)/posts/new')}
+        accessibilityLabel="Create new post"
       />
     </View>
   );

@@ -39,8 +39,11 @@ async function getApiBaseUrl(): Promise<string> {
   if (process.env.EXPO_PUBLIC_API_BASE_URL) {
     return process.env.EXPO_PUBLIC_API_BASE_URL;
   }
-  // Default for dev - should be set in env for production
-  return process.env.EXPO_PUBLIC_WEB_URL || 'http://localhost:3000';
+  if (process.env.EXPO_PUBLIC_WEB_URL) {
+    return process.env.EXPO_PUBLIC_WEB_URL;
+  }
+  if (__DEV__) return 'http://localhost:3000';
+  throw new Error('EXPO_PUBLIC_WEB_URL must be set for production builds');
 }
 
 async function getAccessToken(): Promise<string | null> {
@@ -164,13 +167,13 @@ export function PushNotificationsProvider({ children }: { children: React.ReactN
   const registerPushToken = useCallback(async () => {
     if (Platform.OS === 'web') return;
     if (!Device.isDevice) {
-      console.log('[Push] Skipping registration on simulator/emulator');
+      if (__DEV__) console.log('[Push] Skipping registration on simulator/emulator');
       return;
     }
 
     const projectId = getProjectId();
     if (!projectId) {
-      console.log('[Push] No EAS projectId configured, skipping push registration');
+      if (__DEV__) console.log('[Push] No EAS projectId configured, skipping push registration');
       return;
     }
 
@@ -192,7 +195,7 @@ export function PushNotificationsProvider({ children }: { children: React.ReactN
     }
 
     if (finalStatus !== 'granted') {
-      console.log('[Push] Permission not granted');
+      if (__DEV__) console.log('[Push] Permission not granted');
       return;
     }
 
@@ -211,7 +214,7 @@ export function PushNotificationsProvider({ children }: { children: React.ReactN
     if (!synced) {
       // Persist for retry
       await AsyncStorage.setItem(PENDING_TOKEN_KEY, JSON.stringify(payload));
-      console.log('[Push] Token sync failed, persisted for retry');
+      if (__DEV__) console.log('[Push] Token sync failed, persisted for retry');
     } else {
       await AsyncStorage.removeItem(PENDING_TOKEN_KEY);
     }
@@ -227,7 +230,7 @@ export function PushNotificationsProvider({ children }: { children: React.ReactN
       const synced = await syncTokenToServer(payload);
       if (synced) {
         await AsyncStorage.removeItem(PENDING_TOKEN_KEY);
-        console.log('[Push] Pending token sync succeeded');
+        if (__DEV__) console.log('[Push] Pending token sync succeeded');
       }
     } catch {
       // Invalid stored data

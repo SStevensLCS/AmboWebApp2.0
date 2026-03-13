@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { CheddarRain } from '@/components/CheddarRain';
 
@@ -13,8 +13,10 @@ export default function LoginScreen() {
   useEffect(() => {
     // Log Supabase config on mount to aid debugging
     const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-    console.log('[Login] Supabase URL configured:', url ? url.substring(0, 30) + '...' : 'MISSING');
-    console.log('[Login] Supabase anon key configured:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'yes' : 'MISSING');
+    if (__DEV__) {
+      console.log('[Login] Supabase URL configured:', url ? url.substring(0, 30) + '...' : 'MISSING');
+      console.log('[Login] Supabase anon key configured:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'yes' : 'MISSING');
+    }
   }, []);
 
   async function handleLogin() {
@@ -24,12 +26,12 @@ export default function LoginScreen() {
       return;
     }
     setLoading(true);
-    console.log('[Login] Attempting sign-in for:', trimmedEmail);
+    if (__DEV__) console.log('[Login] Attempting sign-in for:', trimmedEmail);
     try {
       await signIn(trimmedEmail, password);
-      console.log('[Login] signIn resolved successfully');
+      if (__DEV__) console.log('[Login] signIn resolved successfully');
     } catch (error: any) {
-      console.error('[Login] signIn error:', error.message);
+      if (__DEV__) console.error('[Login] signIn error:', error.message);
       Alert.alert('Login Error', error.message);
     } finally {
       setLoading(false);
@@ -37,51 +39,62 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <CheddarRain isActive={cheddarActive} onComplete={() => setCheddarActive(false)} />
-
-      <Text style={styles.title}>Ambassador Portal</Text>
-      <Text style={styles.subtitle}>Sign in to continue</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleLogin}
-        disabled={loading}
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.buttonText}>
-          {loading ? 'Signing in...' : 'Sign In'}
-        </Text>
-      </TouchableOpacity>
+        <CheddarRain isActive={cheddarActive} onComplete={() => setCheddarActive(false)} />
 
-      <TouchableOpacity
-        style={styles.cheddarButton}
-        onPress={() => setCheddarActive(true)}
-        disabled={cheddarActive}
-      >
-        <Text style={styles.cheddarText}>Cheddar? 🧀</Text>
-      </TouchableOpacity>
-    </View>
+        <Text style={styles.title}>Ambassador Portal</Text>
+        <Text style={styles.subtitle}>Sign in to continue</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          accessibilityLabel="Email address"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          accessibilityLabel="Password"
+        />
+
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.cheddarButton}
+          onPress={() => setCheddarActive(true)}
+          disabled={cheddarActive}
+        >
+          <Text style={styles.cheddarText}>Cheddar? 🧀</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  flex: { flex: 1, backgroundColor: '#fff' },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   title: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 32 },
   input: {

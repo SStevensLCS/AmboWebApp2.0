@@ -6,6 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEvents } from '@/hooks/useEvents';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 
 type EventFilter = 'upcoming' | 'all' | 'past';
 
@@ -20,7 +21,7 @@ function formatTime(dateStr: string) {
 }
 
 export default function StudentEvents() {
-  const { events, loading, refetch } = useEvents();
+  const { events, loading, error, refetch } = useEvents();
   const router = useRouter();
   const [filter, setFilter] = useState<EventFilter>('upcoming');
 
@@ -51,6 +52,7 @@ export default function StudentEvents() {
   }, [filteredEvents, filter]);
 
   if (loading && events.length === 0) return <LoadingScreen />;
+  if (error && events.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   const emptyMessages: Record<EventFilter, string> = {
     upcoming: 'No upcoming events scheduled.',

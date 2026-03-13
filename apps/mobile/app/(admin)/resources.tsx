@@ -97,7 +97,7 @@ export default function AdminResources() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
       />
 
-      <FAB icon="plus" color="#fff" style={styles.fab} onPress={handlePickFile} />
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={handlePickFile} accessibilityLabel="Upload new resource" />
 
       <Portal>
         <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>

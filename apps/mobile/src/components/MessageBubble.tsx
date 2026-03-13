@@ -29,14 +29,16 @@ export function MessageBubble({ content, createdAt, senderName, senderAvatar, is
           )}
         </View>
       )}
-      <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
-        {!isOwn && (
-          <Text variant="labelSmall" style={styles.senderName}>{senderName}</Text>
-        )}
-        <Text variant="bodyMedium" style={isOwn ? styles.ownText : styles.otherText}>
-          {content}
-        </Text>
-        <Text variant="bodySmall" style={[styles.time, isOwn ? styles.ownTimeText : styles.otherTimeText]}>
+      <View style={styles.messageCol}>
+        <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
+          {!isOwn && (
+            <Text variant="labelSmall" style={styles.senderName}>{senderName}</Text>
+          )}
+          <Text variant="bodyMedium" style={isOwn ? styles.ownText : styles.otherText}>
+            {content}
+          </Text>
+        </View>
+        <Text variant="bodySmall" style={[styles.timeOutside, isOwn ? styles.ownTimeOutside : styles.otherTimeOutside]}>
           {time}
         </Text>
       </View>
@@ -59,10 +61,13 @@ const styles = StyleSheet.create({
   avatarCol: {
     marginRight: 8,
     alignSelf: 'flex-end',
+    marginBottom: 16,
   },
   avatarFallback: { backgroundColor: '#e5e7eb' },
-  bubble: {
+  messageCol: {
     maxWidth: '75%',
+  },
+  bubble: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 16,
@@ -86,15 +91,16 @@ const styles = StyleSheet.create({
   otherText: {
     color: '#1f2937',
   },
-  time: {
-    marginTop: 4,
+  timeOutside: {
     fontSize: 10,
+    marginTop: 2,
+    paddingHorizontal: 4,
+    color: '#9ca3af',
   },
-  ownTimeText: {
-    color: 'rgba(255,255,255,0.7)',
+  ownTimeOutside: {
     textAlign: 'right',
   },
-  otherTimeText: {
-    color: '#9ca3af',
+  otherTimeOutside: {
+    textAlign: 'left',
   },
 });

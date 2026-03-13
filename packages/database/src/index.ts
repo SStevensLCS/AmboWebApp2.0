@@ -8,6 +8,7 @@ export type {
   EventDetails,
   EventComment,
   EventRSVP,
+  EventRSVPOption,
 } from './types';
 export { SERVICE_TYPES } from './types';
 

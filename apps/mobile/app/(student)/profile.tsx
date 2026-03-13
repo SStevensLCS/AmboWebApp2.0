@@ -154,7 +154,7 @@ export default function StudentProfile() {
 
       {/* Push Notifications */}
       <Text variant="titleSmall" style={styles.sectionLabel}>NOTIFICATIONS</Text>
-      <Card style={styles.pushCard}>
+      <Card elevation={0} style={styles.pushCard}>
         <Card.Content>
           <View style={styles.pushHeader}>
             <MaterialCommunityIcons name="bell-ring-outline" size={24} color="#111827" />
@@ -208,7 +208,7 @@ export default function StudentProfile() {
 
       {/* Support & About */}
       <Text variant="titleSmall" style={styles.sectionLabel}>SUPPORT</Text>
-      <Card style={styles.supportCard}>
+      <Card elevation={0} style={styles.supportCard}>
         <Card.Content style={styles.supportContent}>
           <View style={styles.supportRow}>
             <MaterialCommunityIcons name="help-circle-outline" size={20} color="#6b7280" />
@@ -222,6 +222,19 @@ export default function StudentProfile() {
             style={styles.supportButton}
           >
             Contact Support
+          </Button>
+          <Button
+            mode="text"
+            icon="bug"
+            onPress={() => Linking.openURL(
+              'mailto:skyler.a.stevens@gmail.com' +
+              '?subject=Bug%20Report%20%2F%20App%20Idea%20-%20Ambassador%20Portal' +
+              '&body=Type%3A%20%5BBug%20%2F%20Feature%20Request%5D%0A%0ADescription%3A%0A%0A%0ASteps%20to%20Reproduce%20(if%20bug)%3A%0A1.%0A2.%0A3.'
+            )}
+            compact
+            style={styles.supportButton}
+          >
+            Report Bug / App Idea
           </Button>
         </Card.Content>
       </Card>

@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { SectionList, View, StyleSheet, RefreshControl, Alert, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
-import { Card, Text, FAB, Portal, Modal, TextInput, Button } from 'react-native-paper';
+import { SectionList, View, StyleSheet, RefreshControl } from 'react-native';
+import { Card, Chip, Text, FAB } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEvents } from '@/hooks/useEvents';
-import { useAuth } from '@/providers/AuthProvider';
-import { supabase } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
+
+type EventFilter = 'upcoming' | 'all' | 'past';
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -19,89 +19,61 @@ function formatTime(dateStr: string) {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-function formatDateTimeForInput(date: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 export default function AdminEvents() {
   const { events, loading, refetch } = useEvents();
-  const { session } = useAuth();
-  const userId = session?.user?.id || '';
   const router = useRouter();
-  const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [filter, setFilter] = useState<EventFilter>('upcoming');
 
-  // Create event form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [uniform, setUniform] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    return events.filter((e) => {
+      if (filter === 'upcoming') return new Date(e.end_time) >= now;
+      if (filter === 'past') return new Date(e.end_time) < now;
+      return true;
+    });
+  }, [events, filter]);
 
   const sections = useMemo(() => {
-    const grouped: Record<string, typeof events> = {};
-    for (const event of events) {
+    const grouped: Record<string, typeof filteredEvents> = {};
+    for (const event of filteredEvents) {
       const dateKey = new Date(event.start_time).toISOString().split('T')[0];
       if (!grouped[dateKey]) grouped[dateKey] = [];
       grouped[dateKey].push(event);
     }
-    return Object.entries(grouped)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, data]) => ({
-        title: formatDate(date + 'T12:00:00'),
-        data,
-      }));
-  }, [events]);
-
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setUniform('');
-    const now = new Date();
-    const later = new Date(now.getTime() + 60 * 60 * 1000);
-    setStartTime(formatDateTimeForInput(now));
-    setEndTime(formatDateTimeForInput(later));
-  };
-
-  const handleOpenCreate = () => {
-    resetForm();
-    setShowCreate(true);
-  };
-
-  const handleCreate = async () => {
-    if (!title.trim()) {
-      Alert.alert('Error', 'Title is required.');
-      return;
-    }
-    if (!startTime || !endTime) {
-      Alert.alert('Error', 'Start and end times are required.');
-      return;
-    }
-
-    setCreating(true);
-    const { error } = await supabase.from('events').insert({
-      title: title.trim(),
-      description: description.trim() || null,
-      uniform: uniform.trim() || null,
-      start_time: new Date(startTime).toISOString(),
-      end_time: new Date(endTime).toISOString(),
-      created_by: userId,
+    const sorted = Object.entries(grouped).sort(([a], [b]) => {
+      if (filter === 'past') return b.localeCompare(a);
+      return a.localeCompare(b);
     });
-
-    setCreating(false);
-    if (error) {
-      Alert.alert('Error', error.message);
-    } else {
-      setShowCreate(false);
-      refetch();
-    }
-  };
+    return sorted.map(([date, data]) => ({
+      title: formatDate(date + 'T12:00:00'),
+      data,
+    }));
+  }, [filteredEvents, filter]);
 
   if (loading && events.length === 0) return <LoadingScreen />;
 
+  const emptyMessages: Record<EventFilter, string> = {
+    upcoming: 'No upcoming events. Tap + to create one.',
+    past: 'No past events.',
+    all: 'Tap + to create your first event.',
+  };
+
   return (
     <View style={styles.container}>
+      <View style={styles.filterRow}>
+        {(['upcoming', 'all', 'past'] as const).map((f) => (
+          <Chip
+            key={f}
+            selected={filter === f}
+            onPress={() => setFilter(f)}
+            showSelectedOverlay
+            style={styles.filterChip}
+            compact
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </Chip>
+        ))}
+      </View>
       <SectionList
         contentContainerStyle={styles.content}
         sections={sections}
@@ -112,6 +84,7 @@ export default function AdminEvents() {
         )}
         renderItem={({ item }) => (
           <Card
+            elevation={0}
             style={styles.eventCard}
             onPress={() => router.push({ pathname: '/(admin)/events/[id]', params: { id: item.id } })}
           >
@@ -136,95 +109,19 @@ export default function AdminEvents() {
           </Card>
         )}
         ListEmptyComponent={
-          <EmptyState icon="calendar-blank-outline" title="No events yet" subtitle="Tap + to create your first event." />
+          <EmptyState icon="calendar-blank-outline" title="No events" subtitle={emptyMessages[filter]} />
         }
       />
 
-      <FAB icon="plus" color="#fff" style={styles.fab} onPress={handleOpenCreate} />
-
-      {/* Create Event Modal */}
-      <Portal>
-        <Modal
-          visible={showCreate}
-          onDismiss={() => setShowCreate(false)}
-          contentContainerStyle={styles.modal}
-        >
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <Text variant="titleLarge" style={styles.modalTitle}>Create Event</Text>
-
-              <TextInput
-                mode="outlined"
-                label="Title *"
-                value={title}
-                onChangeText={setTitle}
-                dense
-                style={styles.modalInput}
-              />
-              <TextInput
-                mode="outlined"
-                label="Description"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={3}
-                dense
-                style={styles.modalInput}
-              />
-              <TextInput
-                mode="outlined"
-                label="Uniform"
-                value={uniform}
-                onChangeText={setUniform}
-                dense
-                style={styles.modalInput}
-              />
-              <Text variant="labelMedium" style={styles.dateLabel}>Date & Time</Text>
-              <View style={styles.dateRow}>
-                <TextInput
-                  mode="outlined"
-                  label="Start"
-                  value={startTime}
-                  onChangeText={setStartTime}
-                  dense
-                  style={[styles.modalInput, styles.dateInput]}
-                  placeholder="2026-03-15T14:00"
-                  left={<TextInput.Icon icon="calendar-clock" size={18} />}
-                />
-                <TextInput
-                  mode="outlined"
-                  label="End"
-                  value={endTime}
-                  onChangeText={setEndTime}
-                  dense
-                  style={[styles.modalInput, styles.dateInput]}
-                  placeholder="2026-03-15T16:00"
-                  left={<TextInput.Icon icon="clock-outline" size={18} />}
-                />
-              </View>
-              <Text variant="bodySmall" style={styles.dateHint}>Format: YYYY-MM-DDTHH:MM</Text>
-
-              <View style={styles.modalActions}>
-                <Button mode="text" onPress={() => setShowCreate(false)}>Cancel</Button>
-                <Button
-                  mode="contained"
-                  onPress={handleCreate}
-                  loading={creating}
-                  disabled={!title.trim() || creating}
-                >
-                  Create
-                </Button>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </Modal>
-      </Portal>
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={() => router.push('/(admin)/events/new')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
+  filterChip: {},
   content: { padding: 16, paddingBottom: 32 },
   sectionHeader: {
     fontWeight: '600',
@@ -244,18 +141,4 @@ const styles = StyleSheet.create({
     bottom: 16,
     backgroundColor: '#111827',
   },
-  modal: {
-    backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  modalTitle: { fontWeight: '700', marginBottom: 16 },
-  modalInput: { backgroundColor: '#fff', marginBottom: 12 },
-  dateLabel: { fontWeight: '600', color: '#374151', marginBottom: 8 },
-  dateRow: { flexDirection: 'row', gap: 8 },
-  dateInput: { flex: 1 },
-  dateHint: { color: '#9ca3af', marginBottom: 12, marginTop: -8 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 },
 });

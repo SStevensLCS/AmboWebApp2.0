@@ -12,6 +12,13 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const url = getAuthUrl();
-    return NextResponse.redirect(url);
+    try {
+        const url = getAuthUrl();
+        return NextResponse.redirect(url);
+    } catch (error: any) {
+        return NextResponse.json(
+            { error: error.message || "Google Calendar is not configured." },
+            { status: 500 }
+        );
+    }
 }

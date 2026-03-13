@@ -163,7 +163,7 @@ export default function AdminProfile() {
 
       {/* Notification Permission */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Notifications</Text>
-      <Card style={styles.pushCard}>
+      <Card elevation={0} style={styles.pushCard}>
         <Card.Content>
           <View style={styles.pushHeader}>
             <MaterialCommunityIcons name="bell-ring-outline" size={24} color="#111827" />
@@ -215,7 +215,7 @@ export default function AdminProfile() {
 
       {/* Notification Preferences */}
       <Text variant="titleSmall" style={styles.prefsLabel}>Notification Types</Text>
-      <Card style={styles.prefsCard}>
+      <Card elevation={0} style={styles.prefsCard}>
         <Card.Content style={styles.prefsContent}>
           <View style={styles.prefRow}>
             <View style={styles.prefInfo}>
@@ -271,7 +271,7 @@ export default function AdminProfile() {
 
       {/* Google Calendar */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Integrations</Text>
-      <Card style={styles.gcalCard}>
+      <Card elevation={0} style={styles.gcalCard}>
         <Card.Content>
           <View style={styles.gcalHeader}>
             <MaterialCommunityIcons name="google" size={24} color="#4285F4" />
@@ -314,7 +314,7 @@ export default function AdminProfile() {
 
       {/* Support */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Support</Text>
-      <Card style={styles.supportCard}>
+      <Card elevation={0} style={styles.supportCard}>
         <Card.Content style={styles.supportContent}>
           <View style={styles.supportRow}>
             <MaterialCommunityIcons name="help-circle-outline" size={20} color="#6b7280" />
@@ -328,6 +328,19 @@ export default function AdminProfile() {
             style={styles.supportButton}
           >
             Contact Support
+          </Button>
+          <Button
+            mode="text"
+            icon="bug"
+            onPress={() => Linking.openURL(
+              'mailto:skyler.a.stevens@gmail.com' +
+              '?subject=Bug%20Report%20%2F%20App%20Idea%20-%20Ambassador%20Portal' +
+              '&body=Type%3A%20%5BBug%20%2F%20Feature%20Request%5D%0A%0ADescription%3A%0A%0A%0ASteps%20to%20Reproduce%20(if%20bug)%3A%0A1.%0A2.%0A3.'
+            )}
+            compact
+            style={styles.supportButton}
+          >
+            Report Bug / App Idea
           </Button>
         </Card.Content>
       </Card>

@@ -22,6 +22,7 @@ export default function AdminSubmissions() {
       refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
       renderItem={({ item }) => (
         <Card
+          elevation={0}
           style={styles.card}
           onPress={() => router.push({ pathname: '/(admin)/submissions/[id]', params: { id: item.id } })}
         >

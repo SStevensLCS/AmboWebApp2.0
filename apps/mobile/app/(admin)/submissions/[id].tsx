@@ -118,7 +118,7 @@ export default function SubmissionDetailPage() {
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Student Info Card */}
-          <Card style={styles.studentCard}>
+          <Card elevation={0} style={styles.studentCard}>
             <Card.Content style={styles.studentContent}>
               <View style={styles.studentRow}>
                 {submission.users?.avatar_url ? (
@@ -139,7 +139,7 @@ export default function SubmissionDetailPage() {
 
           {/* Submission Details */}
           <Text variant="titleSmall" style={styles.sectionLabel}>SUBMISSION DETAILS</Text>
-          <Card style={styles.detailsCard}>
+          <Card elevation={0} style={styles.detailsCard}>
             <Card.Content style={styles.detailsContent}>
               <View style={styles.detailRow}>
                 <View style={styles.detailIconRow}>

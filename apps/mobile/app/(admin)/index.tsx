@@ -44,35 +44,35 @@ export default function AdminDashboard() {
       <Text variant="headlineSmall" style={styles.heading}>Dashboard</Text>
 
       <View style={styles.statsGrid}>
-        <Card style={[styles.statCard, pendingCount > 0 && styles.pendingCard]} onPress={() => router.push('/(admin)/submissions')}>
+        <Card elevation={0} style={[styles.statCard, pendingCount > 0 && styles.pendingCard]} onPress={() => router.push('/(admin)/submissions')}>
           <Card.Content style={styles.statContent}>
             <MaterialCommunityIcons name="file-clock-outline" size={22} color={pendingCount > 0 ? '#f59e0b' : '#9ca3af'} />
             <Text variant="headlineMedium" style={styles.statValue}>{pendingCount}</Text>
             <Text variant="bodySmall" style={styles.statLabel}>Pending Reviews</Text>
           </Card.Content>
         </Card>
-        <Card style={styles.statCard} onPress={() => router.push('/(admin)/users')}>
+        <Card elevation={0} style={styles.statCard} onPress={() => router.push('/(admin)/users')}>
           <Card.Content style={styles.statContent}>
             <MaterialCommunityIcons name="account-group-outline" size={22} color="#111827" />
             <Text variant="headlineMedium" style={styles.statValue}>{userCount}</Text>
             <Text variant="bodySmall" style={styles.statLabel}>Users</Text>
           </Card.Content>
         </Card>
-        <Card style={[styles.statCard, applicationCount > 0 && styles.applicationCard]} onPress={() => router.push('/(admin)/applications')}>
+        <Card elevation={0} style={[styles.statCard, applicationCount > 0 && styles.applicationCard]} onPress={() => router.push('/(admin)/applications')}>
           <Card.Content style={styles.statContent}>
             <MaterialCommunityIcons name="clipboard-text-outline" size={22} color={applicationCount > 0 ? '#3b82f6' : '#9ca3af'} />
             <Text variant="headlineMedium" style={styles.statValue}>{applicationCount}</Text>
             <Text variant="bodySmall" style={styles.statLabel}>Applications</Text>
           </Card.Content>
         </Card>
-        <Card style={styles.statCard} onPress={() => router.push('/(admin)/submissions')}>
+        <Card elevation={0} style={styles.statCard} onPress={() => router.push('/(admin)/submissions')}>
           <Card.Content style={styles.statContent}>
             <MaterialCommunityIcons name="file-document-outline" size={22} color="#111827" />
             <Text variant="headlineMedium" style={styles.statValue}>{submissionCount}</Text>
             <Text variant="bodySmall" style={styles.statLabel}>Submissions</Text>
           </Card.Content>
         </Card>
-        <Card style={styles.statCard} onPress={() => router.push('/(admin)/resources')}>
+        <Card elevation={0} style={styles.statCard} onPress={() => router.push('/(admin)/resources')}>
           <Card.Content style={styles.statContent}>
             <MaterialCommunityIcons name="folder-outline" size={22} color="#16a34a" />
             <Text variant="headlineMedium" style={styles.statValue}>&mdash;</Text>

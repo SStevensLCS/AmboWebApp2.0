@@ -78,7 +78,7 @@ export default function StudentDashboard() {
         <View style={styles.header}>
           {/* Stats */}
           <View style={styles.statsRow}>
-            <Card style={styles.statCard}>
+            <Card elevation={0} style={styles.statCard}>
               <Card.Content style={styles.statContent}>
                 <MaterialCommunityIcons name="clock-outline" size={20} color="#111827" />
                 <Text variant="headlineMedium" style={styles.statValue}>
@@ -87,7 +87,7 @@ export default function StudentDashboard() {
                 <Text variant="bodySmall" style={styles.statLabel}>Approved Hours</Text>
               </Card.Content>
             </Card>
-            <Card style={styles.statCard}>
+            <Card elevation={0} style={styles.statCard}>
               <Card.Content style={styles.statContent}>
                 <MaterialCommunityIcons name="trophy-outline" size={20} color="#7c3aed" />
                 <Text variant="headlineMedium" style={styles.statValue}>
@@ -97,7 +97,7 @@ export default function StudentDashboard() {
               </Card.Content>
             </Card>
             {stats.pending > 0 && (
-              <Card style={[styles.statCard, styles.pendingCard]}>
+              <Card elevation={0} style={[styles.statCard, styles.pendingCard]}>
                 <Card.Content style={styles.statContent}>
                   <MaterialCommunityIcons name="clock-alert-outline" size={20} color="#f59e0b" />
                   <Text variant="headlineMedium" style={styles.statValue}>
@@ -133,6 +133,7 @@ export default function StudentDashboard() {
                 const d = new Date(event.start_time);
                 return (
                   <Card
+                    elevation={0}
                     key={event.id}
                     style={styles.eventCard}
                     onPress={() => router.push({ pathname: '/(student)/events/[id]', params: { id: event.id } })}
@@ -185,7 +186,7 @@ export default function StudentDashboard() {
         </View>
       }
       renderItem={({ item }) => (
-        <Card style={styles.submissionCard}>
+        <Card elevation={0} style={styles.submissionCard}>
           <Card.Content>
             <View style={styles.submissionHeader}>
               <Text variant="bodyMedium" style={styles.submissionType}>{item.service_type}</Text>

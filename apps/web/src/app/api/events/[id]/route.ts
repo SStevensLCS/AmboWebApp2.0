@@ -44,7 +44,29 @@ export async function PUT(
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // ── Google Calendar sync ─────────────────────────────
+    // ── Update custom RSVP options if provided ────────────
+    if (body.rsvp_options !== undefined) {
+        // Delete existing options
+        await supabase
+            .from("event_rsvp_options")
+            .delete()
+            .eq("event_id", params.id);
+
+        // Insert new options
+        if (Array.isArray(body.rsvp_options) && body.rsvp_options.length > 0) {
+            const optionRows = body.rsvp_options
+                .filter((label: string) => label.trim())
+                .map((label: string, idx: number) => ({
+                    event_id: params.id,
+                    label: label.trim(),
+                    sort_order: idx,
+                }));
+            if (optionRows.length > 0) {
+                await supabase.from("event_rsvp_options").insert(optionRows);
+            }
+        }
+    }
+
     // ── Google Calendar sync ─────────────────────────────
     if (updated.google_calendar_event_id) {
         // Use sync helper to include RSVPs

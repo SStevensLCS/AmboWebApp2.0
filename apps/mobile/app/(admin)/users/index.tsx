@@ -24,6 +24,7 @@ export default function AdminUsers() {
         const initials = `${item.first_name?.[0] || ''}${item.last_name?.[0] || ''}`;
         return (
           <Card
+            elevation={0}
             style={styles.card}
             onPress={() => router.push({ pathname: '/(admin)/users/[id]', params: { id: item.id } })}
           >

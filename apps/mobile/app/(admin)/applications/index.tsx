@@ -47,7 +47,7 @@ export default function ApplicationsList() {
     const date = new Date(item.created_at).toLocaleDateString();
 
     return (
-      <Card style={styles.card} onPress={() => router.push(`/(admin)/applications/${item.id}`)}>
+      <Card elevation={0} style={styles.card} onPress={() => router.push(`/(admin)/applications/${item.id}`)}>
         <Card.Content style={styles.cardContent}>
           <Avatar.Text size={40} label={initials} style={styles.avatar} />
           <View style={styles.cardInfo}>

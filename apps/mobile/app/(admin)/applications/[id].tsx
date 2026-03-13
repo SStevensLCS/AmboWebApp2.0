@@ -164,7 +164,7 @@ export default function ApplicationDetail() {
 
         {/* Personal Info */}
         <Text variant="titleSmall" style={styles.sectionLabel}>PERSONAL INFORMATION</Text>
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content style={styles.infoContent}>
             <InfoRow icon="account" label="Name" value={`${application.first_name} ${application.last_name}`} />
             <Divider style={styles.rowDivider} />
@@ -176,7 +176,7 @@ export default function ApplicationDetail() {
 
         {/* Academic Info */}
         <Text variant="titleSmall" style={styles.sectionLabel}>ACADEMIC INFORMATION</Text>
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content style={styles.infoContent}>
             <InfoRow icon="school-outline" label="Current Grade" value={application.grade_current || 'N/A'} />
             <Divider style={styles.rowDivider} />
@@ -209,7 +209,7 @@ export default function ApplicationDetail() {
         {(application.referrer_1_name || application.referrer_2_name) && (
           <>
             <Text variant="titleSmall" style={styles.sectionLabel}>REFERENCES</Text>
-            <Card style={styles.card}>
+            <Card elevation={0} style={styles.card}>
               <Card.Content style={styles.infoContent}>
                 {application.referrer_1_name && (
                   <InfoRow icon="account-outline" label="Reference 1" value={`${application.referrer_1_name} (${application.referrer_1_email || 'No email'})`} />
@@ -232,7 +232,7 @@ export default function ApplicationDetail() {
           const answer = application[key] as string | undefined;
           if (!answer) return null;
           return (
-            <Card key={index} style={styles.questionCard}>
+            <Card elevation={0} key={index} style={styles.questionCard}>
               <Card.Content>
                 <Text variant="labelMedium" style={styles.questionLabel}>{label}</Text>
                 <Text variant="bodyMedium" style={styles.answer}>{answer}</Text>

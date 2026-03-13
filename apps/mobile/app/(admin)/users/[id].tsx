@@ -260,6 +260,7 @@ export default function UserDetail() {
 
         {/* Submissions Summary (collapsible) */}
         <Card
+          elevation={0}
           style={styles.summaryCard}
           onPress={() => setShowSubmissions(!showSubmissions)}
         >
@@ -277,7 +278,7 @@ export default function UserDetail() {
         </Card>
 
         {showSubmissions && (
-          <Card style={styles.submissionsCard}>
+          <Card elevation={0} style={styles.submissionsCard}>
             <Card.Content>
               {submissions.length === 0 ? (
                 <Text variant="bodySmall" style={styles.noData}>No submissions found</Text>

@@ -7,11 +7,16 @@ const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 const TOKEN_KEY = "google_calendar_tokens";
 
 function getOAuth2Client(): OAuth2Client {
-    return new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
-    );
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    if (!clientId || !clientSecret) {
+        throw new Error(
+            "Google Calendar integration is not configured. " +
+            "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables."
+        );
+    }
+    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
 // ─── Auth helpers ────────────────────────────────────────

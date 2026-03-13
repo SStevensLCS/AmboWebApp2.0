@@ -24,6 +24,14 @@ export interface Submission {
   created_at?: string;
 }
 
+export interface EventRSVPOption {
+  id: string;
+  event_id: string;
+  label: string;
+  sort_order: number;
+  created_at?: string;
+}
+
 export interface EventDetails {
   id: string;
   title: string;
@@ -34,6 +42,7 @@ export interface EventDetails {
   created_by: string;
   uniform?: string;
   users?: { role?: string };
+  rsvp_options?: EventRSVPOption[];
 }
 
 export interface EventComment {
@@ -48,6 +57,8 @@ export interface EventRSVP {
   status: RSVPStatus;
   users: { first_name: string; last_name: string };
   user_id: string;
+  rsvp_option_id?: string;
+  rsvp_option?: EventRSVPOption;
 }
 
 export const SERVICE_TYPES = [

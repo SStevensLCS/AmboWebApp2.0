@@ -51,7 +51,7 @@ export default function NewSubmission() {
       <>
         <Stack.Screen options={{ title: 'Submitted!' }} />
         <View style={styles.successContainer}>
-          <Card style={styles.successCard}>
+          <Card elevation={0} style={styles.successCard}>
             <Card.Content style={styles.successContent}>
               <MaterialCommunityIcons name="check-circle" size={56} color="#10b981" />
               <Text variant="headlineSmall" style={styles.successTitle}>

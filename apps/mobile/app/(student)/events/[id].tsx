@@ -15,6 +15,7 @@ import {
   IconButton,
   Divider,
   Avatar,
+  Chip,
   SegmentedButtons,
 } from 'react-native-paper';
 import { useLocalSearchParams, Stack } from 'expo-router';
@@ -42,7 +43,7 @@ export default function EventDetail() {
   const [commentText, setCommentText] = useState('');
   const [posting, setPosting] = useState(false);
 
-  const { comments, rsvps, myRsvp, loading, updateRsvp, postComment } = useEventDetail(id, userId);
+  const { comments, rsvps, rsvpOptions, myRsvp, myRsvpOptionId, loading, updateRsvp, postComment } = useEventDetail(id, userId);
 
   useEffect(() => {
     async function fetchEvent() {
@@ -98,7 +99,7 @@ export default function EventDetail() {
             <Text variant="bodyMedium">{start.time} - {end.time}</Text>
           </View>
           {event.uniform && (
-            <Card style={styles.uniformCard}>
+            <Card elevation={0} style={styles.uniformCard}>
               <Card.Content style={styles.uniformContent}>
                 <MaterialCommunityIcons name="tshirt-crew-outline" size={18} color="#111827" />
                 <Text variant="bodyMedium" style={styles.uniformText}>Uniform: {event.uniform}</Text>
@@ -116,28 +117,65 @@ export default function EventDetail() {
           {/* RSVP */}
           <Divider style={styles.divider} />
           <Text variant="titleMedium" style={styles.sectionTitle}>RSVP</Text>
-          <SegmentedButtons
-            value={myRsvp || ''}
-            onValueChange={handleRsvp}
-            buttons={[
-              { value: 'going', label: `Going (${goingCount})`, icon: 'check' },
-              { value: 'maybe', label: `Maybe (${maybeCount})`, icon: 'help-circle-outline' },
-              { value: 'no', label: "Can't Go", icon: 'close' },
-            ]}
-            style={styles.rsvpButtons}
-          />
+          {rsvpOptions.length > 0 ? (
+            <View style={styles.rsvpChipRow}>
+              {rsvpOptions.map((opt) => {
+                const isSelected = myRsvp === 'going' && myRsvpOptionId === opt.id;
+                const count = rsvps.filter(r => r.rsvp_option_id === opt.id).length;
+                return (
+                  <Chip
+                    key={opt.id}
+                    selected={isSelected}
+                    showSelectedOverlay
+                    onPress={() => updateRsvp('going' as RSVPStatus, opt.id)}
+                    style={styles.rsvpChip}
+                  >
+                    {opt.label}{count > 0 ? ` (${count})` : ''}
+                  </Chip>
+                );
+              })}
+            </View>
+          ) : (
+            <SegmentedButtons
+              value={myRsvp || ''}
+              onValueChange={handleRsvp}
+              buttons={[
+                { value: 'going', label: `Going (${goingCount})`, icon: 'check' },
+                { value: 'maybe', label: `Maybe (${maybeCount})`, icon: 'help-circle-outline' },
+                { value: 'no', label: "Can't Go", icon: 'close' },
+              ]}
+              style={styles.rsvpButtons}
+            />
+          )}
 
           {/* Attendees */}
-          {rsvps.filter((r) => r.status === 'going' && r.users).length > 0 && (
+          {rsvpOptions.length > 0 ? (
             <View style={styles.attendeesSection}>
-              <Text variant="bodySmall" style={styles.attendeesLabel}>Going:</Text>
-              <Text variant="bodySmall" style={styles.attendeesText}>
-                {rsvps
-                  .filter((r) => r.status === 'going' && r.users)
-                  .map((r) => `${r.users.first_name} ${r.users.last_name}`)
-                  .join(', ')}
-              </Text>
+              {rsvpOptions.map((opt) => {
+                const optRsvps = rsvps.filter(r => r.rsvp_option_id === opt.id && r.users);
+                if (optRsvps.length === 0) return null;
+                return (
+                  <View key={opt.id} style={{ marginBottom: 4 }}>
+                    <Text variant="bodySmall" style={styles.attendeesLabel}>{opt.label}:</Text>
+                    <Text variant="bodySmall" style={styles.attendeesText}>
+                      {optRsvps.map(r => `${r.users.first_name} ${r.users.last_name}`).join(', ')}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
+          ) : (
+            rsvps.filter((r) => r.status === 'going' && r.users).length > 0 && (
+              <View style={styles.attendeesSection}>
+                <Text variant="bodySmall" style={styles.attendeesLabel}>Going:</Text>
+                <Text variant="bodySmall" style={styles.attendeesText}>
+                  {rsvps
+                    .filter((r) => r.status === 'going' && r.users)
+                    .map((r) => `${r.users.first_name} ${r.users.last_name}`)
+                    .join(', ')}
+                </Text>
+              </View>
+            )
           )}
 
           {/* Comments */}
@@ -201,6 +239,8 @@ const styles = StyleSheet.create({
   description: { color: '#374151', lineHeight: 22 },
   sectionTitle: { fontWeight: '600', marginBottom: 12 },
   rsvpButtons: { marginBottom: 12 },
+  rsvpChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  rsvpChip: {},
   attendeesSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   attendeesLabel: { fontWeight: '600', color: '#374151' },
   attendeesText: { color: '#6b7280', flex: 1 },

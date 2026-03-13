@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
-import { Text, TextInput, Button, Avatar, IconButton, Divider } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
+import { Text, TextInput, Button, Avatar, Divider } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
-
-interface Participant {
-  id: string;
-  first_name: string;
-  last_name: string;
-  avatar_url?: string;
-  role: string;
-}
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface UserItem {
   id: string;
@@ -28,20 +21,15 @@ export default function AdminChatEdit() {
   const userId = session?.user?.id || '';
 
   const [groupName, setGroupName] = useState('');
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [participantIds, setParticipantIds] = useState<Set<string>>(new Set());
+  const [allUsers, setAllUsers] = useState<UserItem[]>([]);
+  const [pendingAddIds, setPendingAddIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Add people state
-  const [showAddPeople, setShowAddPeople] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<UserItem[]>([]);
-  const [searching, setSearching] = useState(false);
-
-  // Fetch group info and participants
   useEffect(() => {
     if (!id) return;
-    async function fetchGroupData() {
+    async function fetchData() {
       setLoading(true);
 
       // Fetch group name
@@ -55,91 +43,80 @@ export default function AdminChatEdit() {
         setGroupName(group.name);
       }
 
-      // Fetch participants with user details
+      // Fetch current participants
       const { data: parts } = await supabase
         .from('chat_participants')
-        .select('user_id, users(id, first_name, last_name, avatar_url, role)')
+        .select('user_id')
         .eq('group_id', id);
 
-      if (parts) {
-        const mapped = parts
-          .filter((p: any) => p.users)
-          .map((p: any) => ({
-            id: p.users.id,
-            first_name: p.users.first_name,
-            last_name: p.users.last_name,
-            avatar_url: p.users.avatar_url,
-            role: p.users.role,
-          }));
-        setParticipants(mapped);
+      const currentIds = new Set((parts || []).map((p: any) => p.user_id));
+      setParticipantIds(currentIds);
+
+      // Fetch all users
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, avatar_url, role')
+        .order('first_name');
+
+      if (users) {
+        setAllUsers(users as UserItem[]);
       }
 
       setLoading(false);
     }
-    fetchGroupData();
+    fetchData();
   }, [id]);
 
-  // Search users when query changes
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const timeout = setTimeout(async () => {
-      setSearching(true);
-      const q = searchQuery.trim().toLowerCase();
-      const { data } = await supabase
-        .from('users')
-        .select('id, first_name, last_name, avatar_url, role')
-        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`)
-        .limit(20);
-
-      if (data) {
-        // Filter out users already in the group
-        const participantIds = participants.map((p) => p.id);
-        const filtered = data.filter((u: any) => !participantIds.includes(u.id));
-        setSearchResults(filtered as UserItem[]);
+  const toggleUser = (uid: string) => {
+    // Can't toggle users already in the group
+    if (participantIds.has(uid)) return;
+    setPendingAddIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(uid)) {
+        next.delete(uid);
+      } else {
+        next.add(uid);
       }
-      setSearching(false);
-    }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [searchQuery, participants]);
-
-  const handleAddUser = async (user: UserItem) => {
-    if (!id) return;
-
-    const { error } = await supabase
-      .from('chat_participants')
-      .insert({ group_id: id, user_id: user.id });
-
-    if (error) {
-      Alert.alert('Error', 'Failed to add participant');
-      return;
-    }
-
-    setParticipants((prev) => [...prev, user]);
-    setSearchQuery('');
-    setSearchResults([]);
+      return next;
+    });
   };
+
+  const isSelected = (uid: string) => participantIds.has(uid) || pendingAddIds.has(uid);
 
   const handleSave = async () => {
     if (!id) return;
     setSaving(true);
 
-    const { error } = await supabase
+    // Update group name
+    const { error: nameError } = await supabase
       .from('chat_groups')
       .update({ name: groupName.trim() || null })
       .eq('id', id);
 
-    setSaving(false);
-
-    if (error) {
+    if (nameError) {
+      setSaving(false);
       Alert.alert('Error', 'Failed to update group name');
       return;
     }
 
+    // Batch-insert new participants
+    if (pendingAddIds.size > 0) {
+      const inserts = Array.from(pendingAddIds).map((uid) => ({
+        group_id: id,
+        user_id: uid,
+      }));
+      const { error: addError } = await supabase
+        .from('chat_participants')
+        .insert(inserts);
+
+      if (addError) {
+        setSaving(false);
+        Alert.alert('Error', 'Failed to add participants');
+        return;
+      }
+    }
+
+    setSaving(false);
     router.back();
   };
 
@@ -154,6 +131,15 @@ export default function AdminChatEdit() {
       </View>
     );
   }
+
+  // Sort: current participants first, then others
+  const sortedUsers = [...allUsers].sort((a, b) => {
+    const aIn = participantIds.has(a.id) ? 0 : 1;
+    const bIn = participantIds.has(b.id) ? 0 : 1;
+    return aIn - bIn;
+  });
+
+  const totalSelected = participantIds.size + pendingAddIds.size;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -170,89 +156,44 @@ export default function AdminChatEdit() {
 
       <Divider style={styles.divider} />
 
-      {/* Participants Section */}
+      {/* Members Section */}
       <Text variant="titleMedium" style={styles.sectionTitle}>
-        Participants ({participants.length})
+        Members ({totalSelected})
       </Text>
-      {participants.map((p) => {
-        const initials = getInitials(p.first_name, p.last_name);
+
+      {sortedUsers.map((user) => {
+        const initials = getInitials(user.first_name, user.last_name);
+        const isCurrentParticipant = participantIds.has(user.id);
+        const selected = isSelected(user.id);
+
         return (
-          <View key={p.id} style={styles.participantRow}>
-            {p.avatar_url ? (
-              <Avatar.Image size={40} source={{ uri: p.avatar_url }} />
+          <Pressable
+            key={user.id}
+            style={[styles.userRow, selected && !isCurrentParticipant && styles.userRowSelected]}
+            onPress={() => toggleUser(user.id)}
+            disabled={isCurrentParticipant}
+          >
+            <MaterialCommunityIcons
+              name={selected ? 'checkbox-marked' : 'checkbox-blank-outline'}
+              size={24}
+              color={selected ? '#6366f1' : '#9ca3af'}
+            />
+            {user.avatar_url ? (
+              <Avatar.Image size={40} source={{ uri: user.avatar_url }} />
             ) : (
               <Avatar.Text size={40} label={initials} style={styles.avatarFallback} />
             )}
-            <View style={styles.participantInfo}>
-              <Text variant="bodyMedium" style={styles.participantName}>
-                {p.first_name} {p.last_name}
+            <View style={styles.userInfo}>
+              <Text variant="bodyMedium" style={styles.userName}>
+                {user.first_name} {user.last_name}
               </Text>
-              <Text variant="bodySmall" style={styles.participantRole}>
-                {p.role}
+              <Text variant="bodySmall" style={styles.userRole}>
+                {user.role}{isCurrentParticipant ? ' · in group' : ''}
               </Text>
             </View>
-          </View>
+          </Pressable>
         );
       })}
-
-      <Divider style={styles.divider} />
-
-      {/* Add People Section */}
-      <Text variant="titleMedium" style={styles.sectionTitle}>Add People</Text>
-      {!showAddPeople ? (
-        <Button
-          mode="outlined"
-          icon="account-plus"
-          onPress={() => setShowAddPeople(true)}
-          style={styles.addButton}
-        >
-          Add People
-        </Button>
-      ) : (
-        <View>
-          <TextInput
-            mode="outlined"
-            label="Search users..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            dense
-            left={<TextInput.Icon icon="magnify" />}
-            style={styles.searchInput}
-            autoFocus
-          />
-          {searchResults.map((user) => {
-            const initials = getInitials(user.first_name, user.last_name);
-            return (
-              <Pressable
-                key={user.id}
-                style={styles.searchResultRow}
-                onPress={() => handleAddUser(user)}
-              >
-                {user.avatar_url ? (
-                  <Avatar.Image size={36} source={{ uri: user.avatar_url }} />
-                ) : (
-                  <Avatar.Text size={36} label={initials} style={styles.avatarFallback} />
-                )}
-                <View style={styles.participantInfo}>
-                  <Text variant="bodyMedium" style={styles.participantName}>
-                    {user.first_name} {user.last_name}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.participantRole}>
-                    {user.role}
-                  </Text>
-                </View>
-                <IconButton icon="plus" size={20} />
-              </Pressable>
-            );
-          })}
-          {searching && (
-            <Text variant="bodySmall" style={styles.searchingText}>Searching...</Text>
-          )}
-          {searchQuery.trim() && !searching && searchResults.length === 0 && (
-            <Text variant="bodySmall" style={styles.searchingText}>No users found</Text>
-          )}
-        </View>
-      )}
 
       {/* Save Button */}
       <View style={styles.footer}>
@@ -277,26 +218,21 @@ const styles = StyleSheet.create({
   sectionTitle: { fontWeight: '700', marginBottom: 8 },
   nameInput: { backgroundColor: '#fff', marginBottom: 8 },
   divider: { marginVertical: 16 },
-  participantRow: {
+  userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     gap: 12,
+    borderRadius: 8,
+  },
+  userRowSelected: {
+    backgroundColor: '#eef2ff',
   },
   avatarFallback: { backgroundColor: '#e5e7eb' },
-  participantInfo: { flex: 1 },
-  participantName: { fontWeight: '600' },
-  participantRole: { color: '#6b7280' },
-  addButton: { marginBottom: 8, borderRadius: 8 },
-  searchInput: { backgroundColor: '#fff', marginBottom: 8 },
-  searchResultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    gap: 12,
-  },
-  searchingText: { color: '#6b7280', paddingVertical: 8, textAlign: 'center' },
+  userInfo: { flex: 1 },
+  userName: { fontWeight: '600' },
+  userRole: { color: '#6b7280' },
   footer: { marginTop: 24 },
   saveButton: { borderRadius: 8 },
 });

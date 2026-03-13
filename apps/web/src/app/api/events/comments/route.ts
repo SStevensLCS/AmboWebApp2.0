@@ -23,12 +23,19 @@ export async function GET(req: NextRequest) {
 
     const { data: rsvps } = await supabase
         .from("event_rsvps")
-        .select("status, user_id, users(first_name, last_name, avatar_url)")
+        .select("status, user_id, rsvp_option_id, users(first_name, last_name, avatar_url)")
         .eq("event_id", eventId);
+
+    const { data: rsvpOptions } = await supabase
+        .from("event_rsvp_options")
+        .select("*")
+        .eq("event_id", eventId)
+        .order("sort_order", { ascending: true });
 
     return NextResponse.json({
         comments: comments || [],
         rsvps: rsvps || [],
+        rsvp_options: rsvpOptions || [],
     });
 }
 

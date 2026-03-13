@@ -48,7 +48,7 @@ export function ResourceCard({
   const date = new Date(createdAt).toLocaleDateString();
 
   return (
-    <Card style={styles.card}>
+    <Card elevation={0} style={styles.card}>
       <Card.Content style={styles.content}>
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons name={iconName} size={28} color="#111827" />

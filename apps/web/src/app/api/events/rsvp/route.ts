@@ -8,7 +8,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { event_id, status } = await req.json();
+    const { event_id, status, rsvp_option_id } = await req.json();
     if (!event_id || !status) {
         return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
             event_id,
             user_id: session.userId,
             status,
+            ...(rsvp_option_id !== undefined && { rsvp_option_id }),
         },
         { onConflict: "event_id,user_id" }
     );

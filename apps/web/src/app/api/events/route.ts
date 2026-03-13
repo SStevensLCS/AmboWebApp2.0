@@ -58,6 +58,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // ── Insert custom RSVP options if provided ────────────
+    if (body.rsvp_options && Array.isArray(body.rsvp_options) && body.rsvp_options.length > 0) {
+        const optionRows = body.rsvp_options
+            .filter((label: string) => label.trim())
+            .map((label: string, idx: number) => ({
+                event_id: newEvent.id,
+                label: label.trim(),
+                sort_order: idx,
+            }));
+        if (optionRows.length > 0) {
+            await supabase.from("event_rsvp_options").insert(optionRows);
+        }
+    }
+
     // ── Google Calendar sync ─────────────────────────────
     const gcalId = await createCalendarEvent({
         ...eventData,

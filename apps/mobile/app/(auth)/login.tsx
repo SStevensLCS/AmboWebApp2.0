@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
+import { CheddarRain } from '@/components/CheddarRain';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cheddarActive, setCheddarActive] = useState(false);
 
   useEffect(() => {
     // Log Supabase config on mount to aid debugging
@@ -36,6 +38,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      <CheddarRain isActive={cheddarActive} onComplete={() => setCheddarActive(false)} />
+
       <Text style={styles.title}>Ambassador Portal</Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 
@@ -64,6 +68,14 @@ export default function LoginScreen() {
           {loading ? 'Signing in...' : 'Sign In'}
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.cheddarButton}
+        onPress={() => setCheddarActive(true)}
+        disabled={cheddarActive}
+      >
+        <Text style={styles.cheddarText}>Cheddar? 🧀</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -82,4 +94,13 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  cheddarButton: {
+    alignItems: 'center',
+    marginTop: 24,
+    padding: 8,
+  },
+  cheddarText: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
 });

@@ -97,7 +97,7 @@ export default function AdminResources() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
       />
 
-      <FAB icon="plus" style={styles.fab} onPress={handlePickFile} />
+      <FAB icon="plus" color="#fff" style={styles.fab} onPress={handlePickFile} />
 
       <Portal>
         <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>

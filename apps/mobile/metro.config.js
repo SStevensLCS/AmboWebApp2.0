@@ -17,14 +17,22 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-// 3. Block the root node_modules react/react-native so Metro only sees the local copies.
-//    The web app uses React 18.x while mobile uses React 19.x — this prevents duplicates.
+// 3. Block the root node_modules/react ONLY when a local copy exists (mobile has 19.x, web has 18.x).
+//    Don't block react-native — it's hoisted to root and there's no duplicate.
 const esc = (s) => s.replace(/[/\\]/g, '[/\\\\]');
-config.resolver.blockList = [
-  ...(config.resolver.blockList || []),
-  new RegExp(esc(path.resolve(monorepoRoot, 'node_modules', 'react')) + '[/\\\\].*'),
-  new RegExp(esc(path.resolve(monorepoRoot, 'node_modules', 'react-native')) + '[/\\\\].*'),
-];
+const localReact = path.resolve(projectRoot, 'node_modules', 'react');
+const additionalBlockList = [];
+if (fs.existsSync(localReact)) {
+  additionalBlockList.push(
+    new RegExp(esc(path.resolve(monorepoRoot, 'node_modules', 'react')) + '[/\\\\].*')
+  );
+}
+if (additionalBlockList.length > 0) {
+  config.resolver.blockList = [
+    ...(config.resolver.blockList || []),
+    ...additionalBlockList,
+  ];
+}
 
 // 4. Help Metro resolve hoisted packages that aren't in the local node_modules.
 //    npm workspaces hoists everything to the root, so Metro needs explicit pointers.

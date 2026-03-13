@@ -3,7 +3,6 @@ import { View, StyleSheet, Pressable } from 'react-native';
 import { Avatar, Text } from 'react-native-paper';
 import type { UserRole } from '@ambo/database';
 import { RoleBadge } from './RoleBadge';
-import { FormattedText } from './FormattedText';
 
 interface PostCardProps {
   id: string;
@@ -56,9 +55,9 @@ export function PostCard({ content, createdAt, author, commentCount, onPress }: 
           </View>
         </View>
       </View>
-      <FormattedText style={styles.content} numberOfLines={3}>
+      <Text variant="bodyMedium" style={styles.content} numberOfLines={3}>
         {content}
-      </FormattedText>
+      </Text>
       <Text variant="bodySmall" style={styles.commentCount}>
         {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
       </Text>

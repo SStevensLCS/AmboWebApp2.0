@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#fff',
   },
-  eventCard: { marginBottom: 10, backgroundColor: '#fff' },
+  eventCard: { marginBottom: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' },
   eventTitle: { fontWeight: '600', marginBottom: 6 },
   eventMeta: { gap: 4, marginBottom: 6 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },

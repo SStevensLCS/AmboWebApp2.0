@@ -30,10 +30,10 @@ export function MessageBubble({ content, createdAt, senderName, senderAvatar, is
         </View>
       )}
       <View style={styles.messageCol}>
+        {!isOwn && (
+          <Text variant="labelSmall" style={styles.senderName}>{senderName}</Text>
+        )}
         <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
-          {!isOwn && (
-            <Text variant="labelSmall" style={styles.senderName}>{senderName}</Text>
-          )}
           <Text variant="bodyMedium" style={isOwn ? styles.ownText : styles.otherText}>
             {content}
           </Text>
@@ -83,7 +83,9 @@ const styles = StyleSheet.create({
   senderName: {
     color: '#6b7280',
     fontWeight: '600',
+    fontSize: 11,
     marginBottom: 2,
+    marginLeft: 4,
   },
   ownText: {
     color: '#fff',

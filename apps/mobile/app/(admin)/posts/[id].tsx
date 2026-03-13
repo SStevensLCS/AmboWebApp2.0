@@ -23,7 +23,6 @@ import { usePosts } from '@/hooks/usePosts';
 import { useComments, Comment } from '@/hooks/useComments';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { FormattedText } from '@/components/FormattedText';
 import type { UserRole } from '@ambo/database';
 
 function canModify(
@@ -269,9 +268,9 @@ export default function AdminPostDetail() {
               </View>
             </View>
           ) : (
-            <FormattedText style={styles.content}>
+            <Text variant="bodyMedium" style={styles.content}>
               {post.content}
-            </FormattedText>
+            </Text>
           )}
 
           {/* Comments section */}
@@ -352,7 +351,7 @@ export default function AdminPostDetail() {
                         </View>
                       </View>
                     ) : (
-                      <FormattedText style={{ fontSize: 14 }}>{comment.content}</FormattedText>
+                      <Text variant="bodyMedium" style={{ fontSize: 14 }}>{comment.content}</Text>
                     )}
                   </View>
                   {canActOnComment && !isEditingThis && (

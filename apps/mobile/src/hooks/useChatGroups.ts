@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useChatReadStore } from '@/stores/chatReadStore';
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -113,6 +114,12 @@ export function useChatGroups(userId: string) {
       if (hasLastReadAt && lastMessage) {
         const lastReadAt = lastReadMap[group.id];
         hasUnread = !lastReadAt || new Date(lastMessage.created_at) > new Date(lastReadAt);
+      }
+
+      // Apply optimistic override: if user has opened this group, mark as read
+      const optimisticReadGroups = useChatReadStore.getState().readGroups;
+      if (optimisticReadGroups.has(group.id)) {
+        hasUnread = false;
       }
 
       return { ...group, participants, lastMessage: lastMessage || undefined, hasUnread };

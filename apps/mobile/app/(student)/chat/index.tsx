@@ -4,6 +4,7 @@ import { Avatar, Text, FAB } from 'react-native-paper';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatGroups, ChatGroupWithMeta } from '@/hooks/useChatGroups';
+import { useChatReadStore } from '@/stores/chatReadStore';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -31,9 +32,12 @@ export default function StudentChatList() {
   const { session } = useAuth();
   const userId = session?.user?.id || '';
   const { groups, loading, refetch } = useChatGroups(userId);
+  const clearReadGroups = useChatReadStore((s) => s.clearReadGroups);
 
-  // Refetch when screen regains focus (e.g. returning from a chat thread or new chat)
-  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+  // Refetch when screen regains focus, then clear optimistic state once server data arrives
+  useFocusEffect(useCallback(() => {
+    refetch().then(() => clearReadGroups());
+  }, [refetch, clearReadGroups]));
 
   if (loading && groups.length === 0) return <LoadingScreen />;
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useChatReadStore } from '@/stores/chatReadStore';
 
 interface BadgeCounts {
   unreadChats: number;
@@ -7,13 +8,15 @@ interface BadgeCounts {
 }
 
 export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
-  const [counts, setCounts] = useState<BadgeCounts>({ unreadChats: 0, pendingSubmissions: 0 });
+  const [pendingSubmissions, setPendingSubmissions] = useState(0);
+  const [serverUnreadGroupIds, setServerUnreadGroupIds] = useState<Set<string>>(new Set());
+  const readGroups = useChatReadStore((s) => s.readGroups);
 
   const fetchCounts = useCallback(async () => {
     if (!userId) return;
 
-    // Fetch unread chat count
-    let unreadChats = 0;
+    // Fetch unread chat groups from server
+    const unreadGroupIds = new Set<string>();
     try {
       const { data: participantData } = await supabase
         .from('chat_participants')
@@ -37,7 +40,7 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
             if (participant) {
               const lastRead = participant.last_read_at;
               if (!lastRead || new Date(msg.created_at) > new Date(lastRead)) {
-                unreadChats++;
+                unreadGroupIds.add(msg.group_id);
               }
             }
           }
@@ -47,17 +50,16 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
       // Silently fail if last_read_at column doesn't exist
     }
 
+    setServerUnreadGroupIds(unreadGroupIds);
+
     // Fetch pending submissions count (admin sees all, student sees own)
-    let pendingSubmissions = 0;
     if (role === 'admin') {
       const { count } = await supabase
         .from('submissions')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'Pending');
-      pendingSubmissions = count || 0;
+      setPendingSubmissions(count || 0);
     }
-
-    setCounts({ unreadChats, pendingSubmissions });
   }, [userId, role]);
 
   useEffect(() => {
@@ -84,5 +86,12 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
     };
   }, [fetchCounts, userId]);
 
-  return { ...counts, refetch: fetchCounts };
+  // Derive adjusted unread count: server unread minus optimistically-read groups
+  // This recomputes instantly when readGroups changes (no server round-trip needed)
+  let unreadChats = 0;
+  for (const gid of serverUnreadGroupIds) {
+    if (!readGroups.has(gid)) unreadChats++;
+  }
+
+  return { unreadChats, pendingSubmissions, refetch: fetchCounts };
 }

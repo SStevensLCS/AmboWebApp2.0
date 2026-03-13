@@ -10,6 +10,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from 'react-native-paper';
 import { supabase } from '@/lib/supabase';
+import { useChatReadStore } from '@/stores/chatReadStore';
 
 export default function StudentMessageThread() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function StudentMessageThread() {
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const [groupName, setGroupName] = useState('Messages');
+  const markGroupRead = useChatReadStore((s) => s.markGroupRead);
 
   // Fetch group name for the header
   useEffect(() => {
@@ -54,7 +56,12 @@ export default function StudentMessageThread() {
     fetchGroupName();
   }, [id, userId]);
 
-  // Mark messages as read when entering the chat
+  // Optimistically mark group as read so badge and chat list update instantly
+  useEffect(() => {
+    if (id) markGroupRead(id);
+  }, [id, markGroupRead]);
+
+  // Persist read state to database
   useEffect(() => {
     if (!id || !userId) return;
     supabase

@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">1. Introduction</h2>
           <p>
-            Ambassador Portal (&quot;the App&quot;) is operated by Linfield University for use by
+            Ambassador Portal (&quot;the App&quot;) is operated by Linfield Christian School for use by
             Student Ambassadors, administrators, and applicants. This policy describes how we
             collect, use, and protect your personal information.
           </p>
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
             We do not sell your personal information. Your data may be shared with:
           </p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Linfield University administration for program management purposes.</li>
+            <li>Linfield Christian School administration for program management purposes.</li>
             <li>
               Service providers (Supabase for database hosting, Expo for push notifications) that
               process data on our behalf under strict confidentiality agreements.
@@ -110,8 +110,8 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-xl font-semibold mt-6 mb-2">10. Contact Us</h2>
           <p>
             If you have questions about this privacy policy or your data, contact us at{" "}
-            <a href="mailto:ambassadors@linfield.edu" className="text-blue-600 underline">
-              ambassadors@linfield.edu
+            <a href="mailto:admissions@linfield.com" className="text-blue-600 underline">
+              admissions@linfield.com
             </a>
             .
           </p>

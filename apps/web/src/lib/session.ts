@@ -11,7 +11,12 @@ export type SessionPayload = {
 
 function getSecret() {
   const secret = process.env.SESSION_SECRET || process.env.AUTH_SECRET;
-  return new TextEncoder().encode(secret || "");
+  if (!secret) {
+    throw new Error(
+      "SESSION_SECRET or AUTH_SECRET environment variable must be set"
+    );
+  }
+  return new TextEncoder().encode(secret);
 }
 
 export async function createSession(payload: SessionPayload): Promise<string> {

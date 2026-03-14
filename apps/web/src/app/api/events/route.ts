@@ -17,7 +17,7 @@ export async function GET() {
         .order("start_time", { ascending: true });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
     return NextResponse.json({ events: data || [] });
 }
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
         .single();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     // ── Insert custom RSVP options if provided ────────────

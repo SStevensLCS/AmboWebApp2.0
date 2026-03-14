@@ -41,7 +41,7 @@ export async function PUT(
         .single();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     // ── Update custom RSVP options if provided ────────────
@@ -106,7 +106,7 @@ export async function DELETE(
         .eq("id", params.id);
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     // ── Google Calendar sync ─────────────────────────────

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { randomBytes } from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
+    const rateKey = getRateLimitKey(req, "forgot-password");
+    const { allowed, resetIn } = checkRateLimit(rateKey, { maxRequests: 5, windowSeconds: 3600 });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(resetIn) } }
+      );
+    }
+
     const { email } = await req.json();
 
     if (!email) {

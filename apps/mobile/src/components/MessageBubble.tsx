@@ -19,7 +19,12 @@ export function MessageBubble({ content, createdAt, senderName, senderAvatar, is
     .slice(0, 2);
 
   return (
-    <View style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}>
+    <View
+      style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}
+      accessible={true}
+      accessibilityLabel={`${isOwn ? 'You' : senderName} said: ${content}, at ${time}`}
+      accessibilityRole="text"
+    >
       {!isOwn && (
         <View style={styles.avatarCol}>
           {senderAvatar ? (

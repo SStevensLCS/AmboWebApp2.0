@@ -14,7 +14,7 @@ export async function GET() {
     .order("last_name");
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
   return NextResponse.json(data);
 }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
   if (authError) {
     console.error("Auth user creation failed:", authError);
-    return NextResponse.json({ error: authError.message }, { status: 400 });
+    return NextResponse.json({ error: "Failed to create user account" }, { status: 400 });
   }
 
   // 2. Insert into public users table using the auth user's ID
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     console.error("Profile insert failed:", profileError);
     // Clean up the auth user if profile insert fails
     await supabase.auth.admin.deleteUser(authData.user.id);
-    return NextResponse.json({ error: profileError.message }, { status: 400 });
+    return NextResponse.json({ error: "Request failed" }, { status: 400 });
   }
 
   return NextResponse.json({ ok: true });

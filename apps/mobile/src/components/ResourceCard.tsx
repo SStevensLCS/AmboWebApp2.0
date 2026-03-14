@@ -48,9 +48,9 @@ export function ResourceCard({
   const date = new Date(createdAt).toLocaleDateString();
 
   return (
-    <Card elevation={0} style={styles.card}>
+    <Card elevation={0} style={styles.card} accessible={true} accessibilityLabel={`Resource: ${title}${fileSize ? `, ${formatFileSize(fileSize)}` : ''}, uploaded ${date}`}>
       <Card.Content style={styles.content}>
-        <View style={styles.iconContainer}>
+        <View style={styles.iconContainer} importantForAccessibility="no-hide-descendants">
           <MaterialCommunityIcons name={iconName} size={28} color="#111827" />
         </View>
         <View style={styles.info}>
@@ -68,6 +68,7 @@ export function ResourceCard({
             icon="download"
             size={20}
             onPress={() => Linking.openURL(fileUrl)}
+            accessibilityLabel={`Download ${title}`}
           />
           {showDelete && onDelete && (
             <IconButton
@@ -75,6 +76,7 @@ export function ResourceCard({
               size={20}
               iconColor="#ef4444"
               onPress={onDelete}
+              accessibilityLabel={`Delete ${title}`}
             />
           )}
         </View>

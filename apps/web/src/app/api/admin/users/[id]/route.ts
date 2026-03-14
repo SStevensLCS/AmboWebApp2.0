@@ -19,7 +19,7 @@ export async function GET(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return NextResponse.json(data);
 }
@@ -65,7 +65,7 @@ export async function PATCH(
   const { error } = await supabase.from("users").update(updates).eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: "Request failed" }, { status: 400 });
   }
 
   // When promoting to admin/superadmin, ensure the user has a Supabase Auth account
@@ -150,7 +150,7 @@ export async function DELETE(
   const { error } = await supabase.from("users").delete().eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: "Request failed" }, { status: 400 });
   }
   return NextResponse.json({ ok: true });
 }

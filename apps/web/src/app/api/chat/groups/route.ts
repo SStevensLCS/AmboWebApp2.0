@@ -16,7 +16,7 @@ export async function GET() {
             .eq("user_id", session.userId);
 
         if (partError) {
-            return NextResponse.json({ error: partError.message }, { status: 500 });
+            return NextResponse.json({ error: "Internal server error" }, { status: 500 });
         }
 
         const groupIds = (participations || []).map(p => p.group_id);
@@ -37,7 +37,7 @@ export async function GET() {
             .order("updated_at", { ascending: false });
 
         if (groupsError) {
-            return NextResponse.json({ error: groupsError.message }, { status: 500 });
+            return NextResponse.json({ error: "Internal server error" }, { status: 500 });
         }
 
         // Fetch last message per group for unread indicators

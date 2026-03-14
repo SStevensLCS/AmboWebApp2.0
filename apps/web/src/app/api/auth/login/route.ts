@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { setSessionCookie } from "@/lib/session";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 
 function redirectForRole(role: string): string {
@@ -19,6 +20,15 @@ function redirectForRole(role: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const rateKey = getRateLimitKey(req, "login");
+    const { allowed, resetIn } = checkRateLimit(rateKey, { maxRequests: 10, windowSeconds: 900 });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(resetIn) } }
+      );
+    }
+
     const { email: emailOrPhone, password } = await req.json();
 
     if (!emailOrPhone || !password) {

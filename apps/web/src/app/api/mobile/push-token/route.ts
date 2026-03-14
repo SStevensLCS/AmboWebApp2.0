@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     if (error) {
         console.error("[mobile/push-token] Upsert failed:", error);
         return NextResponse.json(
-            { error: error.message },
+            { error: "Internal server error" },
             { status: 500 }
         );
     }

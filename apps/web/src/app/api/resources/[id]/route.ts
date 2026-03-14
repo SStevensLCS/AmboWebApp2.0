@@ -28,7 +28,7 @@ export async function DELETE(
     const { error: dbError } = await supabase.from("resources").delete().eq("id", params.id);
 
     if (dbError) {
-        return NextResponse.json({ error: dbError.message }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     // Delete from Storage

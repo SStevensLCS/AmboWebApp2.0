@@ -195,8 +195,20 @@ export async function uploadTranscript(formData: FormData) {
         throw new Error("File and Phone Number are required");
     }
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${phone}_transcript_${uuidv4()}.${fileExt}`;
+    // Validate file size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+        throw new Error("File too large (max 20MB)");
+    }
+
+    // Validate file type by magic bytes (PDF: %PDF)
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const isPdf = header[0] === 0x25 && header[1] === 0x50 &&
+                  header[2] === 0x44 && header[3] === 0x46; // %PDF
+    if (!isPdf) {
+        throw new Error("Transcript must be a PDF file");
+    }
+
+    const fileName = `${phone}_transcript_${uuidv4()}.pdf`;
     const filePath = `${fileName}`;
 
     const { error } = await supabase.storage

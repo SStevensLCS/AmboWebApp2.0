@@ -30,7 +30,7 @@ export async function DELETE(
     const { error } = await supabase.from("post_comments").delete().eq("id", params.commentId);
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true });
@@ -70,7 +70,7 @@ export async function PATCH(
         .single();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     return NextResponse.json({ comment: data });

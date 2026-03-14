@@ -11,7 +11,12 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const colors = statusColors[status];
 
   return (
-    <View style={[styles.badge, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+    <View
+      style={[styles.badge, { backgroundColor: colors.bg, borderColor: colors.border }]}
+      accessible={true}
+      accessibilityLabel={`Status: ${status}`}
+      accessibilityRole="text"
+    >
       <Text style={[styles.text, { color: colors.text }]}>{status}</Text>
     </View>
   );

@@ -11,7 +11,12 @@ export function RoleBadge({ role }: RoleBadgeProps) {
   const colors = roleColors[role] || roleColors.basic;
 
   return (
-    <View style={[styles.badge, { backgroundColor: colors.bg }]}>
+    <View
+      style={[styles.badge, { backgroundColor: colors.bg }]}
+      accessible={true}
+      accessibilityLabel={`Role: ${role}`}
+      accessibilityRole="text"
+    >
       <Text style={[styles.text, { color: colors.text }]}>
         {role.charAt(0).toUpperCase() + role.slice(1)}
       </Text>

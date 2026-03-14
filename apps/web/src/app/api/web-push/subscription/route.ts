@@ -34,7 +34,7 @@ export async function POST(req: Request) {
             message: "API: Failed to upsert subscription",
             data: { error: error.message },
         });
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     await supabase.from("debug_logs").insert({
@@ -63,7 +63,7 @@ export async function DELETE(req: Request) {
         .eq("endpoint", endpoint);
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true });

@@ -15,7 +15,7 @@ export async function GET() {
         .order("created_at", { ascending: false });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     // Get public URL for each resource
@@ -55,7 +55,8 @@ export async function POST(req: Request) {
             });
 
         if (storageError) {
-            return NextResponse.json({ error: "Storage Upload Failed: " + storageError.message }, { status: 500 });
+            console.error("Storage upload failed:", storageError);
+            return NextResponse.json({ error: "File upload failed" }, { status: 500 });
         }
 
         // Insert into DB
@@ -73,11 +74,13 @@ export async function POST(req: Request) {
             .single();
 
         if (dbError) {
-            return NextResponse.json({ error: "Database Insert Failed: " + dbError.message }, { status: 500 });
+            console.error("Resource insert failed:", dbError);
+            return NextResponse.json({ error: "Failed to save resource" }, { status: 500 });
         }
 
         return NextResponse.json({ resource });
     } catch (err: any) {
-        return NextResponse.json({ error: "Upload Error: " + err.message }, { status: 500 });
+        console.error("Upload error:", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

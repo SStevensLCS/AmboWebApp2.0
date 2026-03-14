@@ -27,7 +27,7 @@ export async function GET(
         .order("created_at", { ascending: true });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
     return NextResponse.json({ comments: data || [] });
 }
@@ -71,7 +71,7 @@ export async function POST(
         .single();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     // ── Notify Post Author ───────────────────────────────

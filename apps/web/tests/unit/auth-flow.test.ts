@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Hoist mock functions so they're available inside vi.mock factories
-const { mockSignInWithPassword, mockFrom, mockSetSessionCookie } = vi.hoisted(() => ({
-  mockSignInWithPassword: vi.fn(),
+const { mockFrom, mockSetSessionCookie, mockBcryptCompare } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockSetSessionCookie: vi.fn(),
+  mockBcryptCompare: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -13,12 +13,6 @@ vi.mock("next/headers", () => ({
     set: vi.fn(),
     delete: vi.fn(),
     getAll: vi.fn(() => []),
-  })),
-}));
-
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
-    auth: { signInWithPassword: mockSignInWithPassword },
   })),
 }));
 
@@ -37,6 +31,13 @@ vi.mock("@/lib/session", async () => {
   };
 });
 
+vi.mock("bcryptjs", () => ({
+  default: {
+    compare: mockBcryptCompare,
+    hash: vi.fn(),
+  },
+}));
+
 process.env.SESSION_SECRET = "test-secret-for-auth-tests";
 
 import { NextRequest } from "next/server";
@@ -50,26 +51,28 @@ function buildLoginRequest(email: string, password: string): NextRequest {
   });
 }
 
+// Helper to set up mockFrom for user lookup
+function mockUserLookup(user: { id: string; role: string; password_hash: string | null; email: string } | null) {
+  mockFrom.mockReturnValue({
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: user,
+          error: user ? null : { message: "No rows found", code: "PGRST116" },
+        }),
+      }),
+    }),
+  });
+}
+
 describe("Auth Flow - Login Route Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("admin login (role=admin) returns redirect to /admin", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: { id: "admin-user-id" } },
-      error: null,
-    });
-    mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: "admin-user-id", role: "admin" },
-            error: null,
-          }),
-        }),
-      }),
-    });
+    mockUserLookup({ id: "admin-user-id", role: "admin", password_hash: "$2a$12$hash", email: "admin@linfield.edu" });
+    mockBcryptCompare.mockResolvedValue(true);
 
     const res = await POST(buildLoginRequest("admin@linfield.edu", "7604848038"));
     const body = await res.json();
@@ -83,20 +86,8 @@ describe("Auth Flow - Login Route Handler", () => {
   });
 
   it("superadmin login returns redirect to /admin", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: { id: "sa-user-id" } },
-      error: null,
-    });
-    mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: "sa-user-id", role: "superadmin" },
-            error: null,
-          }),
-        }),
-      }),
-    });
+    mockUserLookup({ id: "sa-user-id", role: "superadmin", password_hash: "$2a$12$hash", email: "super@linfield.edu" });
+    mockBcryptCompare.mockResolvedValue(true);
 
     const res = await POST(buildLoginRequest("super@linfield.edu", "password"));
     const body = await res.json();
@@ -106,20 +97,8 @@ describe("Auth Flow - Login Route Handler", () => {
   });
 
   it("student login returns redirect to /student", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: { id: "student-user-id" } },
-      error: null,
-    });
-    mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { id: "student-user-id", role: "student" },
-            error: null,
-          }),
-        }),
-      }),
-    });
+    mockUserLookup({ id: "student-user-id", role: "student", password_hash: "$2a$12$hash", email: "student@linfield.edu" });
+    mockBcryptCompare.mockResolvedValue(true);
 
     const res = await POST(buildLoginRequest("student@linfield.edu", "testpassword"));
     const body = await res.json();
@@ -133,10 +112,8 @@ describe("Auth Flow - Login Route Handler", () => {
   });
 
   it("invalid credentials return 401 with error message", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: null },
-      error: { message: "Invalid login credentials" },
-    });
+    mockUserLookup({ id: "user-id", role: "student", password_hash: "$2a$12$hash", email: "bad@email.com" });
+    mockBcryptCompare.mockResolvedValue(false);
 
     const res = await POST(buildLoginRequest("bad@email.com", "wrongpass"));
     const body = await res.json();
@@ -174,26 +151,23 @@ describe("Auth Flow - Login Route Handler", () => {
     expect(body.error).toBe("Email and password are required.");
   });
 
-  it("user profile not found returns 404", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: { id: "orphan-id" } },
-      error: null,
-    });
-    mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: null,
-            error: { message: "No rows found" },
-          }),
-        }),
-      }),
-    });
+  it("user not found returns 401", async () => {
+    mockUserLookup(null);
 
     const res = await POST(buildLoginRequest("orphan@test.com", "pass"));
     const body = await res.json();
 
-    expect(res.status).toBe(404);
-    expect(body.error).toBe("User profile not found.");
+    expect(res.status).toBe(401);
+    expect(body.error).toBe("Invalid email or password.");
+  });
+
+  it("user with no password_hash returns 401", async () => {
+    mockUserLookup({ id: "no-pass-id", role: "student", password_hash: null, email: "nopass@test.com" });
+
+    const res = await POST(buildLoginRequest("nopass@test.com", "pass"));
+    const body = await res.json();
+
+    expect(res.status).toBe(401);
+    expect(body.error).toContain("No password set");
   });
 });

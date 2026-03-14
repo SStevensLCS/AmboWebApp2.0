@@ -98,6 +98,7 @@ export type AppEvent = {
     description?: string | null;
     start_time: string;
     end_time: string;
+    location?: string | null;
     type?: string | null;
     uniform?: string | null;
     google_calendar_event_id?: string | null;
@@ -139,6 +140,7 @@ export function buildGoogleEvent(
     return {
         summary: event.title,
         description: description.trim() || undefined,
+        location: event.location || undefined,
         start: {
             dateTime: new Date(event.start_time).toISOString(),
             timeZone: "America/Los_Angeles",

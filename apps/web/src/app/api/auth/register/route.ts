@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { setSessionCookie } from "@/lib/session";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 
 const ALLOWED_DOMAINS = ["@student.linfield.com", "@linfield.com"];
 
 export async function POST(req: NextRequest) {
   try {
+    const rateKey = getRateLimitKey(req, "register");
+    const { allowed, resetIn } = checkRateLimit(rateKey, { maxRequests: 5, windowSeconds: 3600 });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(resetIn) } }
+      );
+    }
+
     const { firstName, lastName, email, phone, password } = await req.json();
 
     if (!firstName || !lastName || !email || !phone || !password) {

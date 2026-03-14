@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     );
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
     // Sync to Google Calendar

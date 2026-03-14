@@ -67,13 +67,13 @@ describe("Middleware - Smoke / Route Protection @smoke", () => {
     expect(res.status).toBe(200);
   });
 
-  it("redirects /admin to / when user has student role", async () => {
+  it("redirects /admin to /student when user has student role", async () => {
     const token = await createSession({ userId: "stu-1", role: "student" });
     const res = await middleware(buildRequest("/admin", token));
     expect(res.status).toBe(307);
     const location = res.headers.get("location");
     expect(location).not.toBeNull();
-    expect(new URL(location!).pathname).toBe("/");
+    expect(new URL(location!).pathname).toBe("/student");
   });
 
   it("passes through public routes like / without redirect", async () => {

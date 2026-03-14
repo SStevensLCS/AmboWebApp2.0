@@ -27,13 +27,14 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
         const groupIds = participantData.map((p: any) => p.group_id);
         const { data: latestMessages } = await supabase
           .from('chat_messages')
-          .select('group_id, created_at')
+          .select('group_id, created_at, sender_id')
           .in('group_id', groupIds)
           .order('created_at', { ascending: false });
 
         if (latestMessages) {
           const seenGroups = new Set<string>();
           for (const msg of latestMessages) {
+            if (msg.sender_id === userId) continue;
             if (seenGroups.has(msg.group_id)) continue;
             seenGroups.add(msg.group_id);
             const participant = participantData.find((p: any) => p.group_id === msg.group_id);

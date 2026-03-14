@@ -368,10 +368,6 @@ export default function AdminProfile() {
       <Text variant="titleMedium" style={styles.sectionTitle}>Support</Text>
       <Card elevation={0} style={styles.supportCard}>
         <Card.Content style={styles.supportContent}>
-          <View style={styles.supportRow}>
-            <MaterialCommunityIcons name="help-circle-outline" size={20} color="#6b7280" />
-            <Text variant="bodyMedium">Need help?</Text>
-          </View>
           <Pressable style={styles.supportRow} onPress={() => Linking.openURL('mailto:ambassadors@linfield.edu')}>
             <MaterialCommunityIcons name="email-outline" size={20} color="#6b7280" />
             <Text variant="bodyMedium">Contact Support</Text>

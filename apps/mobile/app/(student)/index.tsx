@@ -134,35 +134,35 @@ export default function StudentDashboard() {
               {upcomingEvents.map((event) => {
                 const d = new Date(event.start_time);
                 return (
-                  <Card
-                    elevation={0}
+                  <Pressable
                     key={event.id}
-                    style={styles.eventCard}
                     onPress={() => router.push({ pathname: '/(student)/events/[id]', params: { id: event.id } })}
                   >
-                    <Card.Content style={styles.eventContent}>
-                      <View style={styles.eventDate}>
-                        <Text variant="labelLarge" style={styles.eventMonth}>
-                          {d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
-                        </Text>
-                        <Text variant="headlineSmall" style={styles.eventDay}>
-                          {d.getDate()}
-                        </Text>
-                      </View>
-                      <View style={styles.eventInfo}>
-                        <Text variant="bodyMedium" style={styles.eventTitle} numberOfLines={1}>
-                          {event.title}
-                        </Text>
-                        <View style={styles.eventMeta}>
-                          <MaterialCommunityIcons name="clock-outline" size={14} color="#6b7280" />
-                          <Text variant="bodySmall" style={styles.eventMetaText}>
-                            {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    <Card elevation={0} style={styles.eventCard}>
+                      <Card.Content style={styles.eventContent}>
+                        <View style={styles.eventDate}>
+                          <Text variant="labelLarge" style={styles.eventMonth}>
+                            {d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                          </Text>
+                          <Text variant="headlineSmall" style={styles.eventDay}>
+                            {d.getDate()}
                           </Text>
                         </View>
-                      </View>
-                      <MaterialCommunityIcons name="chevron-right" size={20} color="#d1d5db" />
-                    </Card.Content>
-                  </Card>
+                        <View style={styles.eventInfo}>
+                          <Text variant="bodyMedium" style={styles.eventTitle} numberOfLines={1}>
+                            {event.title}
+                          </Text>
+                          <View style={styles.eventMeta}>
+                            <MaterialCommunityIcons name="clock-outline" size={14} color="#6b7280" />
+                            <Text variant="bodySmall" style={styles.eventMetaText}>
+                              {d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                            </Text>
+                          </View>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={20} color="#d1d5db" />
+                      </Card.Content>
+                    </Card>
+                  </Pressable>
                 );
               })}
             </>

@@ -65,14 +65,23 @@ export default function NewEvent() {
       const webUrl = Constants.expoConfig?.extra?.webUrl || process.env.EXPO_PUBLIC_WEB_URL;
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (webUrl && currentSession?.access_token) {
-        fetch(`${webUrl}/api/mobile/sync-event`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${currentSession.access_token}`,
-          },
-          body: JSON.stringify({ eventId: newEvent.id }),
-        }).catch(() => {}); // Fire and forget
+        try {
+          const syncRes = await fetch(`${webUrl}/api/mobile/sync-event`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${currentSession.access_token}`,
+            },
+            body: JSON.stringify({ eventId: newEvent.id }),
+          });
+          if (!syncRes.ok) {
+            console.warn('[GCal] Sync failed:', syncRes.status, await syncRes.text());
+          }
+        } catch (err) {
+          console.warn('[GCal] Sync request failed:', err);
+        }
+      } else {
+        console.warn('[GCal] Skipped sync — webUrl:', webUrl, 'hasToken:', !!currentSession?.access_token);
       }
     }
 

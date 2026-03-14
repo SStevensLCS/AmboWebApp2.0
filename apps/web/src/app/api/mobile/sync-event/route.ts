@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
             description: event.description,
             start_time: event.start_time,
             end_time: event.end_time,
+            location: event.location,
             type: event.type,
             uniform: event.uniform,
         });
@@ -103,6 +104,7 @@ export async function POST(req: NextRequest) {
         description: event.description,
         start_time: event.start_time,
         end_time: event.end_time,
+        location: event.location,
         type: event.type,
         uniform: event.uniform,
         id: event.id,

@@ -11,15 +11,17 @@ export default function NewEvent() {
   const { session } = useAuth();
   const userId = session?.user?.id || '';
 
-  const now = new Date();
-  const later = new Date(now.getTime() + 60 * 60 * 1000);
+  const defaultStart = new Date();
+  defaultStart.setHours(0, 0, 0, 0);
+  const defaultEnd = new Date();
+  defaultEnd.setHours(23, 59, 0, 0);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [uniform, setUniform] = useState('');
-  const [startDate, setStartDate] = useState(now);
-  const [endDate, setEndDate] = useState(later);
-  const [allDay, setAllDay] = useState(false);
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate] = useState(defaultEnd);
+  const [allDay, setAllDay] = useState(true);
   const [rsvpOptions, setRsvpOptions] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
@@ -144,20 +146,15 @@ export default function NewEvent() {
             </Button>
           )}
 
-          <View style={styles.actions}>
-            <Button mode="outlined" onPress={() => router.back()} style={styles.actionButton}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={creating}
-              disabled={!title.trim() || creating}
-              style={styles.actionButton}
-            >
-              Create Event
-            </Button>
-          </View>
+          <Button
+            mode="contained"
+            onPress={handleCreate}
+            loading={creating}
+            disabled={!title.trim() || creating}
+            style={styles.createButton}
+          >
+            Create Event
+          </Button>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
@@ -174,6 +171,5 @@ const styles = StyleSheet.create({
   rsvpOptionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   rsvpOptionInput: { flex: 1, backgroundColor: '#fff' },
   addOptionButton: { alignSelf: 'flex-start', marginBottom: 8 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  actionButton: { flex: 1, borderRadius: 8 },
+  createButton: { borderRadius: 8, marginTop: 8 },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { Text, Switch } from 'react-native-paper';
 import DateTimePicker, {
@@ -46,11 +46,6 @@ export function EventDateTimePicker({
 }: EventDateTimePickerProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null);
 
-  const duration = useMemo(
-    () => endDate.getTime() - startDate.getTime(),
-    [startDate, endDate]
-  );
-
   const toggleField = (field: ActiveField) => {
     setActiveField((prev) => (prev === field ? null : field));
   };
@@ -85,13 +80,13 @@ export function EventDateTimePicker({
     }
     onStartDateChange(newStart);
 
-    // Auto-adjust end if start moved past it
-    if (newStart >= endDate) {
-      const safeDuration = duration > 0 ? duration : 60 * 60 * 1000;
-      const newEnd = new Date(newStart.getTime() + safeDuration);
-      if (allDay) {
-        newEnd.setHours(23, 59, 0, 0);
-      }
+    // Always auto-adjust end to 1 hour after start
+    if (allDay) {
+      const newEnd = new Date(newStart);
+      newEnd.setHours(23, 59, 0, 0);
+      onEndDateChange(newEnd);
+    } else {
+      const newEnd = new Date(newStart.getTime() + 60 * 60 * 1000);
       onEndDateChange(newEnd);
     }
   };

@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { AvatarUpload } from '@/components/AvatarUpload';
@@ -16,6 +17,7 @@ export default function StudentProfile() {
   const userId = session?.user?.id || '';
   const { user, loading, refetch } = useProfile(userId);
   const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
+  const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   // Editable fields
@@ -123,6 +125,14 @@ export default function StudentProfile() {
       ]
     );
   }, [signOut]);
+
+  const handleGCalConnect = async () => {
+    try {
+      await gcalConnect();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to connect Google Calendar.');
+    }
+  };
 
   if (loading) return <LoadingScreen />;
 
@@ -259,6 +269,49 @@ export default function StudentProfile() {
 
       <Divider style={styles.divider} />
 
+      {/* Google Calendar */}
+      <Text variant="titleSmall" style={styles.sectionLabel}>INTEGRATIONS</Text>
+      <Card elevation={0} style={styles.gcalCard}>
+        <Card.Content>
+          <View style={styles.gcalHeader}>
+            <MaterialCommunityIcons name="google" size={24} color="#4285F4" />
+            <View style={styles.gcalInfo}>
+              <Text variant="bodyLarge" style={styles.gcalTitle}>Google Calendar</Text>
+              <Text variant="bodySmall" style={styles.gcalSubtitle}>Sync events to your personal calendar</Text>
+            </View>
+          </View>
+          {gcalLoading ? (
+            <ActivityIndicator style={styles.gcalLoader} />
+          ) : gcalConnected ? (
+            <View style={styles.gcalConnected}>
+              <View style={styles.gcalStatus}>
+                <MaterialCommunityIcons name="check-circle" size={16} color="#16a34a" />
+                <Text variant="bodySmall" style={styles.gcalStatusText}>Connected</Text>
+              </View>
+              <Button
+                mode="outlined"
+                textColor="#ef4444"
+                onPress={gcalDisconnect}
+                compact
+              >
+                Disconnect
+              </Button>
+            </View>
+          ) : (
+            <Button
+              mode="contained"
+              icon="calendar-sync"
+              onPress={handleGCalConnect}
+              style={styles.gcalConnectButton}
+            >
+              Connect Google Calendar
+            </Button>
+          )}
+        </Card.Content>
+      </Card>
+
+      <Divider style={styles.divider} />
+
       {/* Support & About */}
       <Text variant="titleSmall" style={styles.sectionLabel}>SUPPORT</Text>
       <Card elevation={0} style={styles.supportCard}>
@@ -352,6 +405,16 @@ const styles = StyleSheet.create({
   pushStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pushStatusText: { color: '#16a34a', fontWeight: '600' },
   pushEnableButton: { borderRadius: 8 },
+  gcalCard: { backgroundColor: '#fff' },
+  gcalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  gcalInfo: { flex: 1 },
+  gcalTitle: { fontWeight: '600' },
+  gcalSubtitle: { color: '#6b7280' },
+  gcalLoader: { marginVertical: 8 },
+  gcalConnected: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  gcalStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  gcalStatusText: { color: '#16a34a', fontWeight: '600' },
+  gcalConnectButton: { borderRadius: 8 },
   supportCard: { backgroundColor: '#fff' },
   supportContent: { gap: 0 },
   supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },

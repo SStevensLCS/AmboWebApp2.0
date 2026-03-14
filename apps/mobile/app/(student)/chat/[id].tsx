@@ -114,7 +114,7 @@ export default function StudentMessageThread() {
       }} />
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
         keyboardVerticalOffset={keyboardOffset}
       >
         <FlatList

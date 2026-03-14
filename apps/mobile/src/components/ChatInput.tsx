@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
-import { TextInput, IconButton } from 'react-native-paper';
+import { View, StyleSheet, TextInput, TextInput as RNTextInput } from 'react-native';
+import { IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ChatInputProps {
@@ -31,16 +31,15 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   return (
     <View style={[styles.container, { paddingBottom: Math.max(8, insets.bottom) }]}>
       <TextInput
-        ref={inputRef as any}
-        mode="outlined"
+        ref={inputRef}
         placeholder="Type a message..."
+        placeholderTextColor="#9ca3af"
         value={text}
         onChangeText={setText}
         style={styles.input}
-        dense
         multiline
         blurOnSubmit={false}
-        disabled={disabled}
+        editable={!disabled}
       />
       <IconButton
         icon="send"
@@ -67,7 +66,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
     maxHeight: 100,
+    color: '#111827',
   },
 });

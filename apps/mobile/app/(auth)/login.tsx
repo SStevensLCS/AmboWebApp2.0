@@ -85,7 +85,7 @@ export default function LoginScreen() {
           onPress={() => setCheddarActive(true)}
           disabled={cheddarActive}
         >
-          <Text style={styles.cheddarText}>Cheddar? 🧀</Text>
+          <Text style={styles.cheddarText}>Feeling Cheddar? 🧀</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -31,5 +31,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...(notificationsPlugin ? [notificationsPlugin] : []),
       '@react-native-community/datetimepicker',
     ],
+    extra: {
+      ...config.extra,
+      webUrl: process.env.EXPO_PUBLIC_WEB_URL,
+    },
   };
 };

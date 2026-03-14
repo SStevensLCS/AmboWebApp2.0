@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { SectionList, View, StyleSheet, RefreshControl } from 'react-native';
+import { SectionList, View, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { Card, Chip, Text, FAB } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -85,30 +85,30 @@ export default function AdminEvents() {
           <Text variant="titleSmall" style={styles.sectionHeader}>{section.title}</Text>
         )}
         renderItem={({ item }) => (
-          <Card
-            elevation={0}
-            style={styles.eventCard}
+          <Pressable
             onPress={() => router.push({ pathname: '/(admin)/events/[id]', params: { id: item.id } })}
           >
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.eventTitle} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <View style={styles.eventMeta}>
-                <View style={styles.metaItem}>
-                  <MaterialCommunityIcons name="clock-outline" size={14} color="#6b7280" />
-                  <Text variant="bodySmall" style={styles.metaText}>
-                    {formatTime(item.start_time)} - {formatTime(item.end_time)}
-                  </Text>
-                </View>
-              </View>
-              {item.description && (
-                <Text variant="bodySmall" style={styles.eventDescription} numberOfLines={2}>
-                  {item.description}
+            <Card elevation={0} style={styles.eventCard}>
+              <Card.Content>
+                <Text variant="titleMedium" style={styles.eventTitle} numberOfLines={2}>
+                  {item.title}
                 </Text>
-              )}
-            </Card.Content>
-          </Card>
+                <View style={styles.eventMeta}>
+                  <View style={styles.metaItem}>
+                    <MaterialCommunityIcons name="clock-outline" size={14} color="#6b7280" />
+                    <Text variant="bodySmall" style={styles.metaText}>
+                      {formatTime(item.start_time)} - {formatTime(item.end_time)}
+                    </Text>
+                  </View>
+                </View>
+                {item.description && (
+                  <Text variant="bodySmall" style={styles.eventDescription} numberOfLines={2}>
+                    {item.description}
+                  </Text>
+                )}
+              </Card.Content>
+            </Card>
+          </Pressable>
         )}
         ListEmptyComponent={
           <EmptyState icon="calendar-blank-outline" title="No events" subtitle={emptyMessages[filter]} />

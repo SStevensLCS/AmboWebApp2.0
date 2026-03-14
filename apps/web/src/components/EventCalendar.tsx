@@ -165,12 +165,10 @@ export function EventCalendar({
                         {evts.map((ev) => (
                             <motion.div
                                 key={ev.id}
-                                whileHover={{ scale: 1.02, y: -2 }}
-                                whileTap={{ scale: 0.96 }}
                             >
                                 <Card
                                     onClick={() => onEventClick(ev)}
-                                    className="cursor-pointer hover:shadow-md transition-all duration-200 h-full"
+                                    className="cursor-pointer transition-all duration-200 h-full"
                                 >
                                     <CardContent className="p-4 space-y-3">
                                         <div className="flex justify-between items-start gap-2">

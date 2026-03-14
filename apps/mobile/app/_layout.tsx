@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { NetworkProvider } from '@/providers/NetworkProvider';
 import { PushNotificationsProvider } from '@/providers/PushNotificationsProvider';
@@ -54,13 +55,15 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <PaperProvider theme={theme}>
-        <NetworkProvider>
-          <PushNotificationsProvider>
-            <RootNavigator />
-          </PushNotificationsProvider>
-        </NetworkProvider>
-      </PaperProvider>
+      <KeyboardProvider>
+        <PaperProvider theme={theme}>
+          <NetworkProvider>
+            <PushNotificationsProvider>
+              <RootNavigator />
+            </PushNotificationsProvider>
+          </NetworkProvider>
+        </PaperProvider>
+      </KeyboardProvider>
     </AuthProvider>
   );
 }

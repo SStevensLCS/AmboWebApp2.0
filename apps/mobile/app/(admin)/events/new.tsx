@@ -4,6 +4,7 @@ import { TextInput, Button, Text, IconButton } from 'react-native-paper';
 import { useRouter, Stack } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
+import Constants from 'expo-constants';
 import { EventDateTimePicker } from '@/components/EventDateTimePicker';
 
 export default function NewEvent() {
@@ -57,6 +58,22 @@ export default function NewEvent() {
           sort_order: idx,
         }))
       );
+    }
+
+    // Sync to Google Calendars (admin + all connected users)
+    if (newEvent) {
+      const webUrl = Constants.expoConfig?.extra?.webUrl || process.env.EXPO_PUBLIC_WEB_URL;
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (webUrl && currentSession?.access_token) {
+        fetch(`${webUrl}/api/mobile/sync-event`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+          body: JSON.stringify({ eventId: newEvent.id }),
+        }).catch(() => {}); // Fire and forget
+      }
     }
 
     setCreating(false);

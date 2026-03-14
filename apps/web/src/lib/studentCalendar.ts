@@ -1,6 +1,7 @@
-import { google } from "googleapis";
+import { google, calendar_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { type AppEvent, buildGoogleEvent } from "@/lib/googleCalendar";
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 
@@ -53,4 +54,74 @@ export async function disconnectStudentCalendar(userId: string) {
         .from("users")
         .update({ calendar_tokens: null })
         .eq("id", userId);
+}
+
+// ─── Per-user calendar sync ─────────────────────────────
+
+async function getUserCalendar(
+    userId: string
+): Promise<calendar_v3.Calendar | null> {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+        .from("users")
+        .select("calendar_tokens")
+        .eq("id", userId)
+        .single();
+
+    if (!data?.calendar_tokens) return null;
+
+    const client = getOAuth2Client();
+    const tokens = data.calendar_tokens as Record<string, unknown>;
+    client.setCredentials(tokens);
+
+    // Persist refreshed tokens
+    client.on("tokens", async (newTokens) => {
+        const merged = { ...tokens, ...newTokens };
+        await supabase
+            .from("users")
+            .update({ calendar_tokens: merged })
+            .eq("id", userId);
+    });
+
+    return google.calendar({ version: "v3", auth: client });
+}
+
+/**
+ * Sync an event to a single user's personal Google Calendar.
+ */
+async function syncEventToUserCalendar(
+    userId: string,
+    event: AppEvent
+): Promise<void> {
+    try {
+        const calendar = await getUserCalendar(userId);
+        if (!calendar) return;
+
+        await calendar.events.insert({
+            calendarId: "primary",
+            requestBody: buildGoogleEvent(event),
+        });
+    } catch (err) {
+        console.error(
+            `[GCal] Failed to sync event to user ${userId}:`,
+            err
+        );
+    }
+}
+
+/**
+ * Sync an event to ALL users who have connected their Google Calendar.
+ */
+export async function syncEventToAllUsers(event: AppEvent): Promise<void> {
+    const supabase = createAdminClient();
+    const { data: users } = await supabase
+        .from("users")
+        .select("id")
+        .not("calendar_tokens", "is", null);
+
+    if (!users || users.length === 0) return;
+
+    await Promise.allSettled(
+        users.map((u) => syncEventToUserCalendar(u.id, event))
+    );
 }

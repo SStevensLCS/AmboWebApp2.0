@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { createCalendarEvent } from "@/lib/googleCalendar";
+import { syncEventToAllUsers } from "@/lib/studentCalendar";
 
 export async function GET() {
     const session = await getSession();
@@ -84,6 +85,12 @@ export async function POST(req: Request) {
             .update({ google_calendar_event_id: gcalId })
             .eq("id", newEvent.id);
     }
+
+    // ── Sync to all connected users' personal calendars ──
+    syncEventToAllUsers({
+        ...eventData,
+        id: newEvent.id,
+    }).catch((err) => console.error("[GCal] User sync failed:", err));
 
     return NextResponse.json({ ok: true, event: newEvent });
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Platform, Pressable } from 'react-native';
 import { Card, Text, Button, Divider, TextInput, Switch, ActivityIndicator } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
@@ -267,40 +267,31 @@ export default function StudentProfile() {
             <MaterialCommunityIcons name="help-circle-outline" size={20} color="#6b7280" />
             <Text variant="bodyMedium">Need help?</Text>
           </View>
-          <Button
-            mode="text"
-            icon="email-outline"
-            onPress={() => Linking.openURL('mailto:ambassadors@linfield.edu')}
-            compact
-            style={styles.supportButton}
-          >
-            Contact Support
-          </Button>
-          <Button
-            mode="text"
-            icon="bug"
+          <Pressable style={styles.supportRow} onPress={() => Linking.openURL('mailto:ambassadors@linfield.edu')}>
+            <MaterialCommunityIcons name="email-outline" size={20} color="#6b7280" />
+            <Text variant="bodyMedium">Contact Support</Text>
+          </Pressable>
+          <Pressable
+            style={styles.supportRow}
             onPress={() => Linking.openURL(
               'mailto:skyler.a.stevens@gmail.com' +
               '?subject=Bug%20Report%20%2F%20App%20Idea%20-%20Ambassador%20Portal' +
               '&body=Type%3A%20%5BBug%20%2F%20Feature%20Request%5D%0A%0ADescription%3A%0A%0A%0ASteps%20to%20Reproduce%20(if%20bug)%3A%0A1.%0A2.%0A3.'
             )}
-            compact
-            style={styles.supportButton}
           >
-            Report Bug / App Idea
-          </Button>
-          <Button
-            mode="text"
-            icon="shield-lock-outline"
+            <MaterialCommunityIcons name="bug-outline" size={20} color="#6b7280" />
+            <Text variant="bodyMedium">Report Bug / App Idea</Text>
+          </Pressable>
+          <Pressable
+            style={styles.supportRow}
             onPress={() => {
               const webUrl = process.env.EXPO_PUBLIC_WEB_URL || 'https://ambo-portal.vercel.app';
               Linking.openURL(`${webUrl}/privacy`);
             }}
-            compact
-            style={styles.supportButton}
           >
-            Privacy Policy
-          </Button>
+            <MaterialCommunityIcons name="shield-lock-outline" size={20} color="#6b7280" />
+            <Text variant="bodyMedium">Privacy Policy</Text>
+          </Pressable>
         </Card.Content>
       </Card>
 
@@ -363,8 +354,7 @@ const styles = StyleSheet.create({
   pushEnableButton: { borderRadius: 8 },
   supportCard: { backgroundColor: '#fff' },
   supportContent: { gap: 0 },
-  supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
-  supportButton: { alignSelf: 'stretch', marginLeft: -8 },
+  supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   signOutButton: { borderRadius: 12 },
   deleteButton: { marginTop: 12 },
   versionText: { color: '#d1d5db', textAlign: 'center', marginTop: 16 },

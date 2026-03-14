@@ -85,11 +85,11 @@ export default function AdminDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 16, paddingBottom: 32 },
   heading: { fontWeight: '700', marginBottom: 16 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  statCard: { width: '47%', backgroundColor: '#fff' },
+  statCard: { width: '47%', backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' },
   pendingCard: { backgroundColor: '#fffbeb' },
   applicationCard: { backgroundColor: '#eff6ff' },
   statContent: { alignItems: 'center', gap: 4, paddingVertical: 16 },

@@ -29,6 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       ...(config.plugins || []),
       ...(notificationsPlugin ? [notificationsPlugin] : []),
+      '@react-native-community/datetimepicker',
     ],
   };
 };

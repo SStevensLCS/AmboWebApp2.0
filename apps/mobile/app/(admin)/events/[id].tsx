@@ -26,6 +26,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useEventDetail } from '@/hooks/useEventDetail';
 import { supabase } from '@/lib/supabase';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { EventDateTimePicker } from '@/components/EventDateTimePicker';
 import type { EventDetails, RSVPStatus } from '@ambo/database';
 
 function formatDateTime(dateStr: string) {
@@ -52,6 +53,9 @@ export default function AdminEventDetail() {
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editStartDate, setEditStartDate] = useState(new Date());
+  const [editEndDate, setEditEndDate] = useState(new Date());
+  const [editAllDay, setEditAllDay] = useState(false);
 
   const insets = useSafeAreaInsets();
   const { comments, rsvps, rsvpOptions, myRsvp, myRsvpOptionId, loading, updateRsvp, postComment } = useEventDetail(id, userId);
@@ -68,6 +72,8 @@ export default function AdminEventDetail() {
         setEvent(e);
         setEditTitle(e.title);
         setEditDescription(e.description || '');
+        setEditStartDate(new Date(e.start_time));
+        setEditEndDate(new Date(e.end_time));
       }
       setEventLoading(false);
     }
@@ -102,6 +108,8 @@ export default function AdminEventDetail() {
       .update({
         title: editTitle.trim(),
         description: editDescription.trim() || null,
+        start_time: editStartDate.toISOString(),
+        end_time: editEndDate.toISOString(),
       })
       .eq('id', id);
 
@@ -109,7 +117,13 @@ export default function AdminEventDetail() {
     if (error) {
       Alert.alert('Error', error.message);
     } else {
-      setEvent({ ...event, title: editTitle.trim(), description: editDescription.trim() || null });
+      setEvent({
+        ...event,
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+        start_time: editStartDate.toISOString(),
+        end_time: editEndDate.toISOString(),
+      });
       setEditing(false);
     }
   };
@@ -188,6 +202,14 @@ export default function AdminEventDetail() {
                 numberOfLines={3}
                 dense
                 style={styles.editInput}
+              />
+              <EventDateTimePicker
+                startDate={editStartDate}
+                endDate={editEndDate}
+                allDay={editAllDay}
+                onStartDateChange={setEditStartDate}
+                onEndDateChange={setEditEndDate}
+                onAllDayChange={setEditAllDay}
               />
               <Button
                 mode="contained"

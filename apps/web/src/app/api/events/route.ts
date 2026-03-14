@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, start_time, end_time, type } = body;
+    const { title, description, start_time, end_time, type, location } = body;
 
     if (!title || !start_time || !end_time) {
         return NextResponse.json(
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
         description: description || null,
         start_time,
         end_time,
+        location: location || null,
         type: type || "Event",
         created_by: session.userId,
         uniform: body.uniform || "Ambassador Polo with Navy Pants.",
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
     }
 
     // ── Sync to all connected users' personal calendars ──
-    syncEventToAllUsers({
+    await syncEventToAllUsers({
         ...eventData,
         id: newEvent.id,
     }).catch((err) => console.error("[GCal] User sync failed:", err));

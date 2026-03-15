@@ -4,6 +4,7 @@ import { COOKIE_NAME, verifySessionToken } from "@/lib/session";
 // Routes that never require authentication
 const PUBLIC_PATHS = [
   "/api/auth/",
+  "/api/mobile/",
   "/auth/callback",
   "/forgot-password",
   "/reset-password",

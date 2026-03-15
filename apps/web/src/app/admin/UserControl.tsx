@@ -77,10 +77,11 @@ export function UserControl() {
       setMyRole(session.user?.role || "student");
     }
 
-    const res = await fetch("/api/admin/users");
+    const res = await fetch("/api/admin/users?limit=100");
     if (res.ok) {
-      const data = await res.json();
-      setRows(data);
+      const json = await res.json();
+      // Support both paginated { data: [...] } and legacy flat array responses
+      setRows(json.data || json);
     }
     setLoading(false);
   };

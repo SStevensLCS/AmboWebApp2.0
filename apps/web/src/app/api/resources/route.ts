@@ -43,6 +43,23 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing file or title" }, { status: 400 });
         }
 
+        // File size limit (10MB)
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE) {
+            return NextResponse.json({ error: "File too large. Maximum size is 10MB." }, { status: 413 });
+        }
+
+        // File type allowlist
+        const allowedExtensions = [
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+            ".png", ".jpg", ".jpeg", ".gif", ".webp",
+            ".csv", ".txt",
+        ];
+        const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+        if (!allowedExtensions.includes(ext)) {
+            return NextResponse.json({ error: `File type "${ext}" is not allowed.` }, { status: 400 });
+        }
+
         const supabase = createAdminClient();
         const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
 

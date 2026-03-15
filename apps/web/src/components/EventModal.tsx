@@ -340,16 +340,16 @@ export function EventModal({
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveEvent} disabled={saving} aria-label="Save event">
                                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(false)}>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(false)} aria-label="Cancel editing">
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)}>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setIsEditing(true)} aria-label="Edit event">
                                         <Pencil className="h-4 w-4" />
                                     </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={() => setShowDeleteConfirm(true)}>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={() => setShowDeleteConfirm(true)} aria-label="Delete event">
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </>
@@ -420,6 +420,7 @@ export function EventModal({
                                                 variant="ghost"
                                                 className="h-8 w-8 shrink-0 text-muted-foreground hover:text-red-500"
                                                 onClick={() => setEditRsvpOptions(editRsvpOptions.filter((_, i) => i !== idx))}
+                                                aria-label="Remove RSVP option"
                                             >
                                                 <X className="h-4 w-4" />
                                             </Button>
@@ -573,10 +574,10 @@ export function EventModal({
                                                 </span>
                                                 {(canEditComment(c)) && editingCommentId !== c.id && (
                                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => startEditComment(c)} className="text-muted-foreground hover:text-foreground">
+                                                        <button onClick={() => startEditComment(c)} className="text-muted-foreground hover:text-foreground" aria-label="Edit comment">
                                                             <Pencil className="h-3 w-3" />
                                                         </button>
-                                                        <button onClick={() => deleteComment(c.id)} className="text-muted-foreground hover:text-red-500">
+                                                        <button onClick={() => deleteComment(c.id)} className="text-muted-foreground hover:text-red-500" aria-label="Delete comment">
                                                             <X className="h-3 w-3" />
                                                         </button>
                                                     </div>
@@ -590,10 +591,10 @@ export function EventModal({
                                                     onChange={e => setEditCommentContent(e.target.value)}
                                                     className="h-8 text-sm"
                                                 />
-                                                <Button size="sm" onClick={() => saveCommentEdit(c.id)} className="h-8 w-8 p-0">
+                                                <Button size="sm" onClick={() => saveCommentEdit(c.id)} className="h-8 w-8 p-0" aria-label="Save comment">
                                                     <Check className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="sm" variant="ghost" onClick={() => setEditingCommentId(null)} className="h-8 w-8 p-0">
+                                                <Button size="sm" variant="ghost" onClick={() => setEditingCommentId(null)} className="h-8 w-8 p-0" aria-label="Cancel editing comment">
                                                     <X className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -627,6 +628,7 @@ export function EventModal({
                         size="icon"
                         onClick={postComment}
                         disabled={loadingComment || !newComment.trim()}
+                        aria-label="Post comment"
                     >
                         {loadingComment ? (
                             <Loader2 className="h-4 w-4 animate-spin" />

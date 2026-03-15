@@ -81,10 +81,11 @@ export function SubmissionsControl() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchSubmissions = async () => {
-    const res = await fetch("/api/admin/submissions");
+    const res = await fetch("/api/admin/submissions?limit=100");
     if (res.ok) {
-      const data = await res.json();
-      setRows(data);
+      const json = await res.json();
+      // Support both paginated { data: [...] } and legacy flat array responses
+      setRows(json.data || json);
     }
     setLoading(false);
   };

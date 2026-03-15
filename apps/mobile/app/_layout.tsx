@@ -11,7 +11,10 @@ import { validateEnv } from '@/lib/env';
 import { useChatReadStore } from '@/stores/chatReadStore';
 import { theme } from '@/lib/theme';
 
+// Run at module load — safe now that validateEnv only warns (never throws)
 validateEnv();
+
+// Kick off async hydration of persisted chat read state
 useChatReadStore.getState().hydrate();
 
 function RootNavigator() {

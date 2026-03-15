@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { isConnected } from "@/lib/googleCalendar";
+import { isConnected, disconnect } from "@/lib/googleCalendar";
 
 /**
  * GET /api/auth/google/status
@@ -13,4 +13,22 @@ export async function GET() {
     }
 
     return NextResponse.json({ connected: await isConnected() });
+}
+
+/**
+ * DELETE /api/auth/google/status
+ * Disconnects Google Calendar by removing stored tokens.
+ */
+export async function DELETE() {
+    const session = await getSession();
+    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        await disconnect();
+        return NextResponse.json({ success: true });
+    } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
 }

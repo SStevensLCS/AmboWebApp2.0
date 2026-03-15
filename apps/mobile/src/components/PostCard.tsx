@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Avatar, Text } from 'react-native-paper';
 import type { UserRole } from '@ambo/database';
-import { RoleBadge } from './RoleBadge';
 
 interface PostCardProps {
   id: string;
@@ -47,12 +46,9 @@ export function PostCard({ content, createdAt, author, commentCount, onPress }: 
           <Text variant="bodyMedium" style={styles.authorName}>
             {author.first_name} {author.last_name}
           </Text>
-          <View style={styles.metaRow}>
-            <RoleBadge role={author.role} />
-            <Text variant="bodySmall" style={styles.timestamp}>
-              {formatTimeAgo(createdAt)}
-            </Text>
-          </View>
+          <Text variant="bodySmall" style={styles.timestamp}>
+            {formatTimeAgo(createdAt)}
+          </Text>
         </View>
       </View>
       <Text variant="bodyMedium" style={styles.content} numberOfLines={3}>
@@ -87,7 +83,6 @@ const styles = StyleSheet.create({
   avatarFallback: { backgroundColor: '#e5e7eb' },
   authorInfo: { gap: 2, flex: 1 },
   authorName: { fontWeight: '600' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timestamp: { color: '#9ca3af', fontSize: 12 },
   content: { marginTop: 10, lineHeight: 20 },
   commentCount: { marginTop: 10, color: '#6b7280', fontWeight: '500' },

@@ -380,7 +380,7 @@ export default function StudentProfile() {
       </Button>
 
       <Text variant="bodySmall" style={styles.versionText}>
-        Ambassador Portal v{appVersion}
+        AmboPortal v{appVersion}
       </Text>
     </ScrollView>
   );

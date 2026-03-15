@@ -65,7 +65,6 @@ export function CheddarRain({ isActive, onComplete }: CheddarRainProps) {
     const endTimer = setTimeout(() => {
       animations.forEach((a) => a.stop());
       setPieces([]);
-      fadeAnim.setValue(1);
       onComplete?.();
     }, 15000);
 

@@ -432,7 +432,7 @@ export default function AdminProfile() {
       </Button>
 
       <Text variant="bodySmall" style={styles.versionText}>
-        Ambassador Portal v{Constants.expoConfig?.version || '1.0.0'}
+        AmboPortal v{Constants.expoConfig?.version || '1.0.0'}
       </Text>
     </ScrollView>
   );

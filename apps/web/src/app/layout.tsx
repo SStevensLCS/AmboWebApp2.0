@@ -10,7 +10,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata = {
-  title: "Ambassador Portal",
+  title: "AmboPortal",
   description: "Ambassador service tracking",
   icons: {
     icon: "/logo.png",

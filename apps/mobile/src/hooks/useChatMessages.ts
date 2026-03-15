@@ -83,12 +83,32 @@ export function useChatMessages(groupId: string) {
   }, [groupId, fetchMessages]);
 
   const sendMessage = async (senderId: string, content: string) => {
+    // Optimistically add message so FlatList transitions from empty→non-empty
+    // immediately, preventing keyboard dismissal on first message send.
+    const optimisticMsg: ChatMessage = {
+      id: `optimistic-${Date.now()}`,
+      group_id: groupId,
+      sender_id: senderId,
+      content,
+      created_at: new Date().toISOString(),
+      users: null as any,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     const { error: err } = await supabase
       .from('chat_messages')
       .insert({ group_id: groupId, sender_id: senderId, content });
     if (err) throw err;
-    // Refetch to ensure message appears even if realtime misses the event
-    await fetchMessages();
+
+    // Silent refetch (no setLoading) to replace optimistic message with real data
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('*, users:sender_id(first_name, last_name, avatar_url)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true });
+    if (data) {
+      setMessages(((data || []) as ChatMessage[]).filter((m) => m.users != null));
+    }
   };
 
   return { messages, loading, error, refetch: fetchMessages, sendMessage };

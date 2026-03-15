@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { usePosts } from '@/hooks/usePosts';
 import { PostCard } from '@/components/PostCard';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -11,6 +12,9 @@ import { ErrorState } from '@/components/ErrorState';
 export default function StudentPostsFeed() {
   const router = useRouter();
   const { posts, loading, error, hasMore, refetch, fetchMore } = usePosts();
+
+  // Refetch posts when screen regains focus (e.g. after creating a new post)
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   if (loading && posts.length === 0) return <LoadingScreen />;
   if (error && posts.length === 0) return <ErrorState message={error} onRetry={refetch} />;

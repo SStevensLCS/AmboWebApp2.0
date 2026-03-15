@@ -53,7 +53,7 @@ export default function LoginScreen() {
       >
         <CheddarRain isActive={cheddarActive} onComplete={() => setCheddarActive(false)} />
 
-        <Text style={styles.title}>Ambassador Portal</Text>
+        <Text style={styles.title}>AmboPortal</Text>
         <Text style={styles.subtitle}>Sign in to continue</Text>
 
         <TextInput

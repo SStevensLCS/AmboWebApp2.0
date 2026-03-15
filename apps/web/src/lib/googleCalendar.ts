@@ -44,6 +44,14 @@ export async function exchangeCodeForTokens(code: string) {
     return tokens;
 }
 
+export async function disconnect(): Promise<void> {
+    const supabase = createAdminClient();
+    await supabase
+        .from("system_settings")
+        .delete()
+        .eq("key", TOKEN_KEY);
+}
+
 export async function isConnected(): Promise<boolean> {
     const supabase = createAdminClient();
     const { data } = await supabase

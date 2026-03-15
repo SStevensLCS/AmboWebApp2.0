@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck2, Loader2, ExternalLink } from "lucide-react";
+import { CalendarCheck2, Loader2, ExternalLink, Unplug } from "lucide-react";
 import { toast } from "sonner";
 
 export function GoogleCalendarSetup() {
@@ -21,9 +21,28 @@ export function GoogleCalendarSetup() {
     }, []);
 
     const [syncing, setSyncing] = useState(false);
+    const [disconnecting, setDisconnecting] = useState(false);
 
     const handleConnect = () => {
         window.location.href = "/api/auth/google";
+    };
+
+    const handleDisconnect = async () => {
+        if (!confirm("Disconnect Google Calendar? Events will no longer sync.")) return;
+        setDisconnecting(true);
+        try {
+            const res = await fetch("/api/auth/google/status", { method: "DELETE" });
+            if (res.ok) {
+                setConnected(false);
+                toast.success("Google Calendar disconnected");
+            } else {
+                toast.error("Failed to disconnect calendar");
+            }
+        } catch {
+            toast.error("Failed to disconnect calendar");
+        } finally {
+            setDisconnecting(false);
+        }
     };
 
     const handleSyncAll = async () => {
@@ -87,6 +106,23 @@ export function GoogleCalendarSetup() {
                             ) : (
                                 "Sync All Events"
                             )}
+                        </Button>
+                    )}
+
+                    {connected && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleDisconnect}
+                            disabled={disconnecting}
+                            className="gap-2 text-destructive hover:text-destructive"
+                        >
+                            {disconnecting ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Unplug className="h-3.5 w-3.5" />
+                            )}
+                            Disconnect
                         </Button>
                     )}
 

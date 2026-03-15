@@ -1,6 +1,6 @@
 {
-    "name": "Ambassador Portal",
-    "short_name": "Ambassador",
+    "name": "AmboPortal",
+    "short_name": "AmboPortal",
     "description": "Student Ambassador Portal",
     "start_url": "/login",
     "display": "standalone",

@@ -27,6 +27,14 @@ export default function NewSubmission() {
       Alert.alert('Error', 'Hours must be greater than 0.');
       return;
     }
+    if (parseFloat(hours) > 24) {
+      Alert.alert('Error', 'Hours cannot exceed 24.');
+      return;
+    }
+    if (credits && parseInt(credits, 10) > 100) {
+      Alert.alert('Error', 'Credits cannot exceed 100.');
+      return;
+    }
 
     setSubmitting(true);
     const { error } = await supabase.from('submissions').insert({
@@ -155,6 +163,7 @@ export default function NewSubmission() {
             onChangeText={setNotes}
             multiline
             numberOfLines={4}
+            maxLength={1000}
             style={[styles.input, styles.notesInput]}
           />
 

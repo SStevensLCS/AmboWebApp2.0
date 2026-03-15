@@ -25,6 +25,10 @@ export default function LoginScreen() {
       Alert.alert('Login Error', 'Please enter both email and password.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      Alert.alert('Login Error', 'Please enter a valid email address.');
+      return;
+    }
     setLoading(true);
     if (__DEV__) console.log('[Login] Attempting sign-in for:', trimmedEmail);
     try {

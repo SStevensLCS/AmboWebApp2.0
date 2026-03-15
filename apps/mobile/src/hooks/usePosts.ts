@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { UserRole } from '@ambo/database';
+
+const PAGE_SIZE = 20;
 
 export interface Post {
   id: string;
@@ -21,6 +23,8 @@ export function usePosts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const loadingMoreRef = useRef(false);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -29,15 +33,36 @@ export function usePosts() {
     const { data, error: err } = await supabase
       .from('posts')
       .select('*, users(first_name, last_name, avatar_url, role), comments(count)')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(0, PAGE_SIZE - 1);
 
     if (err) {
       setError(err.message);
     } else {
-      setPosts(((data || []) as Post[]).filter((p) => p.users != null));
+      const filtered = ((data || []) as Post[]).filter((p) => p.users != null);
+      setPosts(filtered);
+      setHasMore((data || []).length === PAGE_SIZE);
     }
     setLoading(false);
   }, []);
+
+  const fetchMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMore) return;
+    loadingMoreRef.current = true;
+
+    const { data, error: err } = await supabase
+      .from('posts')
+      .select('*, users(first_name, last_name, avatar_url, role), comments(count)')
+      .order('created_at', { ascending: false })
+      .range(posts.length, posts.length + PAGE_SIZE - 1);
+
+    if (!err && data) {
+      const filtered = (data as Post[]).filter((p) => p.users != null);
+      setPosts((prev) => [...prev, ...filtered]);
+      setHasMore(data.length === PAGE_SIZE);
+    }
+    loadingMoreRef.current = false;
+  }, [posts.length, hasMore]);
 
   useEffect(() => {
     fetchPosts();
@@ -69,5 +94,5 @@ export function usePosts() {
     await fetchPosts();
   };
 
-  return { posts, loading, error, refetch: fetchPosts, createPost, editPost, deletePost };
+  return { posts, loading, error, hasMore, refetch: fetchPosts, fetchMore, createPost, editPost, deletePost };
 }

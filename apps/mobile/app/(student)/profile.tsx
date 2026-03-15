@@ -49,6 +49,15 @@ export default function StudentProfile() {
   }, [firstName, lastName, email, phone, user]);
 
   const handleSave = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return;
+    }
+    if (!firstName.trim()) {
+      Alert.alert('Invalid Name', 'First name is required.');
+      return;
+    }
     if (phone && !/^\d{10}$/.test(phone)) {
       Alert.alert('Invalid Phone', 'Phone number must be exactly 10 digits.');
       return;

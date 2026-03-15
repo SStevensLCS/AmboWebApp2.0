@@ -6,7 +6,13 @@ import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { NetworkProvider } from '@/providers/NetworkProvider';
 import { PushNotificationsProvider } from '@/providers/PushNotificationsProvider';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { validateEnv } from '@/lib/env';
+import { useChatReadStore } from '@/stores/chatReadStore';
 import { theme } from '@/lib/theme';
+
+validateEnv();
+useChatReadStore.getState().hydrate();
 
 function RootNavigator() {
   const { session, userRole, isLoading } = useAuth();
@@ -54,16 +60,18 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <KeyboardProvider>
-        <PaperProvider theme={theme}>
-          <NetworkProvider>
-            <PushNotificationsProvider>
-              <RootNavigator />
-            </PushNotificationsProvider>
-          </NetworkProvider>
-        </PaperProvider>
-      </KeyboardProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <KeyboardProvider>
+          <PaperProvider theme={theme}>
+            <NetworkProvider>
+              <PushNotificationsProvider>
+                <RootNavigator />
+              </PushNotificationsProvider>
+            </NetworkProvider>
+          </PaperProvider>
+        </KeyboardProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

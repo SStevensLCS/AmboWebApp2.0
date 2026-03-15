@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { submissionSchema, checkContentLength } from "@/lib/validations";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -8,16 +10,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { user_id, service_date, service_type, credits, hours, feedback } =
-    body;
-
-  if (!user_id || !service_date || !service_type) {
+  // Rate limit: 20 requests per 15 minutes
+  const rateLimitResult = checkRateLimit(getRateLimitKey(req, "submissions"), {
+    maxRequests: 20,
+    windowSeconds: 900,
+  });
+  if (!rateLimitResult.allowed) {
     return NextResponse.json(
-      { error: "Missing required fields" },
+      { error: "Too many submissions. Please wait before submitting again." },
+      { status: 429 }
+    );
+  }
+
+  // Payload size check
+  const sizeError = checkContentLength(req);
+  if (sizeError) {
+    return NextResponse.json({ error: sizeError }, { status: 413 });
+  }
+
+  const body = await req.json();
+  const parsed = submissionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0].message },
       { status: 400 }
     );
   }
+
+  const { user_id, service_date, service_type, credits, hours, feedback } = parsed.data;
 
   if (user_id !== session.userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -28,9 +48,9 @@ export async function POST(req: Request) {
     user_id,
     service_date,
     service_type,
-    credits: Number(credits) ?? 0,
-    hours: Number(hours) ?? 0,
-    feedback: feedback || null,
+    credits,
+    hours,
+    feedback,
   });
 
   if (error) {

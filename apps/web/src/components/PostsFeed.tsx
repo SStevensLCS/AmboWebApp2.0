@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PostItem } from "./PostItem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquarePlus, Plus, AlertTriangle, RefreshCw } from "lucide-react";
+import { MessageSquarePlus, Plus, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 
 type Post = {
     id: string;
@@ -20,18 +20,32 @@ type Post = {
     comments: { count: number }[];
 };
 
+type PaginationMeta = {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+};
+
 export function PostsFeed({ currentUserId, currentUserRole, basePath }: { currentUserId: string; currentUserRole: string; basePath: string }) {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [fetchError, setFetchError] = useState(false);
+    const [pagination, setPagination] = useState<PaginationMeta | null>(null);
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async (page = 1, append = false) => {
         setFetchError(false);
+        if (page === 1) setLoading(true);
+        else setLoadingMore(true);
+
         try {
-            const res = await fetch("/api/posts");
+            const res = await fetch(`/api/posts?page=${page}&limit=25`);
             if (res.ok) {
-                const data = await res.json();
-                setPosts(data.posts || []);
+                const json = await res.json();
+                const newPosts = json.data || json.posts || [];
+                setPosts(prev => append ? [...prev, ...newPosts] : newPosts);
+                if (json.pagination) setPagination(json.pagination);
             } else {
                 setFetchError(true);
             }
@@ -40,11 +54,14 @@ export function PostsFeed({ currentUserId, currentUserRole, basePath }: { curren
             setFetchError(true);
         }
         setLoading(false);
-    };
+        setLoadingMore(false);
+    }, []);
 
     useEffect(() => {
         fetchPosts();
-    }, []);
+    }, [fetchPosts]);
+
+    const hasMore = pagination ? pagination.page < pagination.totalPages : false;
 
     return (
         <div className="relative">
@@ -73,15 +90,36 @@ export function PostsFeed({ currentUserId, currentUserRole, basePath }: { curren
                         </div>
                         <h3 className="font-medium">Failed to load posts</h3>
                         <p className="text-sm text-muted-foreground mt-1 mb-4">Please check your connection and try again.</p>
-                        <Button variant="outline" size="sm" onClick={fetchPosts}>
+                        <Button variant="outline" size="sm" onClick={() => fetchPosts()}>
                             <RefreshCw className="h-4 w-4 mr-2" />
                             Retry
                         </Button>
                     </div>
                 ) : posts.length > 0 ? (
-                    posts.map((post) => (
-                        <PostItem key={post.id} post={post} currentUserId={currentUserId} currentUserRole={currentUserRole} />
-                    ))
+                    <>
+                        {posts.map((post) => (
+                            <PostItem key={post.id} post={post} currentUserId={currentUserId} currentUserRole={currentUserRole} />
+                        ))}
+                        {hasMore && (
+                            <div className="text-center py-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fetchPosts((pagination?.page || 1) + 1, true)}
+                                    disabled={loadingMore}
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        "Load more"
+                                    )}
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-12">
                         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4 text-muted-foreground">

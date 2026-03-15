@@ -38,6 +38,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         onChangeText={setText}
         style={styles.input}
         multiline
+        maxLength={2000}
         blurOnSubmit={false}
         editable={!disabled}
       />

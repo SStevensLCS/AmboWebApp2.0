@@ -1,6 +1,10 @@
 /**
- * Service Worker for Push Notifications
+ * Service Worker for Push Notifications & Offline Support
  */
+
+const CACHE_NAME = "ambo-v1";
+const OFFLINE_URL = "/offline.html";
+const STATIC_ASSETS = ["/logo.png", "/manifest.json"];
 
 // Helper to send logs to server
 async function logToServer(level, message, data = {}) {
@@ -16,13 +20,51 @@ async function logToServer(level, message, data = {}) {
 }
 
 self.addEventListener("install", (event) => {
-    event.waitUntil(logToServer("info", "Service Worker Installed"));
+    event.waitUntil(
+        caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.addAll([OFFLINE_URL, ...STATIC_ASSETS]))
+            .then(() => logToServer("info", "Service Worker Installed"))
+    );
     self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-    event.waitUntil(logToServer("info", "Service Worker Activated"));
-    event.waitUntil(self.clients.claim());
+    event.waitUntil(
+        caches
+            .keys()
+            .then((keys) =>
+                Promise.all(
+                    keys
+                        .filter((key) => key !== CACHE_NAME)
+                        .map((key) => caches.delete(key))
+                )
+            )
+            .then(() => logToServer("info", "Service Worker Activated"))
+            .then(() => self.clients.claim())
+    );
+});
+
+self.addEventListener("fetch", (event) => {
+    // Only handle navigation requests for offline fallback
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+        );
+        return;
+    }
+
+    // Cache-first for static assets
+    if (
+        event.request.destination === "image" ||
+        STATIC_ASSETS.some((asset) => event.request.url.endsWith(asset))
+    ) {
+        event.respondWith(
+            caches.match(event.request).then(
+                (cached) => cached || fetch(event.request)
+            )
+        );
+    }
 });
 
 self.addEventListener("push", function (event) {
@@ -38,7 +80,7 @@ self.addEventListener("push", function (event) {
             if (data) {
                 const options = {
                     body: data.body,
-                    icon: "/logo.png", // Ensure this path is valid
+                    icon: "/logo.png",
                     badge: "/logo.png",
                     vibrate: [100, 50, 100],
                     data: {

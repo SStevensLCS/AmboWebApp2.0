@@ -2,6 +2,8 @@ import { createAdminClient } from "@ambo/database/admin-client";
 import { getSession } from "@/lib/session";
 import { sendNotificationToUser } from "@/lib/notifications";
 import { NextRequest, NextResponse } from "next/server";
+import { chatMessageSchema, checkContentLength } from "@/lib/validations";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
     try {
@@ -56,14 +58,34 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { groupId, content } = await req.json();
-
-        if (!groupId || !content) {
+        // Rate limit: 60 requests per minute
+        const rateLimitResult = checkRateLimit(getRateLimitKey(req, "chat-messages"), {
+            maxRequests: 60,
+            windowSeconds: 60,
+        });
+        if (!rateLimitResult.allowed) {
             return NextResponse.json(
-                { error: "groupId and content are required" },
+                { error: "Too many messages. Please slow down." },
+                { status: 429 }
+            );
+        }
+
+        // Payload size check
+        const sizeError = checkContentLength(req);
+        if (sizeError) {
+            return NextResponse.json({ error: sizeError }, { status: 413 });
+        }
+
+        const body = await req.json();
+        const parsed = chatMessageSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: parsed.error.issues[0].message },
                 { status: 400 }
             );
         }
+
+        const { groupId, content } = parsed.data;
 
         const supabase = createAdminClient();
 
@@ -99,7 +121,6 @@ export async function POST(req: Request) {
         }
 
         // 3. Send Notifications
-        // Fetch all participants to send notifications
         const { data: participants, error: partError } = await supabase
             .from("chat_participants")
             .select("user_id")

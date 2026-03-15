@@ -1,15 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { postSchema, checkContentLength } from "@/lib/validations";
+import { parsePagination, buildPaginatedResponse } from "@/lib/pagination";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     const session = await getSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { page, limit, from, to } = parsePagination(
+        new URL(req.url),
+        { page: 1, limit: 25 }
+    );
+
     const supabase = createAdminClient();
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
         .from("posts")
         .select(`
             *,
@@ -20,14 +28,15 @@ export async function GET() {
                 avatar_url
             ),
             comments (count)
-        `)
-        .order("created_at", { ascending: false });
+        `, { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
     if (error) {
         return NextResponse.json({ error: "Request failed" }, { status: 400 });
     }
 
-    return NextResponse.json({ posts: data || [] });
+    return NextResponse.json(buildPaginatedResponse(data || [], count || 0, { page, limit, from, to }));
 }
 
 export async function POST(req: Request) {
@@ -36,22 +45,41 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { content } = body;
-
-    if (!content || !content.trim()) {
+    // Rate limit: 10 requests per 5 minutes
+    const rateLimitResult = checkRateLimit(getRateLimitKey(req, "posts"), {
+        maxRequests: 10,
+        windowSeconds: 300,
+    });
+    if (!rateLimitResult.allowed) {
         return NextResponse.json(
-            { error: "Content is required" },
+            { error: "Too many posts. Please wait before posting again." },
+            { status: 429 }
+        );
+    }
+
+    // Payload size check
+    const sizeError = checkContentLength(req);
+    if (sizeError) {
+        return NextResponse.json({ error: sizeError }, { status: 413 });
+    }
+
+    const body = await req.json();
+    const parsed = postSchema.safeParse(body);
+    if (!parsed.success) {
+        return NextResponse.json(
+            { error: parsed.error.issues[0].message },
             { status: 400 }
         );
     }
+
+    const { content } = parsed.data;
 
     const supabase = createAdminClient();
     const { data, error } = await supabase
         .from("posts")
         .insert({
             user_id: session.userId,
-            content: content.trim(),
+            content,
         })
         .select(`
             *,
@@ -69,9 +97,6 @@ export async function POST(req: Request) {
     }
 
     // ── Notify Users ─────────────────────────────────────
-
-    // Admin & Student posts -> Notify Admins (excluding self)
-    // Admin posts -> Notify Students (excluding self)
 
     const { sendNotificationToRole } = await import("@/lib/notifications");
 

@@ -14,6 +14,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No file" }, { status: 400 });
   }
 
+  // CSV file size limit (5MB)
+  const MAX_CSV_SIZE = 5 * 1024 * 1024;
+  if (file.size > MAX_CSV_SIZE) {
+    return NextResponse.json({ error: "CSV file too large. Maximum size is 5MB." }, { status: 413 });
+  }
+
   const text = await file.text();
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) {

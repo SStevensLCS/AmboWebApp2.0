@@ -1,22 +1,30 @@
 import { requireAdmin } from "@/lib/admin";
 import { createAdminClient } from "@ambo/database/admin-client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { userCreateSchema, checkContentLength } from "@/lib/validations";
+import { parsePagination, buildPaginatedResponse } from "@/lib/pagination";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { authorized, supabase } = await requireAdmin();
   if (!authorized) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
+  const { page, limit, from, to } = parsePagination(
+    new URL(req.url),
+    { page: 1, limit: 50 }
+  );
+
+  const { data, error, count } = await supabase
     .from("users")
-    .select("id, first_name, last_name, phone, email, role")
-    .order("last_name");
+    .select("id, first_name, last_name, phone, email, role", { count: "exact" })
+    .order("last_name")
+    .range(from, to);
 
   if (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-  return NextResponse.json(data);
+  return NextResponse.json(buildPaginatedResponse(data || [], count || 0, { page, limit, from, to }));
 }
 
 export async function POST(req: Request) {
@@ -25,31 +33,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Payload size check
+  const sizeError = checkContentLength(req);
+  if (sizeError) {
+    return NextResponse.json({ error: sizeError }, { status: 413 });
+  }
+
   const body = await req.json();
-  const { first_name, last_name, phone, email } = body;
-  if (!first_name || !last_name || !phone || !email) {
+
+  // Normalize phone before validation
+  const normalizedBody = {
+    ...body,
+    phone: body.phone ? String(body.phone).replace(/\D/g, "") : body.phone,
+  };
+
+  const parsed = userCreateSchema.safeParse(normalizedBody);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Missing first_name, last_name, phone, or email" },
+      { error: parsed.error.issues[0].message },
       { status: 400 }
     );
   }
 
-  const phone10 = phone.replace(/\D/g, "");
-  if (phone10.length !== 10) {
-    return NextResponse.json(
-      { error: "Phone must be 10 digits" },
-      { status: 400 }
-    );
-  }
+  const { first_name, last_name, phone, email } = parsed.data;
+  const role = body.role === "admin" ? "admin" : "student";
 
   const supabase = createAdminClient();
-  const role = body.role === "admin" ? "admin" : "student";
 
   // 1. Create Supabase Auth account with phone number as default password
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: String(email).trim(),
-    password: phone10,
-    email_confirm: true, // Skip email verification since admin is creating the account
+    email: email,
+    password: phone,
+    email_confirm: true,
   });
 
   if (authError) {
@@ -60,10 +75,10 @@ export async function POST(req: Request) {
   // 2. Insert into public users table using the auth user's ID
   const { error: profileError } = await supabase.from("users").insert({
     id: authData.user.id,
-    first_name: String(first_name).trim(),
-    last_name: String(last_name).trim(),
-    phone: phone10,
-    email: String(email).trim(),
+    first_name,
+    last_name,
+    phone,
+    email,
     role,
   });
 

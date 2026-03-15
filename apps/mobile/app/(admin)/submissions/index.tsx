@@ -8,7 +8,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
 
 export default function AdminSubmissions() {
-  const { submissions, loading, refetch } = useSubmissions();
+  const { submissions, loading, hasMore, refetch, fetchMore } = useSubmissions();
   const router = useRouter();
 
   if (loading && submissions.length === 0) return <LoadingScreen />;
@@ -42,6 +42,8 @@ export default function AdminSubmissions() {
           </Card.Content>
         </Card>
       )}
+      onEndReached={hasMore ? fetchMore : undefined}
+      onEndReachedThreshold={0.5}
       ListEmptyComponent={
         <EmptyState icon="file-document-outline" title="No submissions" subtitle="Submissions will appear here." />
       }

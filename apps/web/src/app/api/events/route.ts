@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { createCalendarEvent } from "@/lib/googleCalendar";
 import { syncEventToAllUsers } from "@/lib/studentCalendar";
+import { eventSchema, checkContentLength } from "@/lib/validations";
 
 export async function GET() {
     const session = await getSession();
@@ -28,15 +29,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { title, description, start_time, end_time, type, location } = body;
+    // Payload size check
+    const sizeError = checkContentLength(req);
+    if (sizeError) {
+        return NextResponse.json({ error: sizeError }, { status: 413 });
+    }
 
-    if (!title || !start_time || !end_time) {
+    const body = await req.json();
+    const parsed = eventSchema.safeParse(body);
+    if (!parsed.success) {
         return NextResponse.json(
-            { error: "Missing required fields" },
+            { error: parsed.error.issues[0].message },
             { status: 400 }
         );
     }
+
+    const { title, description, start_time, end_time, location, type, uniform, rsvp_options } = parsed.data;
 
     const eventData = {
         title,
@@ -46,7 +54,7 @@ export async function POST(req: Request) {
         location: location || null,
         type: type || "Event",
         created_by: session.userId,
-        uniform: body.uniform || "Ambassador Polo with Navy Pants.",
+        uniform: uniform || "Ambassador Polo with Navy Pants.",
     };
 
     const supabase = createAdminClient();
@@ -61,8 +69,8 @@ export async function POST(req: Request) {
     }
 
     // ── Insert custom RSVP options if provided ────────────
-    if (body.rsvp_options && Array.isArray(body.rsvp_options) && body.rsvp_options.length > 0) {
-        const optionRows = body.rsvp_options
+    if (rsvp_options && rsvp_options.length > 0) {
+        const optionRows = rsvp_options
             .filter((label: string) => label.trim())
             .map((label: string, idx: number) => ({
                 event_id: newEvent.id,
@@ -95,4 +103,3 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, event: newEvent });
 }
-

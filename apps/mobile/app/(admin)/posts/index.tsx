@@ -10,7 +10,7 @@ import { ErrorState } from '@/components/ErrorState';
 
 export default function AdminPostsFeed() {
   const router = useRouter();
-  const { posts, loading, error, refetch } = usePosts();
+  const { posts, loading, error, hasMore, refetch, fetchMore } = usePosts();
 
   if (loading && posts.length === 0) return <LoadingScreen />;
   if (error && posts.length === 0) return <ErrorState message={error} onRetry={refetch} />;
@@ -39,6 +39,8 @@ export default function AdminPostsFeed() {
           />
         }
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+        onEndReached={hasMore ? fetchMore : undefined}
+        onEndReachedThreshold={0.5}
       />
       <FAB
         icon="plus"

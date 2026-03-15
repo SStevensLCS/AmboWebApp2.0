@@ -14,9 +14,8 @@ export function validateEnv(): void {
 
   if (missing.length > 0) {
     const message = `Missing required environment variables: ${missing.join(', ')}`;
-    if (__DEV__) {
-      console.error(`[Env] ${message}`);
-    }
-    throw new Error(message);
+    console.error(`[Env] ${message}`);
+    // Don't throw — in preview/production builds this would crash before
+    // the ErrorBoundary mounts and kill the app immediately.
   }
 }

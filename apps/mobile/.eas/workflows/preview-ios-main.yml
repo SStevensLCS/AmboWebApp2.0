@@ -1,8 +1,11 @@
-name: iOS Preview Build (Main)
+name: iOS Preview Build (Develop)
 
 on:
   push:
-    branches: ["main"]
+    branches: ["develop"]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
 
 jobs:
   build_ios_preview:

@@ -1,0 +1,16 @@
+name: iOS Production Build (Main)
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+
+jobs:
+  build_ios_production:
+    name: Build iOS production
+    type: build
+    params:
+      platform: ios
+      profile: production

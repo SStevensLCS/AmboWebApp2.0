@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Pressable,
   TextInput as RNTextInput,
 } from 'react-native';
 import {
@@ -16,8 +17,6 @@ import {
   IconButton,
   Divider,
   Avatar,
-  Chip,
-  SegmentedButtons,
 } from 'react-native-paper';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +34,66 @@ function formatDateTime(dateStr: string) {
     date: d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
   };
+}
+
+// ─── RSVP Button Component ──────────────────────────────
+interface RsvpButtonProps {
+  label: string;
+  icon: string;
+  selected: boolean;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  count?: number;
+  onPress: () => void;
+}
+
+function RsvpButton({ label, icon, selected, color, bgColor, borderColor, count, onPress }: RsvpButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.rsvpBtn,
+        { borderColor: selected ? borderColor : '#e5e7eb', backgroundColor: selected ? bgColor : '#fff' },
+      ]}
+    >
+      <MaterialCommunityIcons name={icon as any} size={18} color={selected ? color : '#6b7280'} />
+      <Text
+        variant="bodySmall"
+        style={[styles.rsvpBtnText, { color: selected ? color : '#374151', fontWeight: selected ? '700' : '500' }]}
+      >
+        {label}{count !== undefined && count > 0 ? ` (${count})` : ''}
+      </Text>
+    </Pressable>
+  );
+}
+
+// ─── RSVP Option Chip Component ─────────────────────────
+interface RsvpOptionChipProps {
+  label: string;
+  selected: boolean;
+  count: number;
+  onPress: () => void;
+}
+
+function RsvpOptionChip({ label, selected, count, onPress }: RsvpOptionChipProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.optionChip,
+        selected && styles.optionChipSelected,
+      ]}
+    >
+      {selected && <MaterialCommunityIcons name="check" size={14} color="#15803d" />}
+      <Text
+        variant="bodySmall"
+        style={[styles.optionChipText, selected && styles.optionChipTextSelected]}
+      >
+        {label}{count > 0 ? ` (${count})` : ''}
+      </Text>
+    </Pressable>
+  );
 }
 
 export default function AdminEventDetail() {
@@ -87,10 +146,6 @@ export default function AdminEventDetail() {
 
   const goingCount = rsvps.filter((r) => r.status === 'going').length;
   const maybeCount = rsvps.filter((r) => r.status === 'maybe').length;
-
-  const handleRsvp = async (status: string) => {
-    await updateRsvp(status as RSVPStatus);
-  };
 
   const handlePostComment = async () => {
     if (!commentText.trim()) return;
@@ -145,6 +200,11 @@ export default function AdminEventDetail() {
       },
     ]);
   };
+
+  // Attendees grouped
+  const goingAttendees = rsvps.filter((r) => r.status === 'going' && r.users);
+  const maybeAttendees = rsvps.filter((r) => r.status === 'maybe' && r.users);
+  const hasCustomOptions = rsvpOptions.length > 0;
 
   const keyboardOffset = Platform.OS === 'ios' ? insets.top + 44 : 0;
 
@@ -254,45 +314,89 @@ export default function AdminEventDetail() {
           {/* RSVP */}
           <Divider style={styles.divider} />
           <Text variant="titleMedium" style={styles.sectionTitle}>RSVP</Text>
-          {rsvpOptions.length > 0 ? (
-            <View style={styles.rsvpChipRow}>
-              {rsvpOptions.map((opt) => {
-                const isSelected = myRsvp === 'going' && myRsvpOptionId === opt.id;
-                const count = rsvps.filter(r => r.rsvp_option_id === opt.id).length;
-                return (
-                  <Chip
-                    key={opt.id}
-                    selected={isSelected}
-                    showSelectedOverlay
-                    onPress={() => updateRsvp('going' as RSVPStatus, opt.id)}
-                    style={styles.rsvpChip}
-                  >
-                    {opt.label}{count > 0 ? ` (${count})` : ''}
-                  </Chip>
-                );
-              })}
+
+          {hasCustomOptions ? (
+            <View style={styles.rsvpSection}>
+              <Text variant="bodySmall" style={styles.rsvpGroupLabel}>I'm going to:</Text>
+              <View style={styles.optionChipRow}>
+                {rsvpOptions.map((opt) => {
+                  const isSelected = myRsvp === 'going' && myRsvpOptionId === opt.id;
+                  const count = rsvps.filter(r => r.rsvp_option_id === opt.id).length;
+                  return (
+                    <RsvpOptionChip
+                      key={opt.id}
+                      label={opt.label}
+                      selected={isSelected}
+                      count={count}
+                      onPress={() => updateRsvp('going' as RSVPStatus, opt.id)}
+                    />
+                  );
+                })}
+              </View>
+              <View style={styles.rsvpBtnRow}>
+                <RsvpButton
+                  label="Maybe"
+                  icon="help-circle-outline"
+                  selected={myRsvp === 'maybe'}
+                  color="#92400e"
+                  bgColor="#fffbeb"
+                  borderColor="#fde68a"
+                  count={maybeCount}
+                  onPress={() => updateRsvp('maybe' as RSVPStatus)}
+                />
+                <RsvpButton
+                  label="Can't Go"
+                  icon="close-circle-outline"
+                  selected={myRsvp === 'no'}
+                  color="#6b7280"
+                  bgColor="#f9fafb"
+                  borderColor="#d1d5db"
+                  onPress={() => updateRsvp('no' as RSVPStatus)}
+                />
+              </View>
             </View>
           ) : (
-            <SegmentedButtons
-              value={myRsvp || ''}
-              onValueChange={handleRsvp}
-              buttons={[
-                { value: 'going', label: `Going (${goingCount})`, icon: 'check' },
-                { value: 'maybe', label: `Maybe (${maybeCount})`, icon: 'help-circle-outline' },
-                { value: 'no', label: "Can't Go", icon: 'close' },
-              ]}
-              style={styles.rsvpButtons}
-            />
+            <View style={styles.rsvpBtnRow}>
+              <RsvpButton
+                label="Going"
+                icon="check-circle-outline"
+                selected={myRsvp === 'going'}
+                color="#15803d"
+                bgColor="#f0fdf4"
+                borderColor="#86efac"
+                count={goingCount}
+                onPress={() => updateRsvp('going' as RSVPStatus)}
+              />
+              <RsvpButton
+                label="Maybe"
+                icon="help-circle-outline"
+                selected={myRsvp === 'maybe'}
+                color="#92400e"
+                bgColor="#fffbeb"
+                borderColor="#fde68a"
+                count={maybeCount}
+                onPress={() => updateRsvp('maybe' as RSVPStatus)}
+              />
+              <RsvpButton
+                label="Can't Go"
+                icon="close-circle-outline"
+                selected={myRsvp === 'no'}
+                color="#6b7280"
+                bgColor="#f9fafb"
+                borderColor="#d1d5db"
+                onPress={() => updateRsvp('no' as RSVPStatus)}
+              />
+            </View>
           )}
 
           {/* Attendees */}
-          {rsvpOptions.length > 0 ? (
+          {hasCustomOptions ? (
             <View style={styles.attendeesSection}>
               {rsvpOptions.map((opt) => {
                 const optRsvps = rsvps.filter(r => r.rsvp_option_id === opt.id && r.users);
                 if (optRsvps.length === 0) return null;
                 return (
-                  <View key={opt.id} style={{ marginBottom: 4 }}>
+                  <View key={opt.id} style={styles.attendeeGroup}>
                     <Text variant="bodySmall" style={styles.attendeesLabel}>{opt.label}:</Text>
                     <Text variant="bodySmall" style={styles.attendeesText}>
                       {optRsvps.map(r => `${r.users.first_name} ${r.users.last_name}`).join(', ')}
@@ -300,19 +404,34 @@ export default function AdminEventDetail() {
                   </View>
                 );
               })}
+              {maybeAttendees.length > 0 && (
+                <View style={styles.attendeeGroup}>
+                  <Text variant="bodySmall" style={styles.attendeesLabel}>Maybe:</Text>
+                  <Text variant="bodySmall" style={styles.attendeesText}>
+                    {maybeAttendees.map(r => `${r.users.first_name} ${r.users.last_name}`).join(', ')}
+                  </Text>
+                </View>
+              )}
             </View>
           ) : (
-            rsvps.filter((r) => r.status === 'going' && r.users).length > 0 && (
-              <View style={styles.attendeesSection}>
-                <Text variant="bodySmall" style={styles.attendeesLabel}>Going:</Text>
-                <Text variant="bodySmall" style={styles.attendeesText}>
-                  {rsvps
-                    .filter((r) => r.status === 'going' && r.users)
-                    .map((r) => `${r.users.first_name} ${r.users.last_name}`)
-                    .join(', ')}
-                </Text>
-              </View>
-            )
+            <View style={styles.attendeesSection}>
+              {goingAttendees.length > 0 && (
+                <View style={styles.attendeeGroup}>
+                  <Text variant="bodySmall" style={styles.attendeesLabel}>Going:</Text>
+                  <Text variant="bodySmall" style={styles.attendeesText}>
+                    {goingAttendees.map((r) => `${r.users.first_name} ${r.users.last_name}`).join(', ')}
+                  </Text>
+                </View>
+              )}
+              {maybeAttendees.length > 0 && (
+                <View style={styles.attendeeGroup}>
+                  <Text variant="bodySmall" style={styles.attendeesLabel}>Maybe:</Text>
+                  <Text variant="bodySmall" style={styles.attendeesText}>
+                    {maybeAttendees.map((r) => `${r.users.first_name} ${r.users.last_name}`).join(', ')}
+                  </Text>
+                </View>
+              )}
+            </View>
           )}
 
           {/* Comments */}
@@ -382,12 +501,50 @@ const styles = StyleSheet.create({
   divider: { marginVertical: 16 },
   description: { color: '#374151', lineHeight: 22 },
   sectionTitle: { fontWeight: '600', marginBottom: 12 },
-  rsvpButtons: { marginBottom: 12 },
-  rsvpChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  rsvpChip: {},
-  attendeesSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+
+  // RSVP section
+  rsvpSection: { gap: 12, marginBottom: 12 },
+  rsvpGroupLabel: { color: '#6b7280', fontWeight: '500' },
+  rsvpBtnRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  rsvpBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  rsvpBtnText: { fontSize: 13 },
+
+  // Custom option chips
+  optionChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  optionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+  },
+  optionChipSelected: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#86efac',
+  },
+  optionChipText: { fontSize: 13, color: '#374151', fontWeight: '500' },
+  optionChipTextSelected: { color: '#15803d', fontWeight: '700' },
+
+  // Attendees
+  attendeesSection: { gap: 6, marginBottom: 4 },
+  attendeeGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   attendeesLabel: { fontWeight: '600', color: '#374151' },
   attendeesText: { color: '#6b7280', flex: 1 },
+
+  // Comments
   comment: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   commentAvatar: { backgroundColor: '#e5e7eb' },
   commentBody: { flex: 1 },

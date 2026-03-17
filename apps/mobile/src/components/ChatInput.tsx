@@ -1,14 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TextInput, TextInput as RNTextInput } from 'react-native';
+import { View, StyleSheet, TextInput, TextInput as RNTextInput, Platform } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 interface ChatInputProps {
   onSend: (text: string) => Promise<void>;
+  onTyping?: () => void;
   disabled?: boolean;
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, onTyping, disabled }: ChatInputProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const insets = useSafeAreaInsets();
@@ -19,12 +21,25 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     const message = text.trim();
     setSending(true);
     setText('');
+
+    // Haptic feedback on send
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+
     try {
       await onSend(message);
     } finally {
       setSending(false);
       // Keep keyboard open after sending
       inputRef.current?.focus();
+    }
+  };
+
+  const handleChangeText = (value: string) => {
+    setText(value);
+    if (value.trim() && onTyping) {
+      onTyping();
     }
   };
 
@@ -35,7 +50,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         placeholder="Type a message..."
         placeholderTextColor="#9ca3af"
         value={text}
-        onChangeText={setText}
+        onChangeText={handleChangeText}
         style={styles.input}
         multiline
         maxLength={2000}

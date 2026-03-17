@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { TextInput, Button, Text, Menu, Divider, Card } from 'react-native-paper';
 import { useRouter, Stack } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -10,13 +11,22 @@ import { SERVICE_TYPES } from '@ambo/database';
 export default function NewSubmission() {
   const { session } = useAuth();
   const router = useRouter();
-  const [serviceType, setServiceType] = useState('');
+  const [serviceType, setServiceType] = useState('Family Tour');
   const [menuVisible, setMenuVisible] = useState(false);
-  const [hours, setHours] = useState('');
-  const [credits, setCredits] = useState('');
+  const [hours, setHours] = useState('1');
+  const [credits, setCredits] = useState('1');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Reset form when navigating back to this screen (e.g. from dashboard)
+  useFocusEffect(useCallback(() => {
+    setSuccess(false);
+    setServiceType('Family Tour');
+    setHours('1');
+    setCredits('1');
+    setNotes('');
+  }, []));
 
   const handleSubmit = async () => {
     if (!serviceType.trim()) {
@@ -75,9 +85,9 @@ export default function NewSubmission() {
               mode="contained"
               onPress={() => {
                 setSuccess(false);
-                setServiceType('');
-                setHours('');
-                setCredits('');
+                setServiceType('Family Tour');
+                setHours('1');
+                setCredits('1');
                 setNotes('');
               }}
             >

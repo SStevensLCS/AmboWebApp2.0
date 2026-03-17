@@ -1,16 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useChatReadStore } from '@/stores/chatReadStore';
-
-interface BadgeCounts {
-  unreadChats: number;
-  pendingSubmissions: number;
-}
 
 export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
   const [pendingSubmissions, setPendingSubmissions] = useState(0);
   const [serverUnreadGroupIds, setServerUnreadGroupIds] = useState<Set<string>>(new Set());
   const readGroups = useChatReadStore((s) => s.readGroups);
+  // Track group IDs so we can scope the realtime subscription
+  const groupIdsRef = useRef<string[]>([]);
 
   const fetchCounts = useCallback(async () => {
     if (!userId) return;
@@ -25,24 +22,33 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
 
       if (participantData && participantData.length > 0) {
         const groupIds = participantData.map((p: any) => p.group_id);
+        groupIdsRef.current = groupIds;
+
+        // Build O(1) lookup map for participant data
+        const participantMap = new Map<string, string | null>();
+        for (const p of participantData) {
+          participantMap.set(p.group_id, (p as any).last_read_at ?? null);
+        }
+
+        // Fetch recent messages — limit to reduce data transfer
         const { data: latestMessages } = await supabase
           .from('chat_messages')
           .select('group_id, created_at, sender_id')
           .in('group_id', groupIds)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(groupIds.length * 3);
 
         if (latestMessages) {
           const seenGroups = new Set<string>();
           for (const msg of latestMessages) {
-            if (msg.sender_id === userId) continue;
-            if (seenGroups.has(msg.group_id)) continue;
+            if (msg.sender_id === userId) continue; // Skip own messages
+            if (seenGroups.has(msg.group_id)) continue; // Already found latest for this group
             seenGroups.add(msg.group_id);
-            const participant = participantData.find((p: any) => p.group_id === msg.group_id);
-            if (participant) {
-              const lastRead = participant.last_read_at;
-              if (!lastRead || new Date(msg.created_at) > new Date(lastRead)) {
-                unreadGroupIds.add(msg.group_id);
-              }
+
+            const lastRead = participantMap.get(msg.group_id);
+            if (lastRead === undefined) continue; // Not a participant (shouldn't happen)
+            if (!lastRead || new Date(msg.created_at) > new Date(lastRead)) {
+              unreadGroupIds.add(msg.group_id);
             }
           }
         }
@@ -64,19 +70,29 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
   }, [userId, role]);
 
   useEffect(() => {
+    if (!userId) return;
+
     fetchCounts();
 
     // Refresh periodically as a fallback
     const interval = setInterval(fetchCounts, 30000);
 
-    // Subscribe to new chat messages for instant badge updates
+    // Subscribe to new chat messages — filter handler to user's groups only
     const channel = supabase
       .channel(`badge-counts-${userId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-        () => {
-          fetchCounts();
+        (payload) => {
+          const newMsg = payload.new as any;
+          // Only refetch if the message is in one of the user's groups
+          // and not from the user themselves
+          if (
+            groupIdsRef.current.includes(newMsg.group_id) &&
+            newMsg.sender_id !== userId
+          ) {
+            fetchCounts();
+          }
         }
       )
       .subscribe();

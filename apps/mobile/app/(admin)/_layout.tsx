@@ -1,4 +1,4 @@
-import { Tabs, Redirect } from 'expo-router';
+import { Tabs, Redirect, Slot } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useBadgeCounts } from '@/hooks/useBadgeCounts';
 import { LayoutDashboard, Calendar, MessageSquare, MessageCircle, UserCircle } from 'lucide-react-native';
@@ -7,6 +7,10 @@ export default function AdminLayout() {
   const { session, userRole } = useAuth();
   const userId = session?.user?.id || '';
   const { unreadChats, pendingSubmissions } = useBadgeCounts(userId, 'admin');
+
+  // Keep navigator mounted during sign-out so RootNavigator can redirect to login
+  // without destroying the navigation tree (which causes ErrorBoundary crash)
+  if (!session) return <Slot />;
 
   if (userRole !== 'admin' && userRole !== 'superadmin') {
     return <Redirect href="/" />;

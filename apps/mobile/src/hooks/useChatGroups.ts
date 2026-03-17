@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useChatReadStore } from '@/stores/chatReadStore';
 
@@ -20,7 +20,7 @@ export interface ChatGroup {
 
 export interface ChatGroupWithMeta extends ChatGroup {
   participants: { user_id: string; users: { first_name: string; last_name: string; avatar_url?: string } }[];
-  lastMessage?: { content: string; created_at: string };
+  lastMessage?: { content: string; created_at: string; sender_id?: string };
   hasUnread?: boolean;
 }
 
@@ -29,9 +29,16 @@ export function useChatGroups(userId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const hasLoadedOnce = useRef(false);
+  // Track group IDs for scoped realtime subscription
+  const groupIdsRef = useRef<string[]>([]);
+
   const fetchGroups = useCallback(async () => {
     if (!userId) return;
-    setLoading(true);
+    // Only show full loading state on initial load, not on refetches
+    if (!hasLoadedOnce.current) {
+      setLoading(true);
+    }
     setError(null);
 
     // Try to fetch with last_read_at, fall back to without it if the column doesn't exist yet
@@ -62,17 +69,20 @@ export function useChatGroups(userId: string) {
     }
 
     const groupIds = (participantData || []).map((p: any) => p.group_id);
+    groupIdsRef.current = groupIds;
+
     if (groupIds.length === 0) {
       setGroups([]);
+      hasLoadedOnce.current = true;
       setLoading(false);
       return;
     }
 
-    // Build a map of group_id -> last_read_at for unread detection
-    const lastReadMap: Record<string, string | null> = {};
+    // Build a map of group_id -> last_read_at for unread detection (O(1) lookup)
+    const lastReadMap = new Map<string, string | null>();
     if (hasLastReadAt) {
       for (const p of participantData || []) {
-        lastReadMap[p.group_id] = p.last_read_at ?? null;
+        lastReadMap.set(p.group_id, p.last_read_at ?? null);
       }
     }
 
@@ -95,24 +105,37 @@ export function useChatGroups(userId: string) {
       .select('group_id, user_id, users(first_name, last_name, avatar_url)')
       .in('group_id', groupIds);
 
-    // Fetch last message per group
-    const { data: lastMessages } = await supabase
+    // Fetch last message per group — limit to reduce data transfer
+    // We fetch recent messages and deduplicate to first-per-group client-side
+    const { data: recentMessages } = await supabase
       .from('chat_messages')
-      .select('group_id, content, created_at')
+      .select('group_id, content, created_at, sender_id')
       .in('group_id', groupIds)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(groupIds.length * 3); // Fetch a small multiple to ensure coverage
+
+    // Build map of group_id -> latest message (O(n) dedup)
+    const lastMessageMap = new Map<string, { content: string; created_at: string; sender_id: string }>();
+    if (recentMessages) {
+      for (const msg of recentMessages) {
+        if (!lastMessageMap.has(msg.group_id)) {
+          lastMessageMap.set(msg.group_id, msg);
+        }
+      }
+    }
 
     const result: ChatGroupWithMeta[] = (groupData || []).map((group) => {
       const participants = (allParticipants || [])
         .filter((p) => p.group_id === group.id && p.users != null)
         .map((p) => ({ user_id: p.user_id, users: p.users as unknown as { first_name: string; last_name: string; avatar_url?: string } }));
 
-      const lastMessage = (lastMessages || []).find((m) => m.group_id === group.id);
+      const lastMessage = lastMessageMap.get(group.id);
 
       // Determine unread status (only if last_read_at column exists)
+      // Own messages should never trigger unread indicators
       let hasUnread = false;
-      if (hasLastReadAt && lastMessage) {
-        const lastReadAt = lastReadMap[group.id];
+      if (hasLastReadAt && lastMessage && lastMessage.sender_id !== userId) {
+        const lastReadAt = lastReadMap.get(group.id);
         hasUnread = !lastReadAt || new Date(lastMessage.created_at) > new Date(lastReadAt);
       }
 
@@ -133,12 +156,74 @@ export function useChatGroups(userId: string) {
     });
 
     setGroups(result);
+    hasLoadedOnce.current = true;
     setLoading(false);
   }, [userId]);
 
+  // Initial fetch + realtime subscription for live chat list updates
   useEffect(() => {
+    if (!userId) return;
+
     fetchGroups();
-  }, [fetchGroups]);
+
+    // Subscribe to new messages in any of the user's groups
+    // This updates the chat list preview and unread status in real time
+    const channel = supabase
+      .channel(`chat-list:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+        },
+        (payload) => {
+          const newMsg = payload.new as any;
+          // Only process messages for groups we participate in
+          if (!groupIdsRef.current.includes(newMsg.group_id)) return;
+
+          // Surgically update the affected group instead of full refetch
+          setGroups((prev) => {
+            const idx = prev.findIndex((g) => g.id === newMsg.group_id);
+            if (idx === -1) {
+              // New group we don't know about yet — trigger full refetch
+              fetchGroups();
+              return prev;
+            }
+
+            const updated = [...prev];
+            const group = { ...updated[idx] };
+            group.lastMessage = {
+              content: newMsg.content,
+              created_at: newMsg.created_at,
+              sender_id: newMsg.sender_id,
+            };
+
+            // Mark unread if from someone else and not optimistically read
+            if (newMsg.sender_id !== userId) {
+              const optimisticReadGroups = useChatReadStore.getState().readGroups;
+              group.hasUnread = !optimisticReadGroups.has(group.id);
+            }
+
+            updated[idx] = group;
+
+            // Re-sort so most recent message bubbles to top
+            updated.sort((a, b) => {
+              const aTime = a.lastMessage?.created_at || a.updated_at || a.created_at;
+              const bTime = b.lastMessage?.created_at || b.updated_at || b.created_at;
+              return new Date(bTime).getTime() - new Date(aTime).getTime();
+            });
+
+            return updated;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchGroups]);
 
   const createGroup = async (name: string | null, participantIds: string[]) => {
     const groupId = generateUUID();

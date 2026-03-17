@@ -4,6 +4,7 @@ import { Avatar, Text, FAB } from 'react-native-paper';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatGroups, ChatGroupWithMeta } from '@/hooks/useChatGroups';
+import { useChatReadStore } from '@/stores/chatReadStore';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -32,6 +33,7 @@ export default function AdminChatList() {
   const { session } = useAuth();
   const userId = session?.user?.id || '';
   const { groups, loading, error, refetch } = useChatGroups(userId);
+  const clearReadGroups = useChatReadStore((s) => s.clearReadGroups);
   const [refreshing, setRefreshing] = useState(false);
   const initialLoadDone = useRef(false);
 
@@ -40,14 +42,13 @@ export default function AdminChatList() {
     initialLoadDone.current = true;
   }
 
-  // Silent refetch on focus (no loading spinner)
+  // Refetch on focus, then clear optimistic state once server data arrives
   useFocusEffect(
     useCallback(() => {
       if (initialLoadDone.current) {
-        // Silent background refresh - don't trigger loading state
-        refetch();
+        refetch().then(() => clearReadGroups());
       }
-    }, [refetch])
+    }, [refetch, clearReadGroups])
   );
 
   const handleRefresh = useCallback(async () => {

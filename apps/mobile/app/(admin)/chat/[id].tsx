@@ -1,26 +1,64 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Platform } from 'react-native';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { View, FlatList, StyleSheet, Platform, Pressable, ActivityIndicator } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatMessages, ChatMessage } from '@/hooks/useChatMessages';
-import { MessageBubble } from '@/components/MessageBubble';
+import { MessageBubble, DateSeparator, TypingIndicator } from '@/components/MessageBubble';
 import { ChatInput } from '@/components/ChatInput';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
-import { IconButton } from 'react-native-paper';
+import { IconButton, Text } from 'react-native-paper';
 import { supabase } from '@/lib/supabase';
+import { useChatReadStore } from '@/stores/chatReadStore';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+
+type ListItem =
+  | { type: 'date'; date: string; key: string }
+  | { type: 'message'; message: ChatMessage; key: string };
+
+function formatDateLabel(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 86400000);
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (msgDate.getTime() === today.getTime()) return 'Today';
+  if (msgDate.getTime() === yesterday.getTime()) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function getDateKey(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
 
 export default function AdminMessageThread() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session } = useAuth();
   const userId = session?.user?.id || '';
-  const { messages, loading, sendMessage } = useChatMessages(id || '');
+  const {
+    messages,
+    loading,
+    loadingOlder,
+    hasOlderMessages,
+    sendMessage,
+    retryMessage,
+    loadOlderMessages,
+    typingUsers,
+    sendTyping,
+    stopTyping,
+  } = useChatMessages(id || '');
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const [groupName, setGroupName] = useState('Messages');
+  const [userFirstName, setUserFirstName] = useState('');
+  const markGroupRead = useChatReadStore((s) => s.markGroupRead);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const isNearBottomRef = useRef(true);
 
   // Fetch group name for the header
   useEffect(() => {
@@ -37,7 +75,6 @@ export default function AdminMessageThread() {
         return;
       }
 
-      // If no explicit name, build from participant names
       const { data: participants } = await supabase
         .from('chat_participants')
         .select('user_id, users(first_name, last_name)')
@@ -55,47 +92,126 @@ export default function AdminMessageThread() {
     fetchGroupName();
   }, [id, userId]);
 
-  // Mark messages as read when entering the chat (gracefully handles missing column)
+  // Cache user's first name for typing indicator
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('users')
+      .select('first_name')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        if (data) setUserFirstName((data as any).first_name || '');
+      });
+  }, [userId]);
+
+  // Optimistically mark group as read
+  useEffect(() => {
+    if (id) markGroupRead(id);
+  }, [id, markGroupRead]);
+
+  // Persist read state to database
   useEffect(() => {
     if (!id || !userId) return;
-    supabase
-      .from('chat_participants')
-      .update({ last_read_at: new Date().toISOString() })
-      .eq('group_id', id)
-      .eq('user_id', userId)
-      .then(() => {})
-      .catch(() => {}); // Silently fail if last_read_at column doesn't exist yet
+    Promise.resolve(
+      supabase
+        .from('chat_participants')
+        .update({ last_read_at: new Date().toISOString() })
+        .eq('group_id', id)
+        .eq('user_id', userId)
+    ).catch(() => {});
   }, [id, userId, messages.length]);
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && isNearBottomRef.current) {
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }, [messages.length]);
+
+  // Build list items with date separators
+  const listItems: ListItem[] = useMemo(() => {
+    const items: ListItem[] = [];
+    let lastDateKey = '';
+
+    for (const msg of messages) {
+      const dateKey = getDateKey(msg.created_at);
+      if (dateKey !== lastDateKey) {
+        lastDateKey = dateKey;
+        items.push({
+          type: 'date',
+          date: formatDateLabel(msg.created_at),
+          key: `date-${dateKey}`,
+        });
+      }
+      items.push({ type: 'message', message: msg, key: msg.id });
+    }
+    return items;
+  }, [messages]);
+
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
+    const nearBottom = distanceFromBottom < 100;
+    isNearBottomRef.current = nearBottom;
+    setShowScrollToBottom(!nearBottom && contentSize.height > layoutMeasurement.height * 1.5);
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, []);
+
+  const handleTyping = useCallback(() => {
+    if (userId && userFirstName) {
+      sendTyping(userId, userFirstName);
+    }
+  }, [userId, userFirstName, sendTyping]);
+
+  const othersTyping = typingUsers.filter((t) => t.userId !== userId);
 
   if (loading && messages.length === 0) return <LoadingScreen />;
 
   const handleSend = async (text: string) => {
     await sendMessage(userId, text);
+    if (id && userId) {
+      Promise.resolve(
+        supabase
+          .from('chat_participants')
+          .update({ last_read_at: new Date().toISOString() })
+          .eq('group_id', id)
+          .eq('user_id', userId)
+      ).catch(() => {});
+    }
   };
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
-    const isOwn = item.sender_id === userId;
-    const senderName = item.users
-      ? `${item.users.first_name} ${item.users.last_name}`
+  const renderItem = ({ item }: { item: ListItem }) => {
+    if (item.type === 'date') {
+      return <DateSeparator date={item.date} />;
+    }
+
+    const msg = item.message;
+    const isOwn = msg.sender_id === userId;
+    const senderName = msg.users
+      ? `${msg.users.first_name} ${msg.users.last_name}`
       : 'Unknown';
+
     return (
       <MessageBubble
-        content={item.content}
-        createdAt={item.created_at}
+        content={msg.content}
+        createdAt={msg.created_at}
         senderName={senderName}
-        senderAvatar={item.users?.avatar_url}
+        senderAvatar={msg.users?.avatar_url}
         isOwn={isOwn}
+        status={msg.status}
+        onRetry={
+          msg.status === 'failed'
+            ? () => retryMessage(msg.id, userId)
+            : undefined
+        }
       />
     );
   };
 
-  // Header (~44) + top safe area inset gives the correct offset
   const keyboardOffset = Platform.OS === 'ios' ? insets.top + 44 : 0;
 
   return (
@@ -113,14 +229,44 @@ export default function AdminMessageThread() {
       >
         <FlatList
           ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
+          data={listItems}
+          keyExtractor={(item) => item.key}
+          renderItem={renderItem}
           contentContainerStyle={messages.length === 0 ? styles.emptyContainer : styles.list}
           ListEmptyComponent={<EmptyState icon="chat-outline" title="No messages yet" subtitle="Send the first message!" />}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListHeaderComponent={
+            hasOlderMessages && messages.length > 0 ? (
+              <Pressable onPress={loadOlderMessages} style={styles.loadOlderBtn}>
+                {loadingOlder ? (
+                  <ActivityIndicator size="small" color="#9ca3af" />
+                ) : (
+                  <Text variant="bodySmall" style={styles.loadOlderText}>Load older messages</Text>
+                )}
+              </Pressable>
+            ) : null
+          }
+          ListFooterComponent={
+            othersTyping.length > 0 ? (
+              <TypingIndicator names={othersTyping.map((t) => t.firstName)} />
+            ) : null
+          }
+          onScroll={handleScroll}
+          scrollEventThrottle={100}
+          onContentSizeChange={() => {
+            if (isNearBottomRef.current) {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }
+          }}
+          ItemSeparatorComponent={() => null}
         />
-        <ChatInput onSend={handleSend} />
+
+        {showScrollToBottom && (
+          <Pressable style={styles.scrollToBottomBtn} onPress={scrollToBottom}>
+            <MaterialCommunityIcons name="chevron-down" size={22} color="#fff" />
+          </Pressable>
+        )}
+
+        <ChatInput onSend={handleSend} onTyping={handleTyping} />
       </KeyboardAvoidingView>
     </>
   );
@@ -130,4 +276,29 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   list: { paddingVertical: 12 },
   emptyContainer: { flex: 1 },
+  loadOlderBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  loadOlderText: {
+    color: '#3b82f6',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  scrollToBottomBtn: {
+    position: 'absolute',
+    right: 16,
+    bottom: 80,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#111827',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
 });

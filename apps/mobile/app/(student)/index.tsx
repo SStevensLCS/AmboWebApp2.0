@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { Card, Text, Button, Chip, Divider } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useSubmissions } from '@/hooks/useSubmissions';
@@ -26,20 +27,41 @@ export default function StudentDashboard() {
   const { submissions, loading, error, refetch } = useSubmissions(userId);
   const [activeFilters, setActiveFilters] = useState<Set<SubmissionStatus>>(new Set(FILTERS));
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const initialLoadDone = useRef(false);
   const router = useRouter();
 
-  useEffect(() => {
-    async function fetchUpcoming() {
-      const { data } = await supabase
-        .from('events')
-        .select('id, title, start_time')
-        .gte('start_time', new Date().toISOString())
-        .order('start_time', { ascending: true })
-        .limit(3);
-      setUpcomingEvents((data as UpcomingEvent[]) || []);
-    }
-    fetchUpcoming();
+  if (!loading && !initialLoadDone.current) {
+    initialLoadDone.current = true;
+  }
+
+  const fetchUpcoming = useCallback(async () => {
+    const { data } = await supabase
+      .from('events')
+      .select('id, title, start_time')
+      .gte('start_time', new Date().toISOString())
+      .order('start_time', { ascending: true })
+      .limit(3);
+    setUpcomingEvents((data as UpcomingEvent[]) || []);
   }, []);
+
+  useEffect(() => {
+    fetchUpcoming();
+  }, [fetchUpcoming]);
+
+  // Silent refetch when screen regains focus (e.g. after submitting activity)
+  useFocusEffect(useCallback(() => {
+    if (initialLoadDone.current) {
+      refetch();
+      fetchUpcoming();
+    }
+  }, [refetch, fetchUpcoming]));
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([refetch(), fetchUpcoming()]);
+    setRefreshing(false);
+  }, [refetch, fetchUpcoming]);
 
   const stats = useMemo(() => {
     const approved = submissions.filter((s) => s.status === 'Approved');
@@ -66,7 +88,7 @@ export default function StudentDashboard() {
     });
   };
 
-  if (loading && submissions.length === 0) return <LoadingScreen />;
+  if (loading && submissions.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
   if (error && submissions.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
@@ -75,39 +97,30 @@ export default function StudentDashboard() {
       contentContainerStyle={styles.content}
       data={filtered}
       keyExtractor={(item) => item.id}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       ListHeaderComponent={
         <View style={styles.header}>
           {/* Stats */}
           <View style={styles.statsRow}>
-            <Card elevation={0} style={styles.statCard}>
-              <Card.Content style={styles.statContent}>
-                <MaterialCommunityIcons name="clock-outline" size={20} color="#111827" />
-                <Text variant="headlineMedium" style={styles.statValue}>
-                  {stats.totalHours.toFixed(1)}
-                </Text>
-                <Text variant="bodySmall" style={styles.statLabel}>Approved Hours</Text>
-              </Card.Content>
-            </Card>
-            <Card elevation={0} style={styles.statCard}>
-              <Card.Content style={styles.statContent}>
-                <MaterialCommunityIcons name="trophy-outline" size={20} color="#7c3aed" />
-                <Text variant="headlineMedium" style={styles.statValue}>
-                  {stats.totalCredits.toFixed(1)}
-                </Text>
-                <Text variant="bodySmall" style={styles.statLabel}>Credits</Text>
-              </Card.Content>
-            </Card>
+            <View style={styles.statCard}>
+              <Text variant="headlineMedium" style={styles.statValue}>
+                {stats.totalHours.toFixed(1)}
+              </Text>
+              <Text variant="bodySmall" style={styles.statLabel}>Approved{'\n'}Hours</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text variant="headlineMedium" style={styles.statValue}>
+                {stats.totalCredits.toFixed(1)}
+              </Text>
+              <Text variant="bodySmall" style={styles.statLabel}>Credits</Text>
+            </View>
             {stats.pending > 0 && (
-              <Card elevation={0} style={[styles.statCard, styles.pendingCard]}>
-                <Card.Content style={styles.statContent}>
-                  <MaterialCommunityIcons name="clock-alert-outline" size={20} color="#f59e0b" />
-                  <Text variant="headlineMedium" style={styles.statValue}>
-                    {stats.pending}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.statLabel}>Pending</Text>
-                </Card.Content>
-              </Card>
+              <View style={[styles.statCard, styles.pendingCard]}>
+                <Text variant="headlineMedium" style={styles.statValue}>
+                  {stats.pending}
+                </Text>
+                <Text variant="bodySmall" style={styles.statLabel}>Pending</Text>
+              </View>
             )}
           </View>
 
@@ -196,7 +209,7 @@ export default function StudentDashboard() {
             </View>
             <View style={styles.submissionDetails}>
               <Text variant="bodySmall" style={styles.detailText}>
-                {item.service_date}
+                {new Date(item.service_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).replace(',', '')}
               </Text>
               <Text variant="bodySmall" style={styles.detailText}>
                 {Number(item.hours)} hrs
@@ -228,9 +241,8 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   header: { gap: 16, marginBottom: 8 },
   statsRow: { flexDirection: 'row', gap: 12 },
-  statCard: { flex: 1, backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb' },
-  pendingCard: { backgroundColor: '#fffbeb' },
-  statContent: { alignItems: 'center', gap: 4, paddingVertical: 12 },
+  statCard: { flex: 1, backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 16, overflow: 'hidden' },
+  pendingCard: { backgroundColor: '#fffbeb', borderColor: '#fde68a' },
   statValue: { fontWeight: '700' },
   statLabel: { color: '#6b7280' },
   actionButton: { borderRadius: 12 },

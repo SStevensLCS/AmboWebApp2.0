@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { EventComment, EventRSVP, EventRSVPOption, RSVPStatus } from '@ambo/database';
 
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || '';
+
 export function useEventDetail(eventId: string, userId: string) {
   const [comments, setComments] = useState<EventComment[]>([]);
   const [rsvps, setRsvps] = useState<EventRSVP[]>([]);
@@ -45,8 +47,86 @@ export function useEventDetail(eventId: string, userId: string) {
     fetchData();
   }, [fetchData]);
 
+  /** Fire-and-forget Google Calendar sync via the web API */
+  const triggerGcalSync = useCallback(async () => {
+    if (!WEB_URL) {
+      console.log('[GCal] No WEB_URL configured — skipping sync');
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.log('[GCal] No access token — skipping sync');
+        return;
+      }
+      console.log('[GCal] Triggering sync for event', eventId);
+      fetch(`${WEB_URL}/api/events/${eventId}/gcal-sync`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then(async (res) => {
+          const body = await res.json().catch(() => ({}));
+          console.log('[GCal] Sync response:', res.status, body);
+        })
+        .catch((err) => console.log('[GCal] Sync request failed:', err));
+    } catch {
+      // silently ignore — GCal sync is best-effort
+    }
+  }, [eventId]);
+
+  /** Remove RSVP entirely (toggle-off) */
+  const removeRsvp = useCallback(async () => {
+    // Optimistic: clear immediately
+    const prevMyRsvp = myRsvp;
+    const prevMyRsvpOptionId = myRsvpOptionId;
+    const prevRsvps = rsvps;
+    setMyRsvp(null);
+    setMyRsvpOptionId(null);
+    setRsvps(rsvps.filter((r: any) => r.user_id !== userId));
+
+    const { error } = await supabase
+      .from('event_rsvps')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+
+    if (error) {
+      // Revert on failure
+      setMyRsvp(prevMyRsvp);
+      setMyRsvpOptionId(prevMyRsvpOptionId);
+      setRsvps(prevRsvps);
+      return error;
+    }
+
+    await fetchData();
+    triggerGcalSync();
+    return null;
+  }, [eventId, userId, fetchData, triggerGcalSync, myRsvp, myRsvpOptionId, rsvps]);
+
   const updateRsvp = useCallback(
     async (status: RSVPStatus, rsvpOptionId?: string) => {
+      // Toggle-off: if tapping the same status (and same option for custom), remove RSVP
+      const sameStatus = status === myRsvp;
+      const sameOption = rsvpOptionId === myRsvpOptionId || (!rsvpOptionId && !myRsvpOptionId);
+      if (sameStatus && sameOption) {
+        return removeRsvp();
+      }
+
+      // Optimistic update — immediately reflect the change in UI
+      const prevMyRsvp = myRsvp;
+      const prevMyRsvpOptionId = myRsvpOptionId;
+      const prevRsvps = rsvps;
+      setMyRsvp(status);
+      setMyRsvpOptionId(rsvpOptionId || null);
+
+      // Optimistically update the rsvps array for counts
+      const existingIdx = rsvps.findIndex((r: any) => r.user_id === userId);
+      if (existingIdx >= 0) {
+        const updated = [...rsvps];
+        updated[existingIdx] = { ...updated[existingIdx], status, rsvp_option_id: rsvpOptionId || null } as any;
+        setRsvps(updated);
+      }
+
       const { error } = await supabase
         .from('event_rsvps')
         .upsert(
@@ -54,19 +134,28 @@ export function useEventDetail(eventId: string, userId: string) {
             event_id: eventId,
             user_id: userId,
             status,
-            ...(rsvpOptionId !== undefined && { rsvp_option_id: rsvpOptionId }),
+            rsvp_option_id: rsvpOptionId || null,
           },
           { onConflict: 'event_id,user_id' }
         );
 
-      if (!error) {
-        setMyRsvp(status);
-        setMyRsvpOptionId(rsvpOptionId || null);
-        await fetchData();
+      if (error) {
+        // Revert optimistic update on failure
+        setMyRsvp(prevMyRsvp);
+        setMyRsvpOptionId(prevMyRsvpOptionId);
+        setRsvps(prevRsvps);
+        return error;
       }
-      return error;
+
+      // Refetch to get server-truth (includes any new RSVPs from others)
+      await fetchData();
+
+      // Trigger Google Calendar sync in background
+      triggerGcalSync();
+
+      return null;
     },
-    [eventId, userId, fetchData]
+    [eventId, userId, fetchData, triggerGcalSync, myRsvp, myRsvpOptionId, rsvps, removeRsvp]
   );
 
   const postComment = useCallback(
@@ -81,5 +170,5 @@ export function useEventDetail(eventId: string, userId: string) {
     [eventId, userId, fetchData]
   );
 
-  return { comments, rsvps, rsvpOptions, myRsvp, myRsvpOptionId, loading, refetch: fetchData, updateRsvp, postComment };
+  return { comments, rsvps, rsvpOptions, myRsvp, myRsvpOptionId, loading, refetch: fetchData, updateRsvp, removeRsvp, postComment };
 }

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -12,11 +12,27 @@ import { ErrorState } from '@/components/ErrorState';
 export default function AdminPostsFeed() {
   const router = useRouter();
   const { posts, loading, error, hasMore, refetch, fetchMore } = usePosts();
+  const [refreshing, setRefreshing] = useState(false);
+  const initialLoadDone = useRef(false);
 
-  // Refetch posts when screen regains focus (e.g. after creating a new post)
-  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+  if (!loading && !initialLoadDone.current) {
+    initialLoadDone.current = true;
+  }
 
-  if (loading && posts.length === 0) return <LoadingScreen />;
+  // Silent refetch when screen regains focus (no spinner)
+  useFocusEffect(useCallback(() => {
+    if (initialLoadDone.current) {
+      refetch();
+    }
+  }, [refetch]));
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  if (loading && posts.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
   if (error && posts.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
@@ -42,7 +58,7 @@ export default function AdminPostsFeed() {
             subtitle="Be the first to post something!"
           />
         }
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         onEndReached={hasMore ? fetchMore : undefined}
         onEndReachedThreshold={0.5}
       />

@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/privacy",
+  "/api/events/", // Event API routes handle their own auth (supports Bearer tokens from mobile)
 ];
 
 function roleHome(role: string): string {

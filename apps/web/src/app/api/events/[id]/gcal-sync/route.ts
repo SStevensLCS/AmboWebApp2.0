@@ -54,18 +54,18 @@ export async function POST(
 
     // Trigger sync
     try {
-        const { syncEventToGoogle, isConnected } = await import("@/lib/googleCalendar");
-        const connected = await isConnected();
-        console.log("[gcal-sync] Event:", eventId, "| GCal connected:", connected);
+        const { syncEventToGoogle } = await import("@/lib/googleCalendar");
+        console.log("[gcal-sync] Triggering sync for event:", eventId);
 
-        if (!connected) {
-            return NextResponse.json({ ok: false, reason: "Google Calendar not connected" });
-        }
+        const result = await syncEventToGoogle(eventId);
+        console.log("[gcal-sync] Result:", JSON.stringify(result));
 
-        await syncEventToGoogle(eventId);
-        return NextResponse.json({ ok: true });
-    } catch (err) {
+        return NextResponse.json(result);
+    } catch (err: any) {
         console.error("[gcal-sync] Failed:", err);
-        return NextResponse.json({ error: "Sync failed", detail: String(err) }, { status: 500 });
+        return NextResponse.json(
+            { synced: false, reason: `Sync error: ${err?.message || err}` },
+            { status: 500 }
+        );
     }
 }

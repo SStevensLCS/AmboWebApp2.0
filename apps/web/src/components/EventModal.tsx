@@ -228,7 +228,12 @@ export function EventModal({
         });
 
         if (res.ok) {
-            toast.success("Event updated");
+            const data = await res.json();
+            if (data.gcal_sync && !data.gcal_sync.synced) {
+                toast.error(`Event saved, but Google Calendar sync failed: ${data.gcal_sync.reason}`);
+            } else {
+                toast.success("Event updated");
+            }
             setIsEditing(false);
             onEventChanged?.();
             onClose();

@@ -113,6 +113,7 @@ export default function AdminEventDetail() {
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editUniform, setEditUniform] = useState('');
   const [editStartDate, setEditStartDate] = useState(new Date());
   const [editEndDate, setEditEndDate] = useState(new Date());
   const [editAllDay, setEditAllDay] = useState(false);
@@ -132,6 +133,7 @@ export default function AdminEventDetail() {
         setEvent(e);
         setEditTitle(e.title);
         setEditDescription(e.description || '');
+        setEditUniform(e.uniform || '');
         setEditStartDate(new Date(e.start_time));
         setEditEndDate(new Date(e.end_time));
       }
@@ -177,20 +179,28 @@ export default function AdminEventDetail() {
         body: JSON.stringify({
           title: editTitle.trim(),
           description: editDescription.trim() || null,
+          uniform: editUniform.trim() || null,
           start_time: editStartDate.toISOString(),
           end_time: editEndDate.toISOString(),
         }),
       });
 
+      const responseData = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to update event');
+        throw new Error(responseData.error || 'Failed to update event');
+      }
+
+      // Check GCal sync status from the response
+      if (responseData.gcal_sync && !responseData.gcal_sync.synced) {
+        Alert.alert('Event Saved', `Google Calendar sync failed: ${responseData.gcal_sync.reason}`);
       }
 
       setEvent({
         ...event,
         title: editTitle.trim(),
         description: editDescription.trim() || null,
+        uniform: editUniform.trim() || null,
         start_time: editStartDate.toISOString(),
         end_time: editEndDate.toISOString(),
       });
@@ -316,6 +326,15 @@ export default function AdminEventDetail() {
                 numberOfLines={3}
                 dense
                 style={styles.editInput}
+              />
+              <TextInput
+                mode="outlined"
+                label="Uniform"
+                value={editUniform}
+                onChangeText={setEditUniform}
+                dense
+                style={styles.editInput}
+                placeholder="e.g. Ambassador Polo with Navy Pants"
               />
               <EventDateTimePicker
                 startDate={editStartDate}

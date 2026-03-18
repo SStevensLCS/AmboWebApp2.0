@@ -140,10 +140,12 @@ const styles = StyleSheet.create({
   ownBubble: {
     backgroundColor: '#111827',
     borderBottomRightRadius: 4,
+    alignSelf: 'flex-end',
   },
   otherBubble: {
     backgroundColor: '#f3f4f6',
     borderBottomLeftRadius: 4,
+    alignSelf: 'flex-start',
   },
   failedBubble: {
     backgroundColor: '#451a1a',

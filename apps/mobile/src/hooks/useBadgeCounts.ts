@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useChatReadStore } from '@/stores/chatReadStore';
 
@@ -6,6 +7,7 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
   const [pendingSubmissions, setPendingSubmissions] = useState(0);
   const [serverUnreadGroupIds, setServerUnreadGroupIds] = useState<Set<string>>(new Set());
   const readGroups = useChatReadStore((s) => s.readGroups);
+  const removeReadGroup = useChatReadStore((s) => s.removeReadGroup);
   // Track group IDs so we can scope the realtime subscription
   const groupIdsRef = useRef<string[]>([]);
 
@@ -59,6 +61,16 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
 
     setServerUnreadGroupIds(unreadGroupIds);
 
+    // Prune optimistic readGroups for groups the server now considers read.
+    // This prevents the optimistic set from growing unbounded and keeps
+    // badge state in sync without the race condition of clearing all at once.
+    const currentReadGroups = useChatReadStore.getState().readGroups;
+    for (const gid of currentReadGroups) {
+      if (!unreadGroupIds.has(gid)) {
+        removeReadGroup(gid);
+      }
+    }
+
     // Fetch pending submissions count (admin sees all, student sees own)
     if (role === 'admin') {
       const { count } = await supabase
@@ -75,9 +87,9 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
     fetchCounts();
 
     // Refresh periodically as a fallback
-    const interval = setInterval(fetchCounts, 30000);
+    const interval = setInterval(fetchCounts, 15000);
 
-    // Subscribe to new chat messages — filter handler to user's groups only
+    // Subscribe to new chat messages — refetch badge counts on any insert
     const channel = supabase
       .channel(`badge-counts-${userId}`)
       .on(
@@ -85,12 +97,8 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         (payload) => {
           const newMsg = payload.new as any;
-          // Only refetch if the message is in one of the user's groups
-          // and not from the user themselves
-          if (
-            groupIdsRef.current.includes(newMsg.group_id) &&
-            newMsg.sender_id !== userId
-          ) {
+          // Refetch if message is from someone else
+          if (newMsg.sender_id !== userId) {
             fetchCounts();
           }
         }
@@ -105,8 +113,14 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
       )
       .subscribe();
 
+    // Refetch when app comes back to foreground
+    const appStateListener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') fetchCounts();
+    });
+
     return () => {
       clearInterval(interval);
+      appStateListener.remove();
       supabase.removeChannel(channel);
     };
   }, [fetchCounts, userId]);

@@ -7,6 +7,7 @@ interface ChatReadStore {
   readGroups: Set<string>;
   loaded: boolean;
   markGroupRead: (groupId: string) => void;
+  removeReadGroup: (groupId: string) => void;
   clearReadGroups: () => void;
   hydrate: () => Promise<void>;
 }
@@ -20,6 +21,15 @@ export const useChatReadStore = create<ChatReadStore>((set, get) => ({
       const next = new Set(state.readGroups);
       next.add(groupId);
       // Persist in background
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...next])).catch(() => {});
+      return { readGroups: next };
+    });
+  },
+
+  removeReadGroup: (groupId) => {
+    set((state) => {
+      const next = new Set(state.readGroups);
+      next.delete(groupId);
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...next])).catch(() => {});
       return { readGroups: next };
     });

@@ -35,10 +35,12 @@ export default function StudentChatList() {
   const { groups, loading, error, refetch } = useChatGroups(userId);
   const clearReadGroups = useChatReadStore((s) => s.clearReadGroups);
 
-  // Refetch when screen regains focus, then clear optimistic state once server data arrives
+  // Refetch on focus — don't clear optimistic readGroups here.
+  // The badge count hook reconciles server vs optimistic state;
+  // clearing too early causes a flash where the badge reappears.
   useFocusEffect(useCallback(() => {
-    refetch().then(() => clearReadGroups());
-  }, [refetch, clearReadGroups]));
+    refetch();
+  }, [refetch]));
 
   if (loading && groups.length === 0) return <LoadingScreen />;
   if (error && groups.length === 0) return <ErrorState message={error} onRetry={refetch} />;

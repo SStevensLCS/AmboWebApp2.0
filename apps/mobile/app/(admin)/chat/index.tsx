@@ -42,13 +42,15 @@ export default function AdminChatList() {
     initialLoadDone.current = true;
   }
 
-  // Refetch on focus, then clear optimistic state once server data arrives
+  // Refetch on focus — don't clear optimistic readGroups here.
+  // The badge count hook reconciles server vs optimistic state;
+  // clearing too early causes a flash where the badge reappears.
   useFocusEffect(
     useCallback(() => {
       if (initialLoadDone.current) {
-        refetch().then(() => clearReadGroups());
+        refetch();
       }
-    }, [refetch, clearReadGroups])
+    }, [refetch])
   );
 
   const handleRefresh = useCallback(async () => {

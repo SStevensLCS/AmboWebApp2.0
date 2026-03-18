@@ -1,21 +1,61 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { createClient } from "@supabase/supabase-js";
 import {
     updateCalendarEvent,
     deleteCalendarEvent,
 } from "@/lib/googleCalendar";
 
 /**
+ * Authenticate via cookie session (web) or Bearer token (mobile).
+ * Returns { userId, role } or null.
+ */
+async function getAuthUser(req: NextRequest) {
+    // Try cookie-based session first
+    try {
+        const session = await getSession();
+        if (session) {
+            return { userId: session.userId, role: session.role };
+        }
+    } catch {
+        // cookies() may throw when no cookie context exists (mobile requests)
+    }
+
+    // Fallback: mobile bearer token
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const token = authHeader.slice(7);
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    if (!supabaseUrl || !supabaseServiceKey) return null;
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) return null;
+
+    const adminClient = createAdminClient();
+    const { data: dbUser } = await adminClient
+        .from("users")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+
+    if (!dbUser) return null;
+    return { userId: data.user.id, role: dbUser.role };
+}
+
+/**
  * PUT /api/events/[id]
  * Update an event in the database and sync to Google Calendar.
  */
 export async function PUT(
-    req: Request,
+    req: NextRequest,
     { params }: { params: { id: string } }
 ) {
-    const session = await getSession();
-    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
+    const authUser = await getAuthUser(req);
+    if (!authUser || (authUser.role !== "admin" && authUser.role !== "superadmin")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -67,11 +107,13 @@ export async function PUT(
         }
     }
 
-    // ── Google Calendar sync ─────────────────────────────
-    if (updated.google_calendar_event_id) {
-        // Use sync helper to include RSVPs
+    // ── Google Calendar sync (always attempt — syncEventToGoogle handles
+    //    creating a new GCal event if one doesn't exist yet) ──────────
+    try {
         const { syncEventToGoogle } = await import("@/lib/googleCalendar");
         await syncEventToGoogle(updated.id);
+    } catch (err) {
+        console.error("[Events PUT] GCal sync failed:", err);
     }
 
     return NextResponse.json({ event: updated });
@@ -82,11 +124,11 @@ export async function PUT(
  * Delete an event from the database and Google Calendar.
  */
 export async function DELETE(
-    _req: Request,
+    req: NextRequest,
     { params }: { params: { id: string } }
 ) {
-    const session = await getSession();
-    if (!session || (session.role !== "admin" && session.role !== "superadmin")) {
+    const authUser = await getAuthUser(req);
+    if (!authUser || (authUser.role !== "admin" && authUser.role !== "superadmin")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

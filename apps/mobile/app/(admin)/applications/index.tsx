@@ -47,23 +47,28 @@ export default function ApplicationsList() {
     const date = new Date(item.created_at).toLocaleDateString();
 
     return (
-      <Card elevation={0} style={styles.card} onPress={() => router.push(`/(admin)/applications/${item.id}`)}>
-        <Card.Content style={styles.cardContent}>
-          <Avatar.Text size={40} label={initials} style={styles.avatar} />
-          <View style={styles.cardInfo}>
-            <Text variant="bodyLarge" style={styles.name}>
-              {item.first_name} {item.last_name}
-            </Text>
-            <Text variant="bodySmall" style={styles.email}>{item.email}</Text>
-            <Text variant="bodySmall" style={styles.date}>{date}</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
-            <Text style={[styles.statusText, { color: colors.text }]}>
-              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-            </Text>
-          </View>
-        </Card.Content>
-      </Card>
+      <Pressable
+        onPress={() => router.push(`/(admin)/applications/${item.id}`)}
+        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      >
+        <Card elevation={0} style={styles.cardInner}>
+          <Card.Content style={styles.cardContent}>
+            <Avatar.Text size={40} label={initials} style={styles.avatar} />
+            <View style={styles.cardInfo}>
+              <Text variant="bodyLarge" style={styles.name}>
+                {item.first_name} {item.last_name}
+              </Text>
+              <Text variant="bodySmall" style={styles.email}>{item.email}</Text>
+              <Text variant="bodySmall" style={styles.date}>{date}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
+              <Text style={[styles.statusText, { color: colors.text }]}>
+                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
+      </Pressable>
     );
   };
 
@@ -119,7 +124,9 @@ const styles = StyleSheet.create({
   filters: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   list: { padding: 16 },
   emptyContainer: { flex: 1, padding: 16 },
-  card: { marginBottom: 10, backgroundColor: '#fff' },
+  card: { marginBottom: 10 },
+  cardPressed: { opacity: 0.7 },
+  cardInner: { backgroundColor: '#fff' },
   cardContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { backgroundColor: '#e5e7eb' },
   cardInfo: { flex: 1 },

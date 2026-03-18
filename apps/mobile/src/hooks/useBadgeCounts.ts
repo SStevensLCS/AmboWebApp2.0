@@ -95,6 +95,14 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'submissions' },
+        () => {
+          // Refetch when any submission status changes (approve/deny)
+          if (role === 'admin') fetchCounts();
+        }
+      )
       .subscribe();
 
     return () => {

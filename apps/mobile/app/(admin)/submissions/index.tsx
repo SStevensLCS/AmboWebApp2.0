@@ -1,46 +1,50 @@
-import React from 'react';
-import { FlatList, View, StyleSheet, RefreshControl } from 'react-native';
+import React, { useCallback } from 'react';
+import { FlatList, View, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { Card, Text } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSubmissions } from '@/hooks/useSubmissions';
 import { StatusBadge } from '@/components/StatusBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { EmptyState } from '@/components/EmptyState';
 
 export default function AdminSubmissions() {
-  const { submissions, loading, hasMore, refetch, fetchMore } = useSubmissions();
+  const { submissions, loading, refreshing, hasMore, refetch, silentRefresh, fetchMore } = useSubmissions();
   const router = useRouter();
 
-  if (loading && submissions.length === 0) return <LoadingScreen />;
+  // Silently refresh data when screen regains focus (no spinner flash)
+  useFocusEffect(useCallback(() => { silentRefresh(); }, [silentRefresh]));
+
+  if (loading) return <LoadingScreen />;
 
   return (
     <FlatList
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={submissions.length === 0 ? styles.emptyContent : styles.content}
       data={submissions}
       keyExtractor={(item) => item.id}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetch} />}
       renderItem={({ item }) => (
-        <Card
-          elevation={0}
-          style={styles.card}
+        <Pressable
           onPress={() => router.push({ pathname: '/(admin)/submissions/[id]', params: { id: item.id } })}
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
         >
-          <Card.Content>
-            <View style={styles.cardHeader}>
-              <Text variant="bodyMedium" style={styles.studentName}>
-                {item.users ? `${item.users.first_name} ${item.users.last_name}` : 'Unknown'}
-              </Text>
-              <StatusBadge status={item.status} />
-            </View>
-            <Text variant="bodySmall" style={styles.serviceType}>{item.service_type}</Text>
-            <View style={styles.cardDetails}>
-              <Text variant="bodySmall" style={styles.detailText}>{item.service_date}</Text>
-              <Text variant="bodySmall" style={styles.detailText}>{Number(item.hours)} hrs</Text>
-              <Text variant="bodySmall" style={styles.detailText}>{Number(item.credits)} credits</Text>
-            </View>
-          </Card.Content>
-        </Card>
+          <Card elevation={0} style={styles.cardInner}>
+            <Card.Content>
+              <View style={styles.cardHeader}>
+                <Text variant="bodyMedium" style={styles.studentName}>
+                  {item.users ? `${item.users.first_name} ${item.users.last_name}` : 'Unknown'}
+                </Text>
+                <StatusBadge status={item.status} />
+              </View>
+              <Text variant="bodySmall" style={styles.serviceType}>{item.service_type}</Text>
+              <View style={styles.cardDetails}>
+                <Text variant="bodySmall" style={styles.detailText}>{item.service_date}</Text>
+                <Text variant="bodySmall" style={styles.detailText}>{Number(item.hours)} hrs</Text>
+                <Text variant="bodySmall" style={styles.detailText}>{Number(item.credits)} credits</Text>
+              </View>
+            </Card.Content>
+          </Card>
+        </Pressable>
       )}
       onEndReached={hasMore ? fetchMore : undefined}
       onEndReachedThreshold={0.5}
@@ -54,7 +58,10 @@ export default function AdminSubmissions() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 16, paddingBottom: 32 },
-  card: { marginBottom: 8, backgroundColor: '#fff' },
+  emptyContent: { flex: 1, padding: 16 },
+  card: { marginBottom: 8 },
+  cardPressed: { opacity: 0.7 },
+  cardInner: { backgroundColor: '#fff' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   studentName: { fontWeight: '600', flex: 1, marginRight: 8 },
   serviceType: { color: '#6b7280', marginBottom: 6 },

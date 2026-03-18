@@ -17,10 +17,11 @@ export async function POST(req: Request) {
 
     const supabase = createAdminClient();
 
-    // Find events starting in the next 23-25 hours that haven't had reminders sent
+    // Find events starting in the next 0-48 hours that haven't had reminders sent
+    // Runs daily, so wide window ensures no events are missed
     const now = new Date();
-    const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
-    const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+    const windowStart = now;
+    const windowEnd = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
     const { data: events, error: eventsError } = await supabase
         .from("events")

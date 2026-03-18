@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -17,6 +18,7 @@ export default function StudentProfile() {
   const userId = session?.user?.id || '';
   const { user, loading, refetch } = useProfile(userId);
   const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
+  const { prefs, loading: prefsLoading, updatePref } = useNotificationPreferences(userId);
   const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
@@ -276,6 +278,72 @@ export default function StudentProfile() {
         </Card.Content>
       </Card>
 
+      {/* Notification Preferences */}
+      <Text variant="titleSmall" style={styles.prefsLabel}>Notification Types</Text>
+      <Card elevation={0} style={styles.prefsCard}>
+        <Card.Content style={styles.prefsContent}>
+          <View style={styles.prefRow}>
+            <View style={styles.prefInfo}>
+              <MaterialCommunityIcons name="chat-outline" size={20} color="#6b7280" />
+              <Text variant="bodyMedium">Chat Messages</Text>
+            </View>
+            <Switch
+              value={prefs.chat_messages}
+              onValueChange={(v) => updatePref('chat_messages', v)}
+              color="#111827"
+            />
+          </View>
+          <Divider />
+          <View style={styles.prefRow}>
+            <View style={styles.prefInfo}>
+              <MaterialCommunityIcons name="message-text-outline" size={20} color="#6b7280" />
+              <Text variant="bodyMedium">New Posts</Text>
+            </View>
+            <Switch
+              value={prefs.new_posts}
+              onValueChange={(v) => updatePref('new_posts', v)}
+              color="#111827"
+            />
+          </View>
+          <Divider />
+          <View style={styles.prefRow}>
+            <View style={styles.prefInfo}>
+              <MaterialCommunityIcons name="comment-text-outline" size={20} color="#6b7280" />
+              <Text variant="bodyMedium">Comments on My Posts</Text>
+            </View>
+            <Switch
+              value={prefs.post_comments}
+              onValueChange={(v) => updatePref('post_comments', v)}
+              color="#111827"
+            />
+          </View>
+          <Divider />
+          <View style={styles.prefRow}>
+            <View style={styles.prefInfo}>
+              <MaterialCommunityIcons name="calendar-text-outline" size={20} color="#6b7280" />
+              <Text variant="bodyMedium">Event Comments</Text>
+            </View>
+            <Switch
+              value={prefs.event_comments}
+              onValueChange={(v) => updatePref('event_comments', v)}
+              color="#111827"
+            />
+          </View>
+          <Divider />
+          <View style={styles.prefRow}>
+            <View style={styles.prefInfo}>
+              <MaterialCommunityIcons name="bell-alert-outline" size={20} color="#6b7280" />
+              <Text variant="bodyMedium">Event Reminders</Text>
+            </View>
+            <Switch
+              value={prefs.event_reminders}
+              onValueChange={(v) => updatePref('event_reminders', v)}
+              color="#111827"
+            />
+          </View>
+        </Card.Content>
+      </Card>
+
       <Divider style={styles.divider} />
 
       {/* Google Calendar */}
@@ -410,6 +478,16 @@ const styles = StyleSheet.create({
   pushStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pushStatusText: { color: '#16a34a', fontWeight: '600' },
   pushEnableButton: { borderRadius: 8 },
+  prefsLabel: { fontWeight: '600', marginBottom: 8, marginTop: 12, color: '#9ca3af', letterSpacing: 0.8 },
+  prefsCard: { backgroundColor: '#fff' },
+  prefsContent: { gap: 4 },
+  prefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  prefInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   gcalCard: { backgroundColor: '#fff' },
   gcalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   gcalInfo: { flex: 1 },

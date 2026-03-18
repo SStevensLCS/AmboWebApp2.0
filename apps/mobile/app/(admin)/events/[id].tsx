@@ -108,6 +108,7 @@ export default function AdminEventDetail() {
   const commentInputRef = useRef<RNTextInput>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
@@ -156,22 +157,36 @@ export default function AdminEventDetail() {
     commentInputRef.current?.focus();
   };
 
+  const getApiHeaders = async () => {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${currentSession?.access_token}`,
+    };
+  };
+
+  const baseUrl = process.env.EXPO_PUBLIC_WEB_URL || process.env.EXPO_PUBLIC_API_BASE_URL || '';
+
   const handleSaveEdit = async () => {
     setSaving(true);
-    const { error } = await supabase
-      .from('events')
-      .update({
-        title: editTitle.trim(),
-        description: editDescription.trim() || null,
-        start_time: editStartDate.toISOString(),
-        end_time: editEndDate.toISOString(),
-      })
-      .eq('id', id);
+    try {
+      const headers = await getApiHeaders();
+      const res = await fetch(`${baseUrl}/api/events/${id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim() || null,
+          start_time: editStartDate.toISOString(),
+          end_time: editEndDate.toISOString(),
+        }),
+      });
 
-    setSaving(false);
-    if (error) {
-      Alert.alert('Error', error.message);
-    } else {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update event');
+      }
+
       setEvent({
         ...event,
         title: editTitle.trim(),
@@ -180,6 +195,10 @@ export default function AdminEventDetail() {
         end_time: editEndDate.toISOString(),
       });
       setEditing(false);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to update event');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -190,15 +209,41 @@ export default function AdminEventDetail() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          const { error } = await supabase.from('events').delete().eq('id', id);
-          if (error) {
-            Alert.alert('Error', error.message);
-          } else {
+          try {
+            const headers = await getApiHeaders();
+            const res = await fetch(`${baseUrl}/api/events/${id}`, {
+              method: 'DELETE',
+              headers,
+            });
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+              throw new Error(data.error || 'Failed to delete event');
+            }
             router.back();
+          } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to delete event');
           }
         },
       },
     ]);
+  };
+
+  const handleSendReminder = async () => {
+    setSendingReminder(true);
+    try {
+      const headers = await getApiHeaders();
+      const res = await fetch(`${baseUrl}/api/events/${id}/send-reminder`, {
+        method: 'POST',
+        headers,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send reminders');
+      Alert.alert('Reminders Sent', `Sent to ${data.sent} attendee${data.sent !== 1 ? 's' : ''}.`);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to send reminders');
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   // Attendees grouped
@@ -240,6 +285,15 @@ export default function AdminEventDetail() {
             >
               Delete
             </Button>
+            <IconButton
+              icon="bell-ring-outline"
+              mode="outlined"
+              size={20}
+              onPress={handleSendReminder}
+              loading={sendingReminder}
+              disabled={sendingReminder}
+              style={styles.reminderButton}
+            />
           </View>
 
           {/* Event Info or Edit Form */}
@@ -489,7 +543,8 @@ export default function AdminEventDetail() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 16, paddingBottom: 16 },
-  adminActions: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  adminActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  reminderButton: { marginLeft: 'auto' },
   editSection: { gap: 12, marginBottom: 8 },
   editInput: { backgroundColor: '#fff' },
   saveButton: { borderRadius: 12, marginTop: 4 },

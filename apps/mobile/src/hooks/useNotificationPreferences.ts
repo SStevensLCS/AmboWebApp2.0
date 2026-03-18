@@ -6,6 +6,7 @@ export interface NotificationPreferences {
   new_posts: boolean;
   post_comments: boolean;
   event_comments: boolean;
+  event_reminders: boolean;
 }
 
 const DEFAULTS: NotificationPreferences = {
@@ -13,6 +14,7 @@ const DEFAULTS: NotificationPreferences = {
   new_posts: true,
   post_comments: true,
   event_comments: true,
+  event_reminders: true,
 };
 
 export function useNotificationPreferences(userId: string) {
@@ -25,7 +27,7 @@ export function useNotificationPreferences(userId: string) {
 
     const { data } = await supabase
       .from('notification_preferences')
-      .select('chat_messages, new_posts, post_comments, event_comments')
+      .select('chat_messages, new_posts, post_comments, event_comments, event_reminders')
       .eq('user_id', userId)
       .single();
 
@@ -35,6 +37,7 @@ export function useNotificationPreferences(userId: string) {
         new_posts: data.new_posts ?? true,
         post_comments: data.post_comments ?? true,
         event_comments: data.event_comments ?? true,
+        event_reminders: data.event_reminders ?? true,
       });
     }
     setLoading(false);

@@ -10,13 +10,14 @@ interface SubmissionWithUser extends Submission {
 
 export function useSubmissions(userId?: string) {
   const [submissions, setSubmissions] = useState<SubmissionWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const loadingMoreRef = useRef(false);
+  const hasFetchedOnce = useRef(false);
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async () => {
     setError(null);
 
     let query = supabase
@@ -37,8 +38,25 @@ export function useSubmissions(userId?: string) {
       setSubmissions((data as SubmissionWithUser[]) || []);
       setHasMore((data || []).length === PAGE_SIZE);
     }
-    setLoading(false);
+
+    hasFetchedOnce.current = true;
+    setInitialLoading(false);
+    setRefreshing(false);
   }, [userId]);
+
+  // Pull-to-refresh: shows the RefreshControl spinner
+  const refetch = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+  }, [fetchData]);
+
+  // Silent refresh: no spinner, just updates data in-place
+  const silentRefresh = useCallback(() => {
+    if (hasFetchedOnce.current) {
+      // Don't set any loading state — just re-fetch silently
+      fetchData();
+    }
+  }, [fetchData]);
 
   const fetchMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore) return;
@@ -64,8 +82,17 @@ export function useSubmissions(userId?: string) {
   }, [userId, submissions.length, hasMore]);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    fetchData();
+  }, [fetchData]);
 
-  return { submissions, loading, error, hasMore, refetch: fetch, fetchMore };
+  return {
+    submissions,
+    loading: initialLoading,
+    refreshing,
+    error,
+    hasMore,
+    refetch,
+    silentRefresh,
+    fetchMore,
+  };
 }

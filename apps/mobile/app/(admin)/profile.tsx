@@ -325,6 +325,18 @@ export default function AdminProfile() {
               color="#111827"
             />
           </View>
+          <Divider />
+          <View style={styles.prefRow}>
+            <View style={styles.prefInfo}>
+              <MaterialCommunityIcons name="bell-alert-outline" size={20} color="#6b7280" />
+              <Text variant="bodyMedium">Event Reminders</Text>
+            </View>
+            <Switch
+              value={prefs.event_reminders}
+              onValueChange={(v) => updatePref('event_reminders', v)}
+              color="#111827"
+            />
+          </View>
         </Card.Content>
       </Card>
 

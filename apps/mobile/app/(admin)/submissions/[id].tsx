@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, Card, TextInput, Button, Divider, Avatar, Dialog, Portal } from 'react-native-paper';
+import { Text, Card, TextInput, Button, Divider, Avatar } from 'react-native-paper';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { supabase } from '@/lib/supabase';
@@ -19,7 +19,6 @@ export default function SubmissionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
   const [saving, setSaving] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<SubmissionStatus | null>(null);
 
   useEffect(() => {
     async function fetchSubmission() {
@@ -40,32 +39,16 @@ export default function SubmissionDetailPage() {
   }, [id]);
 
   const handleAction = async (newStatus: SubmissionStatus) => {
-    if (newStatus === 'Denied' && feedback.trim().length < 10) {
-      Alert.alert('Feedback Required', 'Please provide at least 10 characters of feedback when denying a submission.');
-      return;
-    }
-    setConfirmAction(newStatus);
-  };
-
-  const executeAction = async () => {
-    if (!confirmAction) return;
     setSaving(true);
-    setConfirmAction(null);
-
     const { error } = await supabase
       .from('submissions')
-      .update({ status: confirmAction, feedback: feedback.trim() || null })
+      .update({ status: newStatus, feedback: feedback.trim() || null })
       .eq('id', id);
-
     setSaving(false);
     if (error) {
       Alert.alert('Error', error.message);
     } else {
-      Alert.alert(
-        confirmAction === 'Approved' ? 'Approved' : 'Denied',
-        `Submission has been ${confirmAction.toLowerCase()}.`,
-        [{ text: 'OK', onPress: () => router.back() }],
-      );
+      router.back();
     }
   };
 
@@ -77,7 +60,7 @@ export default function SubmissionDetailPage() {
   const initials = submission.users
     ? `${submission.users.first_name?.[0] || ''}${submission.users.last_name?.[0] || ''}`
     : '?';
-  const isPending = submission.status === 'Pending';
+  const currentStatus = submission.status;
   const serviceDate = new Date(submission.service_date).toLocaleDateString([], {
     weekday: 'short',
     month: 'short',
@@ -88,30 +71,6 @@ export default function SubmissionDetailPage() {
   return (
     <>
       <Stack.Screen options={{ title: 'Review Submission' }} />
-      <Portal>
-        <Dialog visible={confirmAction !== null} onDismiss={() => setConfirmAction(null)}>
-          <Dialog.Title>
-            {confirmAction === 'Approved' ? 'Approve Submission' : 'Deny Submission'}
-          </Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodyMedium">
-              {confirmAction === 'Approved'
-                ? `Approve ${studentName}'s ${submission.service_type} submission for ${Number(submission.hours)} hours?`
-                : `Deny ${studentName}'s ${submission.service_type} submission?`}
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setConfirmAction(null)}>Cancel</Button>
-            <Button
-              onPress={executeAction}
-              textColor={confirmAction === 'Approved' ? '#10b981' : '#ef4444'}
-            >
-              {confirmAction === 'Approved' ? 'Approve' : 'Deny'}
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -175,23 +134,17 @@ export default function SubmissionDetailPage() {
           <Text variant="titleSmall" style={styles.sectionLabel}>FEEDBACK</Text>
           <TextInput
             mode="outlined"
-            placeholder={isPending ? 'Add feedback for the student...' : 'Feedback'}
+            placeholder="Add feedback for the student..."
             value={feedback}
             onChangeText={setFeedback}
             multiline
             numberOfLines={4}
             style={styles.feedbackInput}
-            editable={isPending}
           />
-          {isPending && feedback.length > 0 && feedback.length < 10 && (
-            <Text variant="bodySmall" style={styles.charCount}>
-              {10 - feedback.length} more characters needed for denial
-            </Text>
-          )}
 
-          {/* Action Buttons */}
-          {isPending && (
-            <View style={styles.actionButtons}>
+          {/* Action Buttons — always visible, show contextual actions */}
+          <View style={styles.actionButtons}>
+            {currentStatus !== 'Approved' && (
               <Button
                 mode="contained"
                 icon="check-circle-outline"
@@ -206,6 +159,8 @@ export default function SubmissionDetailPage() {
               >
                 Approve
               </Button>
+            )}
+            {currentStatus !== 'Denied' && (
               <Button
                 mode="contained"
                 icon="close-circle-outline"
@@ -213,42 +168,15 @@ export default function SubmissionDetailPage() {
                 textColor="#fff"
                 onPress={() => handleAction('Denied')}
                 loading={saving}
-                disabled={saving || feedback.trim().length < 10}
+                disabled={saving}
                 style={styles.actionButton}
                 contentStyle={styles.actionButtonContent}
                 labelStyle={styles.actionButtonLabel}
               >
                 Deny
               </Button>
-            </View>
-          )}
-
-          {/* Already reviewed - show update button */}
-          {!isPending && (
-            <Button
-              mode="outlined"
-              onPress={async () => {
-                setSaving(true);
-                const { error } = await supabase
-                  .from('submissions')
-                  .update({ feedback: feedback.trim() || null })
-                  .eq('id', id);
-                setSaving(false);
-                if (error) {
-                  Alert.alert('Error', error.message);
-                } else {
-                  Alert.alert('Updated', 'Feedback updated.', [
-                    { text: 'OK', onPress: () => router.back() },
-                  ]);
-                }
-              }}
-              loading={saving}
-              disabled={saving || feedback === (submission.feedback || '')}
-              style={styles.updateButton}
-            >
-              Update Feedback
-            </Button>
-          )}
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
@@ -290,7 +218,6 @@ const styles = StyleSheet.create({
   statNumber: { fontWeight: '700', color: '#111827' },
   statUnit: { color: '#9ca3af', marginTop: 2 },
   feedbackInput: { backgroundColor: '#fff', marginBottom: 8, minHeight: 100 },
-  charCount: { color: '#f59e0b', marginBottom: 12, marginLeft: 4 },
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
@@ -307,5 +234,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  updateButton: { borderRadius: 12, marginTop: 16 },
 });

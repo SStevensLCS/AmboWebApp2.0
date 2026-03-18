@@ -176,16 +176,22 @@ const calendarId = () => process.env.GOOGLE_CALENDAR_ID || "primary";
 /**
  * Fetches the latest event data + RSVPs and syncs to Google Calendar.
  * Call this after any event update or RSVP change.
+ *
+ * Returns { synced: true } on success, or { synced: false, reason: string }
+ * on failure so callers can surface the issue to the user.
  */
-export async function syncEventToGoogle(eventId: string) {
+export async function syncEventToGoogle(
+    eventId: string
+): Promise<{ synced: boolean; reason?: string }> {
     // 1. Check connection
     const connected = await isConnected();
     if (!connected) {
-        console.log("[GCal] Not connected — skipping sync for event", eventId);
-        return;
+        const msg = "Google Calendar is not connected. Please reconnect in Admin → Settings.";
+        console.warn("[GCal] Not connected — skipping sync for event", eventId);
+        return { synced: false, reason: msg };
     }
 
-    // 2. Fetch Event + RSVPs
+    // 2. Fetch event from DB
     const supabase = createAdminClient();
     const { data: event, error: eventError } = await supabase
         .from("events")
@@ -194,12 +200,13 @@ export async function syncEventToGoogle(eventId: string) {
         .single();
 
     if (eventError || !event) {
-        console.error("[GCal] Event not found for sync:", eventId, eventError?.message);
-        return;
+        const msg = `Event not found in DB: ${eventError?.message || "no data"}`;
+        console.error("[GCal]", msg);
+        return { synced: false, reason: msg };
     }
 
     // 2b. If no Google Calendar event exists yet, create one on-demand
-    let googleEventId = event.google_calendar_event_id;
+    let googleEventId = event.google_calendar_event_id as string | null;
     if (!googleEventId) {
         console.log("[GCal] No google_calendar_event_id — creating GCal event on-demand for", eventId);
         try {
@@ -208,7 +215,6 @@ export async function syncEventToGoogle(eventId: string) {
                 description: event.description,
                 start_time: event.start_time,
                 end_time: event.end_time,
-                location: event.location,
                 type: event.type,
                 uniform: event.uniform,
             });
@@ -220,58 +226,55 @@ export async function syncEventToGoogle(eventId: string) {
                     .eq("id", eventId);
                 console.log("[GCal] Created GCal event:", googleEventId, "for event", eventId);
             } else {
-                console.error("[GCal] createCalendarEvent returned null for event", eventId);
-                return;
+                const msg = "Failed to create Google Calendar event (API returned null).";
+                console.error("[GCal]", msg);
+                return { synced: false, reason: msg };
             }
-        } catch (err) {
-            console.error("[GCal] Failed to create GCal event on-demand:", err);
-            return;
+        } catch (err: any) {
+            const msg = `Failed to create GCal event: ${err?.message || err}`;
+            console.error("[GCal]", msg);
+            return { synced: false, reason: msg };
         }
     }
 
-    // 3. Fetch RSVPs
+    // 3. Fetch RSVPs (non-fatal — sync event details even if RSVPs fail)
+    let rsvpSummary = { yes: [] as string[], maybe: [] as string[], no: [] as string[] };
     const { data: rsvps, error: rsvpError } = await supabase
         .from("event_rsvps")
-        .select("status, users(first_name, last_name)")
+        .select("status, users!user_id(first_name, last_name)")
         .eq("event_id", eventId);
 
     if (rsvpError) {
-        console.error("[GCal] Failed to fetch RSVPs for sync:", rsvpError);
-        return;
+        // Log but don't abort — still sync the event details
+        console.warn("[GCal] Failed to fetch RSVPs (will sync without them):", rsvpError.message);
+    } else {
+        rsvps?.forEach((row: any) => {
+            const name = `${row.users?.first_name || ""} ${row.users?.last_name || ""}`.trim();
+            if (!name) return;
+            if (row.status === "going" || row.status === "yes") rsvpSummary.yes.push(name);
+            else if (row.status === "maybe") rsvpSummary.maybe.push(name);
+            else if (row.status === "no") rsvpSummary.no.push(name);
+        });
     }
 
-    // 4. Format RSVPs
-    const rsvpSummary = {
-        yes: [] as string[],
-        maybe: [] as string[],
-        no: [] as string[],
-    };
-
-    rsvps?.forEach((row: any) => {
-        const name = `${row.users?.first_name || ""} ${row.users?.last_name || ""}`.trim();
-        if (!name) return;
-        // DB stores "going" not "yes" — map to the rsvpSummary keys
-        if (row.status === "going" || row.status === "yes") rsvpSummary.yes.push(name);
-        else if (row.status === "maybe") rsvpSummary.maybe.push(name);
-        else if (row.status === "no") rsvpSummary.no.push(name);
+    // 4. Update Google Calendar
+    const { success, error: gcalError } = await updateCalendarEvent(googleEventId, {
+        ...event,
+        google_calendar_event_id: googleEventId,
+        rsvps: rsvpSummary,
     });
 
-    // 5. Update Google Calendar
-    try {
-        const success = await updateCalendarEvent(googleEventId, {
-            ...event,
-            google_calendar_event_id: googleEventId,
-            rsvps: rsvpSummary,
+    if (success) {
+        console.log("[GCal] ✅ Synced event", eventId, "→ GCal", googleEventId, "— RSVPs:", {
+            going: rsvpSummary.yes.length,
+            maybe: rsvpSummary.maybe.length,
+            no: rsvpSummary.no.length,
         });
-        if (success) {
-            console.log("[GCal] Synced event", eventId, "— RSVPs:", {
-                going: rsvpSummary.yes.length,
-                maybe: rsvpSummary.maybe.length,
-                no: rsvpSummary.no.length,
-            });
-        }
-    } catch (err) {
-        console.error("[GCal] Sync failed:", err);
+        return { synced: true };
+    } else {
+        const msg = `Google Calendar API update failed: ${gcalError || "unknown error"}`;
+        console.error("[GCal] ❌", msg);
+        return { synced: false, reason: msg };
     }
 }
 
@@ -297,20 +300,40 @@ export async function createCalendarEvent(
 export async function updateCalendarEvent(
     googleEventId: string,
     event: AppEvent
-): Promise<boolean> {
-    if (!(await isConnected())) return false;
+): Promise<{ success: boolean; error?: string }> {
+    if (!(await isConnected())) {
+        return { success: false, error: "Not connected to Google Calendar" };
+    }
 
     try {
         const calendar = await getCalendar();
+        const body = buildGoogleEvent(event);
+        console.log("[GCal] PATCH", calendarId(), googleEventId, JSON.stringify({
+            summary: body.summary,
+            start: body.start?.dateTime,
+            end: body.end?.dateTime,
+        }));
         await calendar.events.patch({
             calendarId: calendarId(),
             eventId: googleEventId,
-            requestBody: buildGoogleEvent(event),
+            requestBody: body,
         });
-        return true;
-    } catch (err) {
-        console.error("[GCal] Failed to update event:", err);
-        return false;
+        return { success: true };
+    } catch (err: any) {
+        // Extract the most useful error info from the Google API error
+        const status = err?.response?.status || err?.code;
+        const message = err?.response?.data?.error?.message || err?.message || String(err);
+        const detail = `[${status || "???"}] ${message}`;
+        console.error("[GCal] Failed to update event:", detail);
+
+        // Surface specific actionable messages
+        if (status === 401 || status === 403) {
+            return { success: false, error: `Auth error (${status}): ${message}. Google Calendar tokens may have expired — try reconnecting.` };
+        }
+        if (status === 404) {
+            return { success: false, error: `Event not found on Google Calendar (404). It may have been deleted from Google Calendar directly.` };
+        }
+        return { success: false, error: detail };
     }
 }
 

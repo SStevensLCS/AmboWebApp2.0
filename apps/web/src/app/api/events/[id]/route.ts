@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { createClient } from "@supabase/supabase-js";
-import {
-    updateCalendarEvent,
-    deleteCalendarEvent,
-} from "@/lib/googleCalendar";
+import { deleteCalendarEvent } from "@/lib/googleCalendar";
 
 /**
  * Authenticate via cookie session (web) or Bearer token (mobile).
@@ -109,14 +106,20 @@ export async function PUT(
 
     // ── Google Calendar sync (always attempt — syncEventToGoogle handles
     //    creating a new GCal event if one doesn't exist yet) ──────────
+    let gcalSync: { synced: boolean; reason?: string } = { synced: false, reason: "sync not attempted" };
     try {
         const { syncEventToGoogle } = await import("@/lib/googleCalendar");
-        await syncEventToGoogle(updated.id);
-    } catch (err) {
+        gcalSync = await syncEventToGoogle(updated.id);
+    } catch (err: any) {
+        gcalSync = { synced: false, reason: `Import/call error: ${err?.message || err}` };
         console.error("[Events PUT] GCal sync failed:", err);
     }
 
-    return NextResponse.json({ event: updated });
+    if (!gcalSync.synced) {
+        console.warn("[Events PUT] GCal sync did not complete:", gcalSync.reason);
+    }
+
+    return NextResponse.json({ event: updated, gcal_sync: gcalSync });
 }
 
 /**

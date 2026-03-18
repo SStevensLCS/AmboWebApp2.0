@@ -182,9 +182,15 @@ export default function AdminEventDetail() {
         }),
       });
 
+      const responseData = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to update event');
+        throw new Error(responseData.error || 'Failed to update event');
+      }
+
+      // Check GCal sync status from the response
+      if (responseData.gcal_sync && !responseData.gcal_sync.synced) {
+        Alert.alert('Event Saved', `Google Calendar sync failed: ${responseData.gcal_sync.reason}`);
       }
 
       setEvent({

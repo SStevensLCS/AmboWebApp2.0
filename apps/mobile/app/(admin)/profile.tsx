@@ -6,6 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { useAdminGoogleCalendar } from '@/hooks/useAdminGoogleCalendar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -19,6 +20,7 @@ export default function AdminProfile() {
   const { user, loading, refetch } = useProfile(userId);
   const { prefs, loading: prefsLoading, updatePref } = useNotificationPreferences(userId);
   const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
+  const { connected: adminGcalConnected, loading: adminGcalLoading, connect: adminGcalConnect, disconnect: adminGcalDisconnect } = useAdminGoogleCalendar();
   const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
@@ -91,6 +93,14 @@ export default function AdminProfile() {
       await gcalConnect();
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to connect Google Calendar.');
+    }
+  };
+
+  const handleAdminGCalConnect = async () => {
+    try {
+      await adminGcalConnect();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to connect org Google Calendar.');
     }
   };
 
@@ -344,12 +354,54 @@ export default function AdminProfile() {
 
       {/* Google Calendar */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Integrations</Text>
+
+      {/* Admin/Org Google Calendar */}
       <Card elevation={0} style={styles.gcalCard}>
         <Card.Content>
           <View style={styles.gcalHeader}>
             <MaterialCommunityIcons name="google" size={24} color="#4285F4" />
             <View style={styles.gcalInfo}>
-              <Text variant="bodyLarge" style={styles.gcalTitle}>Google Calendar</Text>
+              <Text variant="bodyLarge" style={styles.gcalTitle}>Org Google Calendar</Text>
+              <Text variant="bodySmall" style={styles.gcalSubtitle}>Admin calendar for event sync + RSVPs</Text>
+            </View>
+          </View>
+          {adminGcalLoading ? (
+            <ActivityIndicator style={styles.gcalLoader} />
+          ) : adminGcalConnected ? (
+            <View style={styles.gcalConnected}>
+              <View style={styles.gcalStatus}>
+                <MaterialCommunityIcons name="check-circle" size={16} color="#16a34a" />
+                <Text variant="bodySmall" style={styles.gcalStatusText}>Connected</Text>
+              </View>
+              <Button
+                mode="outlined"
+                textColor="#ef4444"
+                onPress={adminGcalDisconnect}
+                compact
+              >
+                Disconnect
+              </Button>
+            </View>
+          ) : (
+            <Button
+              mode="contained"
+              icon="calendar-sync"
+              onPress={handleAdminGCalConnect}
+              style={styles.gcalConnectButton}
+            >
+              Connect Org Calendar
+            </Button>
+          )}
+        </Card.Content>
+      </Card>
+
+      {/* Personal Google Calendar */}
+      <Card elevation={0} style={[styles.gcalCard, { marginTop: 12 }]}>
+        <Card.Content>
+          <View style={styles.gcalHeader}>
+            <MaterialCommunityIcons name="google" size={24} color="#4285F4" />
+            <View style={styles.gcalInfo}>
+              <Text variant="bodyLarge" style={styles.gcalTitle}>Personal Calendar</Text>
               <Text variant="bodySmall" style={styles.gcalSubtitle}>Sync events to your personal calendar</Text>
             </View>
           </View>
@@ -377,7 +429,7 @@ export default function AdminProfile() {
               onPress={handleGCalConnect}
               style={styles.gcalConnectButton}
             >
-              Connect Google Calendar
+              Connect Personal Calendar
             </Button>
           )}
         </Card.Content>

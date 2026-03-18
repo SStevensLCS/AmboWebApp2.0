@@ -79,13 +79,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Sync to admin Google Calendar
+    let gcalSynced = false;
+    let gcalReason = "";
+
     if (!event.google_calendar_event_id) {
         const gcalId = await createCalendarEvent({
             title: event.title,
             description: event.description,
             start_time: event.start_time,
             end_time: event.end_time,
-            location: event.location,
             type: event.type,
             uniform: event.uniform,
         });
@@ -95,7 +97,16 @@ export async function POST(req: NextRequest) {
                 .from("events")
                 .update({ google_calendar_event_id: gcalId })
                 .eq("id", eventId);
+            gcalSynced = true;
+        } else {
+            gcalReason = "createCalendarEvent returned null — check Google Calendar connection.";
         }
+    } else {
+        // Event already has a GCal ID — use syncEventToGoogle to update it
+        const { syncEventToGoogle } = await import("@/lib/googleCalendar");
+        const result = await syncEventToGoogle(eventId);
+        gcalSynced = result.synced;
+        gcalReason = result.reason || "";
     }
 
     // Sync to all connected users' personal calendars
@@ -104,11 +115,10 @@ export async function POST(req: NextRequest) {
         description: event.description,
         start_time: event.start_time,
         end_time: event.end_time,
-        location: event.location,
         type: event.type,
         uniform: event.uniform,
         id: event.id,
-    });
+    }).catch((err) => console.error("[mobile/sync-event] User calendar sync failed:", err));
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, gcal_synced: gcalSynced, gcal_reason: gcalReason });
 }

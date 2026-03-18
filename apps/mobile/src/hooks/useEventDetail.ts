@@ -59,16 +59,20 @@ export function useEventDetail(eventId: string, userId: string) {
         console.log('[GCal] No access token — skipping sync');
         return;
       }
-      console.log('[GCal] Triggering sync for event', eventId);
+      console.log('[GCal] Triggering sync for event', eventId, '→', `${WEB_URL}/api/events/${eventId}/gcal-sync`);
       fetch(`${WEB_URL}/api/events/${eventId}/gcal-sync`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
         .then(async (res) => {
           const body = await res.json().catch(() => ({}));
-          console.log('[GCal] Sync response:', res.status, body);
+          if (body.synced) {
+            console.log('[GCal] ✅ Sync succeeded for event', eventId);
+          } else {
+            console.warn('[GCal] ❌ Sync failed:', body.reason || `HTTP ${res.status}`);
+          }
         })
-        .catch((err) => console.log('[GCal] Sync request failed:', err));
+        .catch((err) => console.warn('[GCal] ❌ Sync request error:', err?.message || err));
     } catch {
       // silently ignore — GCal sync is best-effort
     }

@@ -154,12 +154,30 @@ export async function POST(req: NextRequest) {
       scope,
     });
 
-    // Redirect back to client with code
+    // Redirect back to client with code.
+    // Use an HTML redirect page instead of a raw 302. This is far more
+    // reliable inside OAuth popup/tab flows — a 302 cross-origin redirect
+    // from a form POST can be blocked or delayed by browsers, breaking the
+    // handshake. An HTML page with JS + meta-refresh + fallback link
+    // ensures the redirect always completes (same pattern as Google/GitHub).
     const redirectUrl = new URL(redirectUri);
     redirectUrl.searchParams.set("code", code);
     if (state) redirectUrl.searchParams.set("state", state);
+    const target = redirectUrl.toString();
 
-    return NextResponse.redirect(redirectUrl.toString(), 302);
+    const redirectHtml = `<!DOCTYPE html>
+<html><head>
+<meta http-equiv="refresh" content="0;url=${escapeHtml(target)}">
+<title>Redirecting…</title>
+</head><body>
+<p>Authorizing… <a href="${escapeHtml(target)}">click here</a> if not redirected.</p>
+<script>window.location.replace(${JSON.stringify(target)});</script>
+</body></html>`;
+
+    return new Response(redirectHtml, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   } catch (err) {
     console.error("OAuth authorize error:", err);
     return new Response("Internal server error", { status: 500 });

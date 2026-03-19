@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TextInput, TextInput as RNTextInput, Platform } from 'react-native';
+import { View, StyleSheet, TextInput, TextInput as RNTextInput } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import { hapticLight } from '@/lib/haptics';
 
 interface ChatInputProps {
   onSend: (text: string) => Promise<void>;
@@ -22,10 +22,7 @@ export function ChatInput({ onSend, onTyping, disabled }: ChatInputProps) {
     setSending(true);
     setText('');
 
-    // Haptic feedback on send
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    }
+    hapticLight();
 
     try {
       await onSend(message);

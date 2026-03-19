@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '@/providers/AuthProvider';
 import { CheddarRain } from '@/components/CheddarRain';
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, signInWithApple } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +87,31 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
+        {Platform.OS === 'ios' && (
+          <>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={8}
+              style={styles.appleButton}
+              onPress={async () => {
+                try {
+                  await signInWithApple();
+                } catch (error: any) {
+                  if (error.code === 'ERR_REQUEST_CANCELED') return;
+                  Alert.alert('Sign In Error', error.message || 'Apple sign-in failed');
+                }
+              }}
+            />
+          </>
+        )}
+
         <TouchableOpacity
           style={styles.createAccountButton}
           onPress={() => router.push('/(auth)/register')}
@@ -129,6 +155,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#6366f1',
     fontWeight: '500',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+  },
+  appleButton: {
+    height: 50,
+    width: '100%',
   },
   cheddarButton: {
     alignItems: 'center',

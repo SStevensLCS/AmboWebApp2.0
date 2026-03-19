@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin";
 import { NextResponse } from "next/server";
 import { adminClient } from "@ambo/database/admin-client";
+import { logAudit } from "@/lib/audit";
 
 export async function GET(
   _req: Request,
@@ -66,6 +67,17 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: "Request failed" }, { status: 400 });
+  }
+
+  // Audit log for role changes
+  if (updates.role && user) {
+    logAudit({
+      actorId: user.userId,
+      action: "user.role_changed",
+      targetType: "user",
+      targetId: id,
+      metadata: { newRole: updates.role },
+    });
   }
 
   // When promoting to admin/superadmin, ensure the user has a Supabase Auth account
@@ -152,5 +164,16 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: "Request failed" }, { status: 400 });
   }
+
+  if (user) {
+    logAudit({
+      actorId: user.userId,
+      action: "user.deleted",
+      targetType: "user",
+      targetId: id,
+      metadata: { deletedRole: targetUser.role },
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }

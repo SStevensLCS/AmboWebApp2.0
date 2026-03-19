@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { usePosts } from '@/hooks/usePosts';
 import { PostCard } from '@/components/PostCard';
-import { LoadingScreen } from '@/components/LoadingScreen';
+import { PostListSkeleton } from '@/components/SkeletonLoader';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 
@@ -32,7 +32,7 @@ export default function StudentPostsFeed() {
     setRefreshing(false);
   }, [refetch]);
 
-  if (loading && posts.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
+  if (loading && posts.length === 0 && !initialLoadDone.current) return <PostListSkeleton />;
   if (error && posts.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (

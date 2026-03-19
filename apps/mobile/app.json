@@ -15,6 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "edu.linfield.ambo",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Take a photo for your profile picture.",
@@ -52,7 +53,15 @@
       "expo-router",
       "expo-notifications",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "${SENTRY_ORG}",
+          "project": "${SENTRY_PROJECT}"
+        }
+      ]
     ],
     "extra": {
       "router": {},

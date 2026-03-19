@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   // Rate limit: 20 requests per 15 minutes
-  const rateLimitResult = checkRateLimit(getRateLimitKey(req, "submissions"), {
+  const rateLimitResult = await checkRateLimit(getRateLimitKey(req, "submissions"), {
     maxRequests: 20,
     windowSeconds: 900,
   });

@@ -6,7 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEvents, type EventWithRsvp } from '@/hooks/useEvents';
-import { LoadingScreen } from '@/components/LoadingScreen';
+import { EventListSkeleton } from '@/components/SkeletonLoader';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 
@@ -102,7 +102,7 @@ export default function StudentEvents() {
     }));
   }, [filteredEvents, filter]);
 
-  if (loading && events.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
+  if (loading && events.length === 0 && !initialLoadDone.current) return <EventListSkeleton />;
   if (error && events.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   const emptyMessages: Record<EventFilter, string> = {

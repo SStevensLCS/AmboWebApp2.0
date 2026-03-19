@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { Avatar, Text } from 'react-native-paper';
+import { View, StyleSheet, Pressable, Share } from 'react-native';
+import { Avatar, Text, IconButton } from 'react-native-paper';
 import type { UserRole } from '@ambo/database';
 
 interface PostCardProps {
@@ -54,9 +54,24 @@ export function PostCard({ content, createdAt, author, commentCount, onPress }: 
       <Text variant="bodyMedium" style={styles.content} numberOfLines={3}>
         {content}
       </Text>
-      <Text variant="bodySmall" style={styles.commentCount}>
-        {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-      </Text>
+      <View style={styles.footer}>
+        <Text variant="bodySmall" style={styles.commentCount}>
+          {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+        </Text>
+        <IconButton
+          icon="share-variant-outline"
+          size={18}
+          iconColor="#9ca3af"
+          accessibilityLabel="Share post"
+          style={styles.shareButton}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            Share.share({
+              message: `${author.first_name} ${author.last_name}: ${content.substring(0, 200)}${content.length > 200 ? '...' : ''}`,
+            });
+          }}
+        />
+      </View>
     </Pressable>
   );
 }
@@ -85,5 +100,7 @@ const styles = StyleSheet.create({
   authorName: { fontWeight: '600' },
   timestamp: { color: '#9ca3af', fontSize: 12 },
   content: { marginTop: 10, lineHeight: 20 },
-  commentCount: { marginTop: 10, color: '#6b7280', fontWeight: '500' },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  commentCount: { color: '#6b7280', fontWeight: '500' },
+  shareButton: { margin: 0 },
 });

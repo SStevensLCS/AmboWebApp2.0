@@ -6,7 +6,7 @@ import { randomBytes } from "crypto";
 export async function POST(req: NextRequest) {
   try {
     const rateKey = getRateLimitKey(req, "forgot-password");
-    const { allowed, resetIn } = checkRateLimit(rateKey, { maxRequests: 5, windowSeconds: 3600 });
+    const { allowed, resetIn } = await checkRateLimit(rateKey, { maxRequests: 5, windowSeconds: 3600 });
     if (!allowed) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },

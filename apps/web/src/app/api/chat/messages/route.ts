@@ -4,6 +4,7 @@ import { sendNotificationToUser } from "@/lib/notifications";
 import { NextRequest, NextResponse } from "next/server";
 import { chatMessageSchema, checkContentLength } from "@/lib/validations";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { sanitizeText } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
     try {
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
         }
 
         // Rate limit: 60 requests per minute
-        const rateLimitResult = checkRateLimit(getRateLimitKey(req, "chat-messages"), {
+        const rateLimitResult = await checkRateLimit(getRateLimitKey(req, "chat-messages"), {
             maxRequests: 60,
             windowSeconds: 60,
         });
@@ -85,7 +86,8 @@ export async function POST(req: Request) {
             );
         }
 
-        const { groupId, content } = parsed.data;
+        const { groupId } = parsed.data;
+        const content = sanitizeText(parsed.data.content);
 
         const supabase = createAdminClient();
 

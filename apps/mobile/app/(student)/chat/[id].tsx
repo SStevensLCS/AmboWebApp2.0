@@ -222,7 +222,7 @@ export default function StudentMessageThread() {
       <Stack.Screen options={{
         title: groupName,
         headerRight: () => (
-          <IconButton icon="dots-vertical" onPress={() => router.push({ pathname: '/(student)/chat/edit', params: { id } })} />
+          <IconButton icon="dots-vertical" accessibilityLabel="Chat settings" onPress={() => router.push({ pathname: '/(student)/chat/edit', params: { id } })} />
         ),
       }} />
       <KeyboardAvoidingView
@@ -239,7 +239,7 @@ export default function StudentMessageThread() {
           ListEmptyComponent={<EmptyState icon="chat-outline" title="No messages yet" subtitle="Send the first message!" />}
           ListHeaderComponent={
             hasOlderMessages && messages.length > 0 ? (
-              <Pressable onPress={loadOlderMessages} style={styles.loadOlderBtn}>
+              <Pressable onPress={loadOlderMessages} style={styles.loadOlderBtn} accessibilityLabel="Load older messages" accessibilityRole="button">
                 {loadingOlder ? (
                   <ActivityIndicator size="small" color="#9ca3af" />
                 ) : (
@@ -265,7 +265,7 @@ export default function StudentMessageThread() {
 
         {/* Scroll-to-bottom FAB */}
         {showScrollToBottom && (
-          <Pressable style={styles.scrollToBottomBtn} onPress={scrollToBottom}>
+          <Pressable style={styles.scrollToBottomBtn} onPress={scrollToBottom} accessibilityLabel="Scroll to latest messages" accessibilityRole="button">
             <MaterialCommunityIcons name="chevron-down" size={22} color="#fff" />
           </Pressable>
         )}

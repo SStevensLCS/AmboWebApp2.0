@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { sanitizeText } from "@/lib/sanitize";
 
 export async function GET(
     req: Request,
@@ -57,7 +58,7 @@ export async function POST(
         .insert({
             post_id: params.id,
             user_id: session.userId,
-            content: content.trim(),
+            content: sanitizeText(content),
         })
         .select(`
             *,

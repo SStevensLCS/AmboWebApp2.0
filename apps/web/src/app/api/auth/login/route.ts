@@ -21,7 +21,7 @@ function redirectForRole(role: string): string {
 export async function POST(req: NextRequest) {
   try {
     const rateKey = getRateLimitKey(req, "login");
-    const { allowed, resetIn } = checkRateLimit(rateKey, { maxRequests: 10, windowSeconds: 900 });
+    const { allowed, resetIn } = await checkRateLimit(rateKey, { maxRequests: 10, windowSeconds: 900 });
     if (!allowed) {
       return NextResponse.json(
         { error: "Too many login attempts. Please try again later." },

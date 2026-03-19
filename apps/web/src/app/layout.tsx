@@ -26,6 +26,8 @@ export const metadata = {
   },
 };
 
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { Toaster } from "sonner";
 
@@ -60,6 +62,8 @@ export default function RootLayout({
           closeButton
         />
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

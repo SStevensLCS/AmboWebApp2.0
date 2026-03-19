@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/admin";
 import { NextResponse } from "next/server";
+import { logAudit } from "@/lib/audit";
 
 export async function GET(
   _req: Request,
@@ -29,7 +30,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { authorized, supabase } = await requireAdmin();
+  const { authorized, supabase, user } = await requireAdmin();
   if (!authorized) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -54,5 +55,20 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: "Request failed" }, { status: 400 });
   }
+
+  // Audit log for status changes
+  if (updates.status && user) {
+    const action = updates.status === "Approved" ? "submission.approved" as const : updates.status === "Denied" ? "submission.denied" as const : null;
+    if (action) {
+      logAudit({
+        actorId: user.userId,
+        action,
+        targetType: "submission",
+        targetId: id,
+        metadata: { newStatus: updates.status },
+      });
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

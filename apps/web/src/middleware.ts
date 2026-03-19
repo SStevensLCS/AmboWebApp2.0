@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/privacy",
   "/api/events/", // Event API routes handle their own auth (supports Bearer tokens from mobile)
+  "/api/calendar/", // Public iCal feed for calendar subscriptions
 ];
 
 function roleHome(role: string): string {

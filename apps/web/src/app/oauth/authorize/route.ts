@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createAdminClient } from "@ambo/database/admin-client";
 import bcrypt from "bcryptjs";
 import { getClient, createAuthorizationCode } from "@/lib/mcp/oauth-store";
@@ -155,28 +155,19 @@ export async function POST(req: NextRequest) {
     });
 
     // Redirect back to client with code.
-    // Use an HTML redirect page instead of a raw 302. This is far more
-    // reliable inside OAuth popup/tab flows — a 302 cross-origin redirect
-    // from a form POST can be blocked or delayed by browsers, breaking the
-    // handshake. An HTML page with JS + meta-refresh + fallback link
-    // ensures the redirect always completes (same pattern as Google/GitHub).
+    // Use 303 See Other (correct for POST→GET redirect) with explicit
+    // headers. Claude.ai monitors the popup/tab URL for the callback
+    // pattern, so we must use a real HTTP redirect — not an HTML page.
     const redirectUrl = new URL(redirectUri);
     redirectUrl.searchParams.set("code", code);
     if (state) redirectUrl.searchParams.set("state", state);
-    const target = redirectUrl.toString();
 
-    const redirectHtml = `<!DOCTYPE html>
-<html><head>
-<meta http-equiv="refresh" content="0;url=${escapeHtml(target)}">
-<title>Redirecting…</title>
-</head><body>
-<p>Authorizing… <a href="${escapeHtml(target)}">click here</a> if not redirected.</p>
-<script>window.location.replace(${JSON.stringify(target)});</script>
-</body></html>`;
-
-    return new Response(redirectHtml, {
-      status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+    return new Response(null, {
+      status: 303,
+      headers: {
+        Location: redirectUrl.toString(),
+        "Cache-Control": "no-store",
+      },
     });
   } catch (err) {
     console.error("OAuth authorize error:", err);
@@ -195,7 +186,10 @@ function redirectWithError(
   url.searchParams.set("error", errorCode);
   url.searchParams.set("error_description", description);
   if (state) url.searchParams.set("state", state);
-  return NextResponse.redirect(url.toString(), 302);
+  return new Response(null, {
+    status: 303,
+    headers: { Location: url.toString(), "Cache-Control": "no-store" },
+  });
 }
 
 function renderError(

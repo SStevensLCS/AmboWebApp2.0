@@ -36,6 +36,13 @@ function roleHome(role: string): string {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+  // Rewrite POST /register to /oauth/register for MCP OAuth compatibility.
+  // Claude.ai ignores OAuth metadata and hits /register directly.
+  // The /register page.tsx still serves browser GET requests normally.
+  if (path === "/register" && request.method === "POST") {
+    return NextResponse.rewrite(new URL("/oauth/register", request.url));
+  }
+
   // Always allow API auth routes, public callback routes, and the root page
   // (the root page handles Supabase auth redirects for password reset flows)
   if (PUBLIC_PATHS.some((p) => path.startsWith(p)) || path === "/") {

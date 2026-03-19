@@ -11,6 +11,9 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/api/events/", // Event API routes handle their own auth (supports Bearer tokens from mobile)
   "/api/calendar/", // Public iCal feed for calendar subscriptions
+  "/oauth/", // OAuth endpoints handle their own auth
+  "/api/mcp/", // MCP server uses Bearer token auth
+  "/.well-known/", // OAuth metadata discovery
 ];
 
 function roleHome(role: string): string {

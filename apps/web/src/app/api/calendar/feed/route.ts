@@ -69,54 +69,31 @@ export async function GET() {
     for (const event of events || []) {
         const rsvp = rsvpsByEvent[event.id];
 
-        // Build plain-text description lines
-        const descParts: string[] = [];
-        if (event.description) descParts.push(event.description);
-        if (event.type) descParts.push(`Type: ${event.type}`);
-        if (event.uniform) descParts.push(`Uniform: ${event.uniform}`);
+        // Build compact single-line description using · separators
+        // (Google Calendar renders \n as literal text in subscribed feeds,
+        //  and Apple Calendar shows HTML tags as raw text — so a clean
+        //  single-line format is the only cross-platform solution)
+        const parts: string[] = [];
+
+        if (event.type) parts.push(event.type);
+        if (event.uniform) parts.push(`Uniform: ${event.uniform}`);
 
         if (rsvp) {
-            const hasAny = rsvp.going.length > 0 || rsvp.maybe.length > 0 || rsvp.no.length > 0;
-            if (hasAny) {
-                descParts.push("");
-                descParts.push("RSVPs:");
-                if (rsvp.going.length > 0) {
-                    descParts.push(`  Going (${rsvp.going.length}): ${rsvp.going.join(", ")}`);
-                }
-                if (rsvp.maybe.length > 0) {
-                    descParts.push(`  Maybe (${rsvp.maybe.length}): ${rsvp.maybe.join(", ")}`);
-                }
-                if (rsvp.no.length > 0) {
-                    descParts.push(`  Can't Go (${rsvp.no.length}): ${rsvp.no.join(", ")}`);
-                }
+            if (rsvp.going.length > 0) {
+                parts.push(`Going (${rsvp.going.length}): ${rsvp.going.join(", ")}`);
+            }
+            if (rsvp.maybe.length > 0) {
+                parts.push(`Maybe (${rsvp.maybe.length}): ${rsvp.maybe.join(", ")}`);
+            }
+            if (rsvp.no.length > 0) {
+                parts.push(`Can't Go (${rsvp.no.length}): ${rsvp.no.join(", ")}`);
             }
         }
 
-        const plainDesc = descParts.join("\n");
-
-        // Build HTML description for Google Calendar (renders properly)
-        const htmlParts: string[] = [];
-        if (event.description) htmlParts.push(`<p>${escapeHtml(event.description)}</p>`);
-        if (event.type) htmlParts.push(`<b>Type:</b> ${escapeHtml(event.type)}<br>`);
-        if (event.uniform) htmlParts.push(`<b>Uniform:</b> ${escapeHtml(event.uniform)}<br>`);
-
-        if (rsvp) {
-            const hasAny = rsvp.going.length > 0 || rsvp.maybe.length > 0 || rsvp.no.length > 0;
-            if (hasAny) {
-                htmlParts.push(`<br><b>RSVPs</b><br>`);
-                if (rsvp.going.length > 0) {
-                    htmlParts.push(`Going (${rsvp.going.length}): ${escapeHtml(rsvp.going.join(", "))}<br>`);
-                }
-                if (rsvp.maybe.length > 0) {
-                    htmlParts.push(`Maybe (${rsvp.maybe.length}): ${escapeHtml(rsvp.maybe.join(", "))}<br>`);
-                }
-                if (rsvp.no.length > 0) {
-                    htmlParts.push(`Can't Go (${rsvp.no.length}): ${escapeHtml(rsvp.no.join(", "))}<br>`);
-                }
-            }
+        let desc = parts.join(" · ");
+        if (event.description) {
+            desc = desc ? `${event.description} — ${desc}` : event.description;
         }
-
-        const htmlDesc = htmlParts.join("");
 
         const vevent: string[] = [
             "BEGIN:VEVENT",
@@ -127,11 +104,8 @@ export async function GET() {
             `SUMMARY:${escapeIcal(event.title)}`,
         ];
 
-        if (plainDesc) {
-            vevent.push(`DESCRIPTION:${escapeIcal(plainDesc)}`);
-        }
-        if (htmlDesc) {
-            vevent.push(`X-ALT-DESC;FMTTYPE=text/html:${escapeIcal(htmlDesc)}`);
+        if (desc) {
+            vevent.push(`DESCRIPTION:${escapeIcal(desc)}`);
         }
 
         vevent.push(
@@ -168,14 +142,6 @@ function escapeIcal(text: string): string {
         .replace(/;/g, "\\;")
         .replace(/,/g, "\\,")
         .replace(/\n/g, "\\n");
-}
-
-/** Escape HTML special characters */
-function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
 }
 
 /**

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Platform, Pressable, ActionSheetIOS } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { View, ScrollView, StyleSheet, Alert, Linking, Platform, Pressable, ActionSheetIOS, Share } from 'react-native';
 import { Card, Text, Button, Divider, TextInput, Switch, ActivityIndicator } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
@@ -143,14 +142,13 @@ export default function StudentProfile() {
     const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl)}`;
 
     const copyLink = async () => {
-      await Clipboard.setStringAsync(feedUrl);
-      Alert.alert('Copied', 'Calendar feed URL copied to clipboard.');
+      await Share.share({ message: feedUrl, title: 'AmboPortal Calendar Feed' });
     };
 
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['Cancel', 'Apple Calendar', 'Google Calendar', 'Copy Link'],
+          options: ['Cancel', 'Apple Calendar', 'Google Calendar', 'Share Link'],
           cancelButtonIndex: 0,
           title: 'Subscribe to Calendar',
           message: 'Choose your calendar app to subscribe to ambassador events.',
@@ -164,7 +162,7 @@ export default function StudentProfile() {
     } else {
       Alert.alert('Subscribe to Calendar', 'Choose your calendar app', [
         { text: 'Google Calendar', onPress: () => Linking.openURL(googleUrl) },
-        { text: 'Copy Link', onPress: copyLink },
+        { text: 'Share Link', onPress: copyLink },
         { text: 'Cancel', style: 'cancel' },
       ]);
     }

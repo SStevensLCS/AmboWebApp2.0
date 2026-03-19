@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createAdminClient } from "@ambo/database/admin-client";
 
 // Prevent Next.js from trying to statically prerender this route at build time
@@ -25,7 +24,7 @@ export async function GET() {
         .order("start_time", { ascending: true });
 
     if (error) {
-        return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+        return new Response("Failed to fetch events", { status: 500 });
     }
 
     // Fetch all RSVPs with user names for these events
@@ -55,7 +54,7 @@ export async function GET() {
 
     // Build iCalendar document (RFC 5545)
     const now = formatDateUTC(new Date());
-    let ical = [
+    const icalLines: string[] = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
         "PRODID:-//AmboPortal//Events//EN",
@@ -70,37 +69,56 @@ export async function GET() {
     for (const event of events || []) {
         const rsvp = rsvpsByEvent[event.id];
 
-        // Build a clean, readable description
-        const lines: string[] = [];
-
-        if (event.description) {
-            lines.push(event.description);
-            lines.push("");
-        }
-
-        if (event.type) lines.push(`Type: ${event.type}`);
-        if (event.uniform) lines.push(`Uniform: ${event.uniform}`);
+        // Build plain-text description lines
+        const descParts: string[] = [];
+        if (event.description) descParts.push(event.description);
+        if (event.type) descParts.push(`Type: ${event.type}`);
+        if (event.uniform) descParts.push(`Uniform: ${event.uniform}`);
 
         if (rsvp) {
             const hasAny = rsvp.going.length > 0 || rsvp.maybe.length > 0 || rsvp.no.length > 0;
             if (hasAny) {
-                lines.push("");
-                lines.push("RSVPs");
+                descParts.push("");
+                descParts.push("RSVPs:");
                 if (rsvp.going.length > 0) {
-                    lines.push(`  Going (${rsvp.going.length}): ${rsvp.going.join(", ")}`);
+                    descParts.push(`  Going (${rsvp.going.length}): ${rsvp.going.join(", ")}`);
                 }
                 if (rsvp.maybe.length > 0) {
-                    lines.push(`  Maybe (${rsvp.maybe.length}): ${rsvp.maybe.join(", ")}`);
+                    descParts.push(`  Maybe (${rsvp.maybe.length}): ${rsvp.maybe.join(", ")}`);
                 }
                 if (rsvp.no.length > 0) {
-                    lines.push(`  Can't Go (${rsvp.no.length}): ${rsvp.no.join(", ")}`);
+                    descParts.push(`  Can't Go (${rsvp.no.length}): ${rsvp.no.join(", ")}`);
                 }
             }
         }
 
-        const desc = lines.join("\n");
+        const plainDesc = descParts.join("\n");
 
-        const vevent = [
+        // Build HTML description for Google Calendar (renders properly)
+        const htmlParts: string[] = [];
+        if (event.description) htmlParts.push(`<p>${escapeHtml(event.description)}</p>`);
+        if (event.type) htmlParts.push(`<b>Type:</b> ${escapeHtml(event.type)}<br>`);
+        if (event.uniform) htmlParts.push(`<b>Uniform:</b> ${escapeHtml(event.uniform)}<br>`);
+
+        if (rsvp) {
+            const hasAny = rsvp.going.length > 0 || rsvp.maybe.length > 0 || rsvp.no.length > 0;
+            if (hasAny) {
+                htmlParts.push(`<br><b>RSVPs</b><br>`);
+                if (rsvp.going.length > 0) {
+                    htmlParts.push(`Going (${rsvp.going.length}): ${escapeHtml(rsvp.going.join(", "))}<br>`);
+                }
+                if (rsvp.maybe.length > 0) {
+                    htmlParts.push(`Maybe (${rsvp.maybe.length}): ${escapeHtml(rsvp.maybe.join(", "))}<br>`);
+                }
+                if (rsvp.no.length > 0) {
+                    htmlParts.push(`Can't Go (${rsvp.no.length}): ${escapeHtml(rsvp.no.join(", "))}<br>`);
+                }
+            }
+        }
+
+        const htmlDesc = htmlParts.join("");
+
+        const vevent: string[] = [
             "BEGIN:VEVENT",
             `UID:${event.id}@ambo-portal`,
             `DTSTAMP:${now}`,
@@ -109,8 +127,11 @@ export async function GET() {
             `SUMMARY:${escapeIcal(event.title)}`,
         ];
 
-        if (desc) {
-            vevent.push(`DESCRIPTION:${escapeIcal(desc)}`);
+        if (plainDesc) {
+            vevent.push(`DESCRIPTION:${escapeIcal(plainDesc)}`);
+        }
+        if (htmlDesc) {
+            vevent.push(`X-ALT-DESC;FMTTYPE=text/html:${escapeIcal(htmlDesc)}`);
         }
 
         vevent.push(
@@ -118,12 +139,15 @@ export async function GET() {
             "END:VEVENT"
         );
 
-        ical.push(...vevent);
+        icalLines.push(...vevent);
     }
 
-    ical.push("END:VCALENDAR");
+    icalLines.push("END:VCALENDAR");
 
-    return new Response(ical.join("\r\n"), {
+    // Use line folding per RFC 5545: lines > 75 octets should be folded
+    const folded = icalLines.map(foldLine).join("\r\n");
+
+    return new Response(folded, {
         headers: {
             "Content-Type": "text/calendar; charset=utf-8",
             "Content-Disposition": 'inline; filename="ambo-events.ics"',
@@ -137,11 +161,35 @@ function formatDateUTC(d: Date): string {
     return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
-/** Escape special characters for iCal text values */
+/** Escape special characters for iCal text values (RFC 5545 §3.3.11) */
 function escapeIcal(text: string): string {
     return text
         .replace(/\\/g, "\\\\")
         .replace(/;/g, "\\;")
         .replace(/,/g, "\\,")
         .replace(/\n/g, "\\n");
+}
+
+/** Escape HTML special characters */
+function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+/**
+ * Fold long lines per RFC 5545 §3.1:
+ * Lines longer than 75 octets should be folded with CRLF + space.
+ */
+function foldLine(line: string): string {
+    if (line.length <= 75) return line;
+    const chunks: string[] = [];
+    chunks.push(line.substring(0, 75));
+    let i = 75;
+    while (i < line.length) {
+        chunks.push(" " + line.substring(i, i + 74));
+        i += 74;
+    }
+    return chunks.join("\r\n");
 }

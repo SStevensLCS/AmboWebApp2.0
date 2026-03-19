@@ -99,6 +99,7 @@ export function useBadgeCounts(userId: string, role: 'admin' | 'student') {
           const newMsg = payload.new as any;
           // Refetch if message is from someone else
           if (newMsg.sender_id !== userId) {
+            removeReadGroup(newMsg.group_id);
             fetchCounts();
           }
         }

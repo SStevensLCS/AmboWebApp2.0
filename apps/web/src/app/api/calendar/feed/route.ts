@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@ambo/database/admin-client";
 
+// Prevent Next.js from trying to statically prerender this route at build time
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/calendar/feed
  *

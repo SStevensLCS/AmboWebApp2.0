@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { CheddarRain } from '@/components/CheddarRain';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,6 +87,13 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={styles.createAccountButton}
+          onPress={() => router.push('/(auth)/apply')}
+        >
+          <Text style={styles.createAccountText}>Create an Account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.cheddarButton}
           onPress={() => setCheddarActive(true)}
           disabled={cheddarActive}
@@ -111,9 +120,19 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  createAccountButton: {
+    alignItems: 'center',
+    marginTop: 20,
+    padding: 8,
+  },
+  createAccountText: {
+    fontSize: 15,
+    color: '#6366f1',
+    fontWeight: '500',
+  },
   cheddarButton: {
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 16,
     padding: 8,
   },
   cheddarText: {

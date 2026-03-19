@@ -1,0 +1,38 @@
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { TextInput, Text } from 'react-native-paper';
+import type { ApplicationData } from '@ambo/database/application-types';
+
+interface StepContactProps {
+  data: ApplicationData;
+  onChange: (field: keyof ApplicationData, value: any) => void;
+}
+
+export default function StepContact({ data, onChange }: StepContactProps) {
+  return (
+    <View style={styles.container}>
+      <Text variant="titleMedium" style={styles.heading}>Welcome</Text>
+      <Text variant="bodyMedium" style={styles.subtitle}>
+        Enter your phone number to start or resume your application.
+      </Text>
+      <TextInput
+        label="Cell Phone Number"
+        mode="outlined"
+        value={data.phone_number}
+        onChangeText={(v) => onChange('phone_number', v.replace(/\D/g, ''))}
+        keyboardType="phone-pad"
+        maxLength={10}
+        style={styles.input}
+      />
+      <Text variant="bodySmall" style={styles.hint}>10-digit number, no dashes</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { gap: 8 },
+  heading: { textAlign: 'center', fontWeight: '600' },
+  subtitle: { textAlign: 'center', color: '#6b7280', marginBottom: 8 },
+  input: { backgroundColor: '#fff' },
+  hint: { color: '#9ca3af' },
+});

@@ -70,26 +70,35 @@ export async function GET() {
     for (const event of events || []) {
         const rsvp = rsvpsByEvent[event.id];
 
-        // Build description with event metadata
-        let desc = "";
-        if (event.type) desc += `Type: ${event.type}\\n`;
-        if (event.uniform) desc += `Uniform: ${event.uniform}\\n`;
+        // Build a clean, readable description
+        const lines: string[] = [];
+
+        if (event.description) {
+            lines.push(event.description);
+            lines.push("");
+        }
+
+        if (event.type) lines.push(`Type: ${event.type}`);
+        if (event.uniform) lines.push(`Uniform: ${event.uniform}`);
 
         if (rsvp) {
-            desc += "\\n--- RSVPs ---\\n";
-            if (rsvp.going.length > 0) {
-                desc += `Going (${rsvp.going.length}): ${rsvp.going.join(", ")}\\n`;
-            }
-            if (rsvp.maybe.length > 0) {
-                desc += `Maybe (${rsvp.maybe.length}): ${rsvp.maybe.join(", ")}\\n`;
-            }
-            if (rsvp.no.length > 0) {
-                desc += `Can't Go (${rsvp.no.length}): ${rsvp.no.join(", ")}\\n`;
-            }
-            if (rsvp.going.length === 0 && rsvp.maybe.length === 0 && rsvp.no.length === 0) {
-                desc += "No RSVPs yet\\n";
+            const hasAny = rsvp.going.length > 0 || rsvp.maybe.length > 0 || rsvp.no.length > 0;
+            if (hasAny) {
+                lines.push("");
+                lines.push("RSVPs");
+                if (rsvp.going.length > 0) {
+                    lines.push(`  Going (${rsvp.going.length}): ${rsvp.going.join(", ")}`);
+                }
+                if (rsvp.maybe.length > 0) {
+                    lines.push(`  Maybe (${rsvp.maybe.length}): ${rsvp.maybe.join(", ")}`);
+                }
+                if (rsvp.no.length > 0) {
+                    lines.push(`  Can't Go (${rsvp.no.length}): ${rsvp.no.join(", ")}`);
+                }
             }
         }
+
+        const desc = lines.join("\n");
 
         const vevent = [
             "BEGIN:VEVENT",
@@ -102,10 +111,6 @@ export async function GET() {
 
         if (desc) {
             vevent.push(`DESCRIPTION:${escapeIcal(desc)}`);
-        }
-        if (event.description) {
-            // Use X-ALT-DESC for the original event description
-            vevent.push(`X-ALT-DESC:${escapeIcal(event.description)}`);
         }
 
         vevent.push(

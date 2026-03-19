@@ -36,19 +36,6 @@ const nextConfig = {
     ];
   },
 
-  // Rewrite /register API calls to /oauth/register for MCP OAuth compatibility.
-  // Claude.ai ignores OAuth metadata endpoints and constructs paths at the root.
-  // The /register page.tsx still serves GET requests normally.
-  async rewrites() {
-    return [
-      {
-        source: "/register",
-        destination: "/oauth/register",
-        has: [{ type: "header", key: "content-type", value: "application/json" }],
-      },
-    ];
-  },
-
   images: {
     remotePatterns: [
       {

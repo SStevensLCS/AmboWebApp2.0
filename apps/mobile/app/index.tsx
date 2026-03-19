@@ -14,6 +14,8 @@ export default function Index() {
       router.replace('/(auth)/login');
     } else if (userRole === 'admin' || userRole === 'superadmin') {
       router.replace('/(admin)');
+    } else if (userRole === 'basic' || userRole === 'applicant') {
+      router.replace('/(auth)/welcome');
     } else {
       router.replace('/(student)');
     }

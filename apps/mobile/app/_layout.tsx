@@ -45,7 +45,14 @@ function RootNavigator() {
         hasNavigated.current = true;
         router.replace('/(admin)');
       }
-    } else if (userRole) {
+    } else if (userRole === 'basic' || userRole === 'applicant') {
+      // Route to welcome screen; if already in auth group on welcome, skip
+      const onWelcome = inAuthGroup && segments[1] === 'welcome';
+      if (!onWelcome) {
+        hasNavigated.current = true;
+        router.replace('/(auth)/welcome');
+      }
+    } else if (userRole === 'student') {
       if (!inStudentGroup) {
         hasNavigated.current = true;
         router.replace('/(student)');

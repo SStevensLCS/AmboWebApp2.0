@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Alert, Linking, Platform, Pressable } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Linking, Platform, Pressable, ActionSheetIOS } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Card, Text, Button, Divider, TextInput, Switch, ActivityIndicator } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
@@ -138,11 +139,34 @@ export default function StudentProfile() {
   const handleSubscribeCalendar = () => {
     const webUrl = process.env.EXPO_PUBLIC_WEB_URL || 'https://ambo-portal.vercel.app';
     const feedUrl = `${webUrl}/api/calendar/feed`;
+    const webcalUrl = feedUrl.replace(/^https?:\/\//, 'webcal://');
+    const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl)}`;
+
+    const copyLink = async () => {
+      await Clipboard.setStringAsync(feedUrl);
+      Alert.alert('Copied', 'Calendar feed URL copied to clipboard.');
+    };
 
     if (Platform.OS === 'ios') {
-      Linking.openURL(feedUrl.replace(/^https?:\/\//, 'webcal://'));
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Apple Calendar', 'Google Calendar', 'Copy Link'],
+          cancelButtonIndex: 0,
+          title: 'Subscribe to Calendar',
+          message: 'Choose your calendar app to subscribe to ambassador events.',
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) Linking.openURL(webcalUrl);
+          else if (buttonIndex === 2) Linking.openURL(googleUrl);
+          else if (buttonIndex === 3) copyLink();
+        }
+      );
     } else {
-      Linking.openURL(`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl)}`);
+      Alert.alert('Subscribe to Calendar', 'Choose your calendar app', [
+        { text: 'Google Calendar', onPress: () => Linking.openURL(googleUrl) },
+        { text: 'Copy Link', onPress: copyLink },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     }
   };
 

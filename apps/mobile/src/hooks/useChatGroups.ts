@@ -199,10 +199,10 @@ export function useChatGroups(userId: string) {
               sender_id: newMsg.sender_id,
             };
 
-            // Mark unread if from someone else and not optimistically read
+            // Mark unread if from someone else — clear stale optimistic read
             if (newMsg.sender_id !== userId) {
-              const optimisticReadGroups = useChatReadStore.getState().readGroups;
-              group.hasUnread = !optimisticReadGroups.has(group.id);
+              useChatReadStore.getState().removeReadGroup(group.id);
+              group.hasUnread = true;
             }
 
             updated[idx] = group;

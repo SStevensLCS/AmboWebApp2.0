@@ -1,5 +1,12 @@
 # CLAUDE.md - Ambassador Portal (AmboWebApp2.0)
 
+## Git Workflow
+
+- **Branching model:** `feature/*` → `develop` → `main`
+- Before making code changes, check the current branch. If on `develop` or `main`, create a feature branch first: `git checkout -b feature/<short-description>` off `develop`. Ask the user for a branch name if the task isn't obvious.
+- If already on a `feature/*` branch, continue working there.
+- Do NOT push directly to `main` or `develop`. Changes reach those branches via PRs.
+
 ## Scope of Changes
 
 Both the **web app (PWA)** and the **native mobile app** are in scope for edits.

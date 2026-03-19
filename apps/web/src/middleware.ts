@@ -15,6 +15,8 @@ const PUBLIC_PATHS = [
   "/oauth/", // OAuth endpoints handle their own auth
   "/api/mcp/", // MCP server uses Bearer token auth
   "/.well-known/", // OAuth metadata discovery
+  "/authorize", // Root-level OAuth authorize (Claude.ai compat)
+  "/token", // Root-level OAuth token (Claude.ai compat)
 ];
 
 function roleHome(role: string): string {

@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@ambo/database/admin-client";
 import { NextRequest, NextResponse } from "next/server";
 import { createCalendarEvent } from "@/lib/googleCalendar";
-import { syncEventToAllUsers } from "@/lib/studentCalendar";
 
 async function getAuthenticatedUserId(
     req: NextRequest
@@ -108,17 +107,6 @@ export async function POST(req: NextRequest) {
         gcalSynced = result.synced;
         gcalReason = result.reason || "";
     }
-
-    // Sync to all connected users' personal calendars
-    await syncEventToAllUsers({
-        title: event.title,
-        description: event.description,
-        start_time: event.start_time,
-        end_time: event.end_time,
-        type: event.type,
-        uniform: event.uniform,
-        id: event.id,
-    }).catch((err) => console.error("[mobile/sync-event] User calendar sync failed:", err));
 
     return NextResponse.json({ ok: true, gcal_synced: gcalSynced, gcal_reason: gcalReason });
 }

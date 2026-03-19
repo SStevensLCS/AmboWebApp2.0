@@ -5,8 +5,6 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import { useAdminGoogleCalendar } from '@/hooks/useAdminGoogleCalendar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { RoleBadge } from '@/components/RoleBadge';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -19,8 +17,6 @@ export default function AdminProfile() {
   const userId = session?.user?.id || '';
   const { user, loading, refetch } = useProfile(userId);
   const { prefs, loading: prefsLoading, updatePref } = useNotificationPreferences(userId);
-  const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
-  const { connected: adminGcalConnected, loading: adminGcalLoading, connect: adminGcalConnect, disconnect: adminGcalDisconnect } = useAdminGoogleCalendar();
   const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
@@ -88,19 +84,16 @@ export default function AdminProfile() {
     }
   };
 
-  const handleGCalConnect = async () => {
-    try {
-      await gcalConnect();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to connect Google Calendar.');
-    }
-  };
+  const handleSubscribeCalendar = () => {
+    const webUrl = process.env.EXPO_PUBLIC_WEB_URL || 'https://ambo-portal.vercel.app';
+    const feedUrl = `${webUrl}/api/calendar/feed`;
 
-  const handleAdminGCalConnect = async () => {
-    try {
-      await adminGcalConnect();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to connect org Google Calendar.');
+    if (Platform.OS === 'ios') {
+      // webcal:// triggers native iOS calendar subscription
+      Linking.openURL(feedUrl.replace(/^https?:\/\//, 'webcal://'));
+    } else {
+      // Google Calendar subscribe URL for Android
+      Linking.openURL(`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl)}`);
     }
   };
 
@@ -352,86 +345,25 @@ export default function AdminProfile() {
 
       <Divider style={styles.divider} />
 
-      {/* Google Calendar */}
+      {/* Calendar Subscription */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Integrations</Text>
-
-      {/* Admin/Org Google Calendar */}
       <Card elevation={0} style={styles.gcalCard}>
         <Card.Content>
           <View style={styles.gcalHeader}>
-            <MaterialCommunityIcons name="google" size={24} color="#4285F4" />
+            <MaterialCommunityIcons name="calendar-sync" size={24} color="#4285F4" />
             <View style={styles.gcalInfo}>
-              <Text variant="bodyLarge" style={styles.gcalTitle}>Org Google Calendar</Text>
-              <Text variant="bodySmall" style={styles.gcalSubtitle}>Admin calendar for event sync + RSVPs</Text>
+              <Text variant="bodyLarge" style={styles.gcalTitle}>Subscribe to Calendar</Text>
+              <Text variant="bodySmall" style={styles.gcalSubtitle}>Add ambassador events to your calendar app. Events auto-update with RSVPs and details.</Text>
             </View>
           </View>
-          {adminGcalLoading ? (
-            <ActivityIndicator style={styles.gcalLoader} />
-          ) : adminGcalConnected ? (
-            <View style={styles.gcalConnected}>
-              <View style={styles.gcalStatus}>
-                <MaterialCommunityIcons name="check-circle" size={16} color="#16a34a" />
-                <Text variant="bodySmall" style={styles.gcalStatusText}>Connected</Text>
-              </View>
-              <Button
-                mode="outlined"
-                textColor="#ef4444"
-                onPress={adminGcalDisconnect}
-                compact
-              >
-                Disconnect
-              </Button>
-            </View>
-          ) : (
-            <Button
-              mode="contained"
-              icon="calendar-sync"
-              onPress={handleAdminGCalConnect}
-              style={styles.gcalConnectButton}
-            >
-              Connect Org Calendar
-            </Button>
-          )}
-        </Card.Content>
-      </Card>
-
-      {/* Personal Google Calendar */}
-      <Card elevation={0} style={[styles.gcalCard, { marginTop: 12 }]}>
-        <Card.Content>
-          <View style={styles.gcalHeader}>
-            <MaterialCommunityIcons name="google" size={24} color="#4285F4" />
-            <View style={styles.gcalInfo}>
-              <Text variant="bodyLarge" style={styles.gcalTitle}>Personal Calendar</Text>
-              <Text variant="bodySmall" style={styles.gcalSubtitle}>Sync events to your personal calendar</Text>
-            </View>
-          </View>
-          {gcalLoading ? (
-            <ActivityIndicator style={styles.gcalLoader} />
-          ) : gcalConnected ? (
-            <View style={styles.gcalConnected}>
-              <View style={styles.gcalStatus}>
-                <MaterialCommunityIcons name="check-circle" size={16} color="#16a34a" />
-                <Text variant="bodySmall" style={styles.gcalStatusText}>Connected</Text>
-              </View>
-              <Button
-                mode="outlined"
-                textColor="#ef4444"
-                onPress={gcalDisconnect}
-                compact
-              >
-                Disconnect
-              </Button>
-            </View>
-          ) : (
-            <Button
-              mode="contained"
-              icon="calendar-sync"
-              onPress={handleGCalConnect}
-              style={styles.gcalConnectButton}
-            >
-              Connect Personal Calendar
-            </Button>
-          )}
+          <Button
+            mode="contained"
+            icon="calendar-plus"
+            onPress={handleSubscribeCalendar}
+            style={styles.gcalConnectButton}
+          >
+            Subscribe to Calendar
+          </Button>
         </Card.Content>
       </Card>
 
@@ -535,10 +467,6 @@ const styles = StyleSheet.create({
   gcalInfo: { flex: 1 },
   gcalTitle: { fontWeight: '600' },
   gcalSubtitle: { color: '#6b7280' },
-  gcalLoader: { marginVertical: 8 },
-  gcalConnected: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  gcalStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  gcalStatusText: { color: '#16a34a', fontWeight: '600' },
   gcalConnectButton: { borderRadius: 8 },
   supportCard: { backgroundColor: '#f9fafb' },
   supportContent: { gap: 0 },

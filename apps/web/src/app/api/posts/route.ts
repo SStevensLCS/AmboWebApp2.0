@@ -6,37 +6,46 @@ import { parsePagination, buildPaginatedResponse } from "@/lib/pagination";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
-    const session = await getSession();
-    if (!session) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { page, limit, from, to } = parsePagination(
+            new URL(req.url),
+            { page: 1, limit: 25 }
+        );
+
+        const supabase = createAdminClient();
+        const { data, error, count } = await supabase
+            .from("posts")
+            .select(`
+                *,
+                users (
+                    first_name,
+                    last_name,
+                    role,
+                    avatar_url
+                ),
+                comments (count)
+            `, { count: "exact" })
+            .order("created_at", { ascending: false })
+            .range(from, to);
+
+        if (error) {
+            console.error("[GET /api/posts] Supabase error:", error);
+            return NextResponse.json({ error: "Request failed" }, { status: 400 });
+        }
+
+        return NextResponse.json(buildPaginatedResponse(data || [], count || 0, { page, limit, from, to }));
+    } catch (err) {
+        console.error("[GET /api/posts] Unhandled error:", err);
+        return NextResponse.json(
+            { error: "Internal server error", detail: err instanceof Error ? err.message : String(err) },
+            { status: 500 }
+        );
     }
-
-    const { page, limit, from, to } = parsePagination(
-        new URL(req.url),
-        { page: 1, limit: 25 }
-    );
-
-    const supabase = createAdminClient();
-    const { data, error, count } = await supabase
-        .from("posts")
-        .select(`
-            *,
-            users (
-                first_name,
-                last_name,
-                role,
-                avatar_url
-            ),
-            comments (count)
-        `, { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-    if (error) {
-        return NextResponse.json({ error: "Request failed" }, { status: 400 });
-    }
-
-    return NextResponse.json(buildPaginatedResponse(data || [], count || 0, { page, limit, from, to }));
 }
 
 export async function POST(req: Request) {

@@ -8,15 +8,15 @@ export default function PrivacyPolicyPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-      <p className="text-sm text-gray-500 mb-8">Last updated: March 12, 2026</p>
+      <p className="text-sm text-gray-500 mb-8">Last updated: March 24, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-6">
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">1. Introduction</h2>
           <p>
-            Ambassador Portal (&quot;the App&quot;) is operated by Linfield Christian School for use by
-            Student Ambassadors, administrators, and applicants. This policy describes how we
-            collect, use, and protect your personal information.
+            Ambassador Portal (&quot;the App&quot;) is operated by Skyler A. Stevens for use by
+            high school students, school staff, administrators, and applicants. This policy
+            describes how we collect, use, and protect your personal information.
           </p>
         </section>
 
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
             We do not sell your personal information. Your data may be shared with:
           </p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Linfield Christian School administration for program management purposes.</li>
+            <li>School administration for program management purposes.</li>
             <li>
               Service providers (Supabase for database hosting, Expo for push notifications) that
               process data on our behalf under strict confidentiality agreements.
@@ -93,8 +93,9 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">8. Children&apos;s Privacy</h2>
           <p>
-            The App is intended for use by college students and university staff. We do not
-            knowingly collect information from children under 13.
+            The App is intended for use by high school students (ages 13 and older) and school
+            staff. We do not knowingly collect information from children under 13. If you are
+            under 18, you should use the App only with the involvement of a parent or guardian.
           </p>
         </section>
 
@@ -110,8 +111,8 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-xl font-semibold mt-6 mb-2">10. Contact Us</h2>
           <p>
             If you have questions about this privacy policy or your data, contact us at{" "}
-            <a href="mailto:admissions@linfield.com" className="text-blue-600 underline">
-              admissions@linfield.com
+            <a href="mailto:skyler.a.stevens@gmail.com" className="text-blue-600 underline">
+              skyler.a.stevens@gmail.com
             </a>
             .
           </p>

@@ -8,13 +8,13 @@ export default function TermsOfServicePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-3xl font-bold mb-2">Terms of Service</h1>
-      <p className="text-sm text-gray-500 mb-8">Last updated: March 19, 2026</p>
+      <p className="text-sm text-gray-500 mb-8">Last updated: March 24, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-6">
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">1. Acceptance of Terms</h2>
           <p>
-            By accessing or using Ambassador Portal (&quot;the App&quot;), you agree to be bound by
+            By accessing or using AmboPortal (&quot;the App&quot;), you agree to be bound by
             these Terms of Service. If you do not agree, you may not use the App.
           </p>
         </section>
@@ -22,9 +22,9 @@ export default function TermsOfServicePage() {
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">2. Eligibility</h2>
           <p>
-            The App is intended for use by Student Ambassadors, administrators, and applicants
-            affiliated with Linfield Christian School. You must have a valid account created or
-            approved by a school administrator to access the App.
+            The App is intended for use by high school students, school staff, administrators,
+            and applicants. You must have a valid account created or approved by an administrator
+            to access the App.
           </p>
         </section>
 
@@ -54,7 +54,7 @@ export default function TermsOfServicePage() {
           <h2 className="text-xl font-semibold mt-6 mb-2">5. Content You Create</h2>
           <p>
             You retain ownership of content you submit (posts, comments, messages). By submitting
-            content, you grant Linfield Christian School a non-exclusive, royalty-free license to
+            content, you grant Skyler A. Stevens a non-exclusive, royalty-free license to
             use, display, and store that content for the purposes of operating the App.
           </p>
           <p>
@@ -64,16 +64,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">6. Service Hours &amp; Submissions</h2>
-          <p>
-            All service hour submissions are subject to review and approval by administrators.
-            Submitting false or misleading information may result in account suspension or removal
-            from the ambassador program.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">7. Third-Party Services</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">6. Third-Party Services</h2>
           <p>
             The App integrates with third-party services including Google Calendar for event
             syncing. Your use of these integrations is subject to the respective third-party terms
@@ -82,7 +73,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">8. Push Notifications</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">7. Push Notifications</h2>
           <p>
             The App may send push notifications for new messages, events, posts, and administrative
             updates. You can manage notification preferences in your profile settings or disable
@@ -91,7 +82,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">9. Termination</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">8. Termination</h2>
           <p>
             You may delete your account at any time from the Profile screen. Administrators reserve
             the right to suspend or terminate accounts that violate these terms. Upon termination,
@@ -104,7 +95,7 @@ export default function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">10. Disclaimer of Warranties</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">9. Disclaimer of Warranties</h2>
           <p>
             The App is provided &quot;as is&quot; without warranties of any kind, express or
             implied. We do not guarantee that the App will be available at all times or free from
@@ -113,15 +104,15 @@ export default function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">11. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">10. Limitation of Liability</h2>
           <p>
-            To the fullest extent permitted by law, Linfield Christian School shall not be liable
+            To the fullest extent permitted by law, Skyler A. Stevens shall not be liable
             for any indirect, incidental, or consequential damages arising from your use of the App.
           </p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">12. Changes to These Terms</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">11. Changes to These Terms</h2>
           <p>
             We may update these terms from time to time. Continued use of the App after changes are
             posted constitutes acceptance of the revised terms. We will notify users of material
@@ -130,11 +121,11 @@ export default function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mt-6 mb-2">13. Contact Us</h2>
+          <h2 className="text-xl font-semibold mt-6 mb-2">12. Contact Us</h2>
           <p>
             If you have questions about these terms, contact us at{" "}
-            <a href="mailto:admissions@linfield.com" className="text-blue-600 underline">
-              admissions@linfield.com
+            <a href="mailto:skyler.a.stevens@gmail.com" className="text-blue-600 underline">
+              skyler.a.stevens@gmail.com
             </a>
             .
           </p>

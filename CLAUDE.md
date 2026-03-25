@@ -13,7 +13,7 @@ Both the **web app (PWA)** and the **native mobile app** are in scope for edits.
 
 ## What is this project?
 
-Ambassador Portal is a web app for Student Ambassadors at Linfield University to log service hours, track tour credits, manage events, and communicate. It supports four user roles: **student**, **admin**, **superadmin**, and **applicant**.
+Ambassador Portal is a web app built by Skyler A. Stevens for high school students and school staff/admin/faculty to log service hours, track tour credits, manage events, and communicate. It supports four user roles: **student**, **admin**, **superadmin**, and **applicant**.
 
 ## Tech Stack
 

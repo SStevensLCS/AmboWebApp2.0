@@ -1,13 +1,13 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitize from "sanitize-html";
 
 /**
  * Sanitize user-generated text content to prevent XSS.
  * Strips all HTML tags — use for plain text fields like posts, comments, chat messages.
  */
 export function sanitizeText(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [], // Strip all HTML
-    ALLOWED_ATTR: [],
+  return sanitize(input, {
+    allowedTags: [],
+    allowedAttributes: {},
   }).trim();
 }
 
@@ -16,12 +16,13 @@ export function sanitizeText(input: string): string {
  * Allows safe formatting tags but strips scripts, event handlers, etc.
  */
 export function sanitizeHtml(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [
+  return sanitize(input, {
+    allowedTags: [
       "b", "i", "em", "strong", "u", "s", "p", "br", "ul", "ol", "li",
       "a", "blockquote", "code", "pre",
     ],
-    ALLOWED_ATTR: ["href", "target", "rel"],
-    ALLOW_DATA_ATTR: false,
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
   });
 }

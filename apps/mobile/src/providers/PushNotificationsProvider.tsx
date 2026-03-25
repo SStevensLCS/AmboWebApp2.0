@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -114,9 +114,21 @@ export function PushNotificationsProvider({ children }: { children: React.ReactN
         shouldShowBanner: true,
         shouldShowList: true,
         shouldPlaySound: false,
-        shouldSetBadge: false,
+        shouldSetBadge: true,
       }),
     });
+
+    // Clear badge count when app comes to foreground
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        Notifications.setBadgeCountAsync(0).catch(() => {});
+      }
+    });
+
+    // Clear badge on initial mount (app open)
+    Notifications.setBadgeCountAsync(0).catch(() => {});
+
+    return () => subscription.remove();
   }, []);
 
   // Handle notification taps

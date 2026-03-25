@@ -11,6 +11,8 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { supabase } from '@/lib/supabase';
 import Constants from 'expo-constants';
+import { hapticSuccess, hapticError, hapticWarning } from '@/lib/haptics';
+import { useBiometricLock } from '@/hooks/useBiometricLock';
 
 export default function StudentProfile() {
   const { session, signOut } = useAuth();
@@ -18,6 +20,8 @@ export default function StudentProfile() {
   const { user, loading, refetch } = useProfile(userId);
   const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
   const { prefs, loading: prefsLoading, updatePref } = useNotificationPreferences(userId);
+  const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
+  const { isAvailable: biometricAvailable, isEnabled: biometricEnabled, toggle: toggleBiometric } = useBiometricLock();
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   // Editable fields
@@ -76,14 +80,17 @@ export default function StudentProfile() {
 
     setSaving(false);
     if (error) {
+      hapticError();
       Alert.alert('Error', error.message);
     } else {
+      hapticSuccess();
       Alert.alert('Success', 'Profile updated.');
       refetch();
     }
   };
 
   const handleDeleteAccount = useCallback(() => {
+    hapticWarning();
     Alert.alert(
       'Delete Account',
       'This will permanently delete your account and all associated data including submissions, posts, comments, and messages. This action cannot be undone.',
@@ -391,6 +398,27 @@ export default function StudentProfile() {
         </Card.Content>
       </Card>
 
+      {/* Biometric Lock */}
+      {biometricAvailable && (
+        <>
+          <Divider style={styles.divider} />
+          <Text variant="titleSmall" style={styles.sectionLabel}>SECURITY</Text>
+          <Card style={styles.card}>
+            <Card.Content>
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodyMedium" style={{ fontWeight: '600' }}>Biometric Lock</Text>
+                  <Text variant="bodySmall" style={{ color: '#6b7280' }}>
+                    Require Face ID or fingerprint when returning to the app
+                  </Text>
+                </View>
+                <Switch value={biometricEnabled} onValueChange={toggleBiometric} />
+              </View>
+            </Card.Content>
+          </Card>
+        </>
+      )}
+
       <Divider style={styles.divider} />
 
       {/* Support & About */}
@@ -498,6 +526,8 @@ const styles = StyleSheet.create({
   gcalTitle: { fontWeight: '600' },
   gcalSubtitle: { color: '#6b7280' },
   gcalConnectButton: { borderRadius: 8 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  card: { backgroundColor: '#fff' },
   supportCard: { backgroundColor: '#fff' },
   supportContent: { gap: 0 },
   supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },

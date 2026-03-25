@@ -210,7 +210,7 @@ export function MessageList({ groupId, currentUserId, currentUserFirstName = "",
                             No messages yet. Start the conversation!
                         </div>
                     ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-2" aria-live="polite" aria-label="Chat messages">
                             {messages.map((msg) => {
                                 const isMe = msg.sender_id === currentUserId;
                                 const firstName = isMe ? currentUserFirstName : (msg.sender?.first_name || "?");
@@ -226,7 +226,7 @@ export function MessageList({ groupId, currentUserId, currentUserFirstName = "",
                                     >
                                         {!isMe && (
                                             <Avatar className="h-7 w-7 mt-5 mr-2 shrink-0">
-                                                {msg.sender?.avatar_url && <AvatarImage src={msg.sender.avatar_url} className="object-cover" />}
+                                                {msg.sender?.avatar_url && <AvatarImage src={msg.sender.avatar_url} alt={`${msg.sender.first_name}'s avatar`} className="object-cover" />}
                                                 <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                                                     {initials}
                                                 </AvatarFallback>
@@ -260,7 +260,7 @@ export function MessageList({ groupId, currentUserId, currentUserFirstName = "",
                                         </div>
                                         {isMe && (
                                             <Avatar className="h-7 w-7 mt-1 ml-2 shrink-0">
-                                                {currentUserAvatarUrl && <AvatarImage src={currentUserAvatarUrl} className="object-cover" />}
+                                                {currentUserAvatarUrl && <AvatarImage src={currentUserAvatarUrl} alt="Your avatar" className="object-cover" />}
                                                 <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                                                     {initials}
                                                 </AvatarFallback>

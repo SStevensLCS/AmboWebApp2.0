@@ -8,7 +8,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useSubmissions } from '@/hooks/useSubmissions';
 import { supabase } from '@/lib/supabase';
 import { StatusBadge } from '@/components/StatusBadge';
-import { LoadingScreen } from '@/components/LoadingScreen';
+import { DashboardSkeleton } from '@/components/SkeletonLoader';
+import { hapticMedium } from '@/lib/haptics';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import type { SubmissionStatus } from '@ambo/database';
@@ -60,6 +61,7 @@ export default function StudentDashboard() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([refetch(), fetchUpcoming()]);
+    hapticMedium();
     setRefreshing(false);
   }, [refetch, fetchUpcoming]);
 
@@ -88,7 +90,7 @@ export default function StudentDashboard() {
     });
   };
 
-  if (loading && submissions.length === 0 && !initialLoadDone.current) return <LoadingScreen />;
+  if (loading && submissions.length === 0 && !initialLoadDone.current) return <DashboardSkeleton />;
   if (error && submissions.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   return (

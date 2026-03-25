@@ -11,7 +11,14 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/api/events/", // Event API routes handle their own auth (supports Bearer tokens from mobile)
+  "/api/health",
   "/api/calendar/", // Public iCal feed for calendar subscriptions
+  "/api/applications", // Guest application flow (used by mobile app)
+  "/oauth/", // OAuth endpoints handle their own auth
+  "/api/mcp/", // MCP server uses Bearer token auth
+  "/.well-known/", // OAuth metadata discovery
+  "/authorize", // Root-level OAuth authorize (Claude.ai compat)
+  "/token", // Root-level OAuth token (Claude.ai compat)
 ];
 
 function roleHome(role: string): string {
@@ -30,6 +37,13 @@ function roleHome(role: string): string {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // Rewrite POST /register to /oauth/register for MCP OAuth compatibility.
+  // Claude.ai ignores OAuth metadata and hits /register directly.
+  // The /register page.tsx still serves browser GET requests normally.
+  if (path === "/register" && request.method === "POST") {
+    return NextResponse.rewrite(new URL("/oauth/register", request.url));
+  }
 
   // Always allow API auth routes, public callback routes, and the root page
   // (the root page handles Supabase auth redirects for password reset flows)

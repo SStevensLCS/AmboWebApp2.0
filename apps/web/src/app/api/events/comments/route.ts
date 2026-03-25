@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@ambo/database/admin-client";
+import { sanitizeText } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
     const session = await getSession();
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
     const { error } = await supabase.from("event_comments").insert({
         event_id,
         user_id: session.userId,
-        content: content.trim(),
+        content: sanitizeText(content),
     });
 
     if (error) {

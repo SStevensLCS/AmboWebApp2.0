@@ -5,7 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatGroups, ChatGroupWithMeta } from '@/hooks/useChatGroups';
 import { useChatReadStore } from '@/stores/chatReadStore';
-import { LoadingScreen } from '@/components/LoadingScreen';
+import { ChatListSkeleton } from '@/components/SkeletonLoader';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 
@@ -42,7 +42,7 @@ export default function StudentChatList() {
     refetch();
   }, [refetch]));
 
-  if (loading && groups.length === 0) return <LoadingScreen />;
+  if (loading && groups.length === 0) return <ChatListSkeleton />;
   if (error && groups.length === 0) return <ErrorState message={error} onRetry={refetch} />;
 
   const renderGroup = ({ item }: { item: ChatGroupWithMeta }) => {
@@ -55,7 +55,7 @@ export default function StudentChatList() {
     const hasUnread = item.hasUnread === true;
 
     return (
-      <Pressable style={styles.groupRow} onPress={() => router.push(`/(student)/chat/${item.id}`)}>
+      <Pressable style={styles.groupRow} onPress={() => router.push(`/(student)/chat/${item.id}`)} accessibilityLabel={`Chat with ${displayName}${hasUnread ? ', unread messages' : ''}`} accessibilityRole="button">
         {avatarUrl ? (
           <Avatar.Image size={44} source={{ uri: avatarUrl }} />
         ) : (

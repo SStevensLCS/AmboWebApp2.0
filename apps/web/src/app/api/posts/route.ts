@@ -4,6 +4,7 @@ import { createAdminClient } from "@ambo/database/admin-client";
 import { postSchema, checkContentLength } from "@/lib/validations";
 import { parsePagination, buildPaginatedResponse } from "@/lib/pagination";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { sanitizeText } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
     try {
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     }
 
     // Rate limit: 10 requests per 5 minutes
-    const rateLimitResult = checkRateLimit(getRateLimitKey(req, "posts"), {
+    const rateLimitResult = await checkRateLimit(getRateLimitKey(req, "posts"), {
         maxRequests: 10,
         windowSeconds: 300,
     });
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
         );
     }
 
-    const { content } = parsed.data;
+    const content = sanitizeText(parsed.data.content);
 
     const supabase = createAdminClient();
     const { data, error } = await supabase

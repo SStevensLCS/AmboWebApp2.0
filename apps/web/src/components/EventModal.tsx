@@ -558,7 +558,7 @@ export function EventModal({
                             {comments.map((c) => (
                                 <div key={c.id} className="flex gap-3 group">
                                     <Avatar className="h-8 w-8">
-                                        {c.users?.avatar_url && <AvatarImage src={c.users.avatar_url} className="object-cover" />}
+                                        {c.users?.avatar_url && <AvatarImage src={c.users.avatar_url} alt={`${c.users.first_name}'s avatar`} className="object-cover" />}
                                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                             {getInitials(c.users?.first_name, c.users?.last_name)}
                                         </AvatarFallback>

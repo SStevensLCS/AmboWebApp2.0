@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -7,9 +8,18 @@ import { NetworkProvider } from '@/providers/NetworkProvider';
 import { PushNotificationsProvider } from '@/providers/PushNotificationsProvider';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { BiometricLockScreen } from '@/components/BiometricLockScreen';
+import { useBiometricLock } from '@/hooks/useBiometricLock';
 import { validateEnv } from '@/lib/env';
 import { useChatReadStore } from '@/stores/chatReadStore';
 import { theme } from '@/lib/theme';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enabled: !__DEV__,
+  tracesSampleRate: 0.1,
+  enableAutoSessionTracking: true,
+});
 
 // Run at module load — safe now that validateEnv only warns (never throws)
 validateEnv();
@@ -45,7 +55,14 @@ function RootNavigator() {
         hasNavigated.current = true;
         router.replace('/(admin)');
       }
-    } else if (userRole) {
+    } else if (userRole === 'basic' || userRole === 'applicant') {
+      // Route to welcome screen; if already in auth group on welcome, skip
+      const onWelcome = inAuthGroup && segments[1] === 'welcome';
+      if (!onWelcome) {
+        hasNavigated.current = true;
+        router.replace('/(auth)/welcome');
+      }
+    } else if (userRole === 'student') {
       if (!inStudentGroup) {
         hasNavigated.current = true;
         router.replace('/(student)');
@@ -61,7 +78,17 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
+function BiometricGate({ children }: { children: React.ReactNode }) {
+  const { isLocked, unlock } = useBiometricLock();
+
+  if (isLocked) {
+    return <BiometricLockScreen onUnlock={unlock} />;
+  }
+
+  return <>{children}</>;
+}
+
+function RootLayout() {
   return (
     <ErrorBoundary>
       <AuthProvider>
@@ -69,7 +96,9 @@ export default function RootLayout() {
           <PaperProvider theme={theme}>
             <NetworkProvider>
               <PushNotificationsProvider>
-                <RootNavigator />
+                <BiometricGate>
+                  <RootNavigator />
+                </BiometricGate>
               </PushNotificationsProvider>
             </NetworkProvider>
           </PaperProvider>
@@ -78,3 +107,5 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

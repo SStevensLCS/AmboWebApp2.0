@@ -190,7 +190,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                 <CardContent className="p-6">
                     <div className="flex gap-4">
                         <Avatar className="h-10 w-10">
-                            {post.users?.avatar_url && <AvatarImage src={post.users.avatar_url} className="object-cover" />}
+                            {post.users?.avatar_url && <AvatarImage src={post.users.avatar_url} alt={`${post.users.first_name}'s avatar`} className="object-cover" />}
                             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                 {getInitials(post.users?.first_name, post.users?.last_name)}
                             </AvatarFallback>
@@ -279,7 +279,7 @@ export function PostItem({ post, currentUserId, currentUserRole }: { post: Post;
                                                 {comments.map((comment) => (
                                                     <div key={comment.id} className="flex gap-3 group">
                                                         <Avatar className="h-6 w-6 mt-1">
-                                                            {comment.users?.avatar_url && <AvatarImage src={comment.users.avatar_url} className="object-cover" />}
+                                                            {comment.users?.avatar_url && <AvatarImage src={comment.users.avatar_url} alt={`${comment.users.first_name}'s avatar`} className="object-cover" />}
                                                             <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
                                                                 {getInitials(comment.users?.first_name, comment.users?.last_name)}
                                                             </AvatarFallback>

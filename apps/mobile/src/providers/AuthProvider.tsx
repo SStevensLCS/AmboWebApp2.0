@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '@/lib/supabase';
 import type { UserRole } from '@ambo/database/types';
 import type { Session } from '@supabase/supabase-js';
@@ -16,7 +18,9 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -121,13 +125,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function signInWithApple() {
+    if (Platform.OS !== 'ios') {
+      throw new Error('Sign in with Apple is only available on iOS');
+    }
+
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+
+    if (!credential.identityToken) {
+      throw new Error('No identity token returned from Apple');
+    }
+
+    const { error, data } = await supabase.auth.signInWithIdToken({
+      provider: 'apple',
+      token: credential.identityToken,
+    });
+
+    if (error) throw error;
+
+    // Apple only sends the name on the first sign-in — persist it if available
+    if (credential.fullName && data.session) {
+      const firstName = credential.fullName.givenName;
+      const lastName = credential.fullName.familyName;
+      if (firstName || lastName) {
+        await supabase
+          .from('users')
+          .update({
+            ...(firstName ? { first_name: firstName } : {}),
+            ...(lastName ? { last_name: lastName } : {}),
+          })
+          .eq('id', data.session.user.id);
+      }
+    }
+
+    if (data.session) {
+      await fetchUserRole(data.session.user.id);
+    }
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setState({ session: null, userRole: null, isLoading: false });
   }
 
+  async function refreshRole() {
+    const session = (await supabase.auth.getSession()).data.session;
+    if (session) {
+      await fetchUserRole(session.user.id);
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut }}>
+    <AuthContext.Provider value={{ ...state, signIn, signInWithApple, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   );

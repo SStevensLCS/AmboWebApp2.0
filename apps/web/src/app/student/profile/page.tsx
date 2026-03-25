@@ -6,6 +6,7 @@ import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { GoogleCalendarConnect } from "@/components/GoogleCalendarConnect";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { SignOutButton } from "@/components/SignOutButton";
+import { DeleteAccountButton } from "@/components/DeleteAccountButton";
 
 export default async function StudentProfilePage() {
     const session = await getSession();
@@ -35,9 +36,17 @@ export default async function StudentProfilePage() {
 
                 <GoogleCalendarConnect />
 
-                <div className="pt-6 border-t">
+                <div className="pt-6 border-t space-y-4">
                     <h2 className="text-lg font-semibold mb-4">Account Actions</h2>
-                    <SignOutButton variant="destructive" className="w-full sm:w-auto" />
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <SignOutButton variant="outline" className="w-full sm:w-auto" />
+                        <DeleteAccountButton />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>
+                        {" · "}
+                        <a href="/terms" className="underline hover:text-foreground">Terms of Service</a>
+                    </p>
                 </div>
             </div>
         </div>

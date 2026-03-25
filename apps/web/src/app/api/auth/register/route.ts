@@ -9,7 +9,7 @@ const ALLOWED_DOMAINS = ["@student.linfield.com", "@linfield.com"];
 export async function POST(req: NextRequest) {
   try {
     const rateKey = getRateLimitKey(req, "register");
-    const { allowed, resetIn } = checkRateLimit(rateKey, { maxRequests: 5, windowSeconds: 3600 });
+    const { allowed, resetIn } = await checkRateLimit(rateKey, { maxRequests: 5, windowSeconds: 3600 });
     if (!allowed) {
       return NextResponse.json(
         { error: "Too many registration attempts. Please try again later." },

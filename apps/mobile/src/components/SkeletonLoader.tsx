@@ -102,6 +102,41 @@ export function SubmissionListSkeleton() {
   );
 }
 
+export function PostListSkeleton() {
+  return (
+    <View style={styles.dashboardContainer}>
+      <CardSkeleton />
+      <CardSkeleton />
+      <CardSkeleton />
+    </View>
+  );
+}
+
+export function EventListSkeleton() {
+  return (
+    <View style={styles.dashboardContainer}>
+      <SkeletonItem width={100} height={14} style={{ marginBottom: 8 }} />
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={styles.card}>
+          <SkeletonItem width="60%" height={16} />
+          <SkeletonItem width="40%" height={12} style={{ marginTop: 8 }} />
+          <SkeletonItem width="80%" height={12} style={{ marginTop: 6 }} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function ChatListSkeleton() {
+  return (
+    <View style={styles.dashboardContainer}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <ListItemSkeleton key={i} />
+      ))}
+    </View>
+  );
+}
+
 export { SkeletonItem };
 
 const styles = StyleSheet.create({

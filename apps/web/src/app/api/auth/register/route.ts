@@ -4,8 +4,6 @@ import { setSessionCookie } from "@/lib/session";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 
-const ALLOWED_DOMAINS = ["@student.linfield.com", "@linfield.com"];
-
 export async function POST(req: NextRequest) {
   try {
     const rateKey = getRateLimitKey(req, "register");
@@ -34,12 +32,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate email domain
+    // Validate email format
     const emailLower = email.toLowerCase().trim();
-    const domainValid = ALLOWED_DOMAINS.some((d) => emailLower.endsWith(d));
-    if (!domainValid) {
+    if (!emailLower.includes("@")) {
       return NextResponse.json(
-        { error: "Email must end in @student.linfield.com or @linfield.com." },
+        { error: "Please enter a valid email address." },
         { status: 400 }
       );
     }

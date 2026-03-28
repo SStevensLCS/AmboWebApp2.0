@@ -23,7 +23,6 @@ import {
   X,
 } from "lucide-react";
 
-const ALLOWED_DOMAINS = ["@student.linfield.com", "@linfield.com"];
 
 function ValidationItem({ met, label }: { met: boolean; label: string }) {
   return (
@@ -67,9 +66,9 @@ export default function RegisterPage() {
   const router = useRouter();
 
   // Validation checks
-  const emailDomainValid = useMemo(() => {
+  const emailValid = useMemo(() => {
     const lower = email.toLowerCase().trim();
-    return ALLOWED_DOMAINS.some((d) => lower.endsWith(d));
+    return lower.includes("@") && lower.indexOf("@") < lower.length - 1;
   }, [email]);
 
   const phoneDigits = phone.replace(/\D/g, "");
@@ -82,12 +81,12 @@ export default function RegisterPage() {
 
   const emailTouched = email.length > 0;
   const emailHasAt = email.includes("@");
-  const emailShowError = emailTouched && emailHasAt && !emailDomainValid;
+  const emailShowError = emailTouched && emailHasAt && !emailValid;
 
   const formReady =
     firstName.trim() &&
     lastName.trim() &&
-    emailDomainValid &&
+    emailValid &&
     phoneValid &&
     passwordLongEnough &&
     passwordsMatch;
@@ -204,7 +203,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@student.linfield.com"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -212,7 +211,7 @@ export default function RegisterPage() {
                 className={`bg-background ${
                   emailShowError
                     ? "border-red-400 focus-visible:ring-red-400"
-                    : emailDomainValid
+                    : emailValid
                     ? "border-green-400 focus-visible:ring-green-400"
                     : ""
                 }`}
@@ -223,7 +222,7 @@ export default function RegisterPage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-xs text-red-500"
                 >
-                  Must be a @student.linfield.com or @linfield.com email
+                  Please enter a valid email address
                 </motion.p>
               )}
             </div>

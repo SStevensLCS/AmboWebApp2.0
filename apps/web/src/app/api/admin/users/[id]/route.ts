@@ -69,6 +69,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Request failed" }, { status: 400 });
   }
 
+  // Sync email to Supabase Auth so RLS policies (which check auth.jwt()->>'email') stay in sync
+  if (updates.email) {
+    const { error: authEmailError } = await adminClient.auth.admin.updateUserById(id, {
+      email: updates.email as string,
+    });
+    if (authEmailError) {
+      console.error("Failed to sync auth email:", authEmailError.message);
+    }
+  }
+
   // Audit log for role changes
   if (updates.role && user) {
     logAudit({

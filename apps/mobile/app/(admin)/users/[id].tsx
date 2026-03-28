@@ -128,17 +128,31 @@ export default function UserDetail() {
     setSaving(false);
 
     if (error) {
+      console.error('User update error:', error);
       Alert.alert('Error', error.message);
     } else {
-      const updated = {
-        ...user,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        email: email.trim(),
-        phone: phone.trim() || null,
-        role: role as UserRole,
-      };
-      setUser(updated);
+      // Re-fetch to confirm the update actually persisted (RLS may silently block)
+      const { data: refreshed } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email, phone, role, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (refreshed && refreshed.role !== role) {
+        Alert.alert('Permission Denied', 'Unable to change this user\'s role. The update may have been blocked by database permissions.');
+        setRole(refreshed.role || 'student');
+        return;
+      }
+
+      if (refreshed) {
+        const u = refreshed as User;
+        setUser(u);
+        setFirstName(u.first_name || '');
+        setLastName(u.last_name || '');
+        setEmail(u.email || '');
+        setPhone(u.phone || '');
+        setRole(u.role || 'student');
+      }
       Alert.alert('Success', 'User updated successfully.');
     }
   };

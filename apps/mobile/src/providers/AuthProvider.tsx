@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('role')
+        .select('role, email')
         .eq('id', userId)
         .single();
 
@@ -97,6 +97,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const session = (await supabase.auth.getSession()).data.session;
+
+      // Keep users.email in sync with the Auth email (source of truth).
+      // This auto-corrects any drift caused by the Auth confirmation flow:
+      // when a user requests an email change, users.email may have been
+      // updated optimistically while auth.users.email hasn't confirmed yet.
+      //
+      // We call a server-side API route (admin client) instead of updating
+      // directly, because the RLS UPDATE policy on users requires
+      // is_admin_user() — which looks up by email and fails when the emails
+      // are already out of sync (chicken-and-egg).
+      if (!error && session?.user?.email && data.email !== session.user.email) {
+        if (__DEV__) {
+          console.log('[Auth] Syncing users.email from Auth:', session.user.email);
+        }
+        const baseUrl = process.env.EXPO_PUBLIC_WEB_URL;
+        if (baseUrl) {
+          try {
+            const res = await fetch(`${baseUrl}/api/mobile/sync-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
+            if (__DEV__) {
+              const body = await res.json().catch(() => ({}));
+              console.log('[Auth] sync-email response:', res.status, body);
+            }
+          } catch (err) {
+            if (__DEV__) console.error('[Auth] sync-email failed:', err);
+          }
+        }
+      }
 
       setState({
         session,

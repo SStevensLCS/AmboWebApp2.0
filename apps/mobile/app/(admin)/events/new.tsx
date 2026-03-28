@@ -74,17 +74,12 @@ export default function NewEvent() {
             },
             body: JSON.stringify({ eventId: newEvent.id }),
           });
-          if (syncRes.ok) {
-            Alert.alert('GCal Debug', 'Sync succeeded!');
-          } else {
-            const body = await syncRes.text();
-            Alert.alert('GCal Debug', `Sync failed (${syncRes.status}): ${body}`);
+          if (!syncRes.ok) {
+            console.warn('[GCal] Sync failed:', syncRes.status);
           }
         } catch (err: any) {
-          Alert.alert('GCal Debug', `Sync request error: ${err?.message || err}`);
+          console.warn('[GCal] Sync error:', err?.message || err);
         }
-      } else {
-        Alert.alert('GCal Debug', `Skipped sync\nwebUrl: ${webUrl || 'MISSING'}\nhasToken: ${!!currentSession?.access_token}`);
       }
     }
 

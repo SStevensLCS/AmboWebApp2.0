@@ -20,5 +20,14 @@
     "production": {
       "autoIncrement": true
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "skyler.a.stevens@gmail.com",
+        "ascAppId": "6761090244",
+        "appleTeamId": "2RLH9PFCH5"
+      }
+    }
   }
 }

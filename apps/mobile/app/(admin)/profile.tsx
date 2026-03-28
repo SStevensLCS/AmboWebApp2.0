@@ -11,6 +11,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { supabase } from '@/lib/supabase';
 import Constants from 'expo-constants';
+import { ChangePasswordCard } from '@/components/ChangePasswordCard';
 
 export default function AdminProfile() {
   const { session, signOut } = useAuth();
@@ -65,21 +66,49 @@ export default function AdminProfile() {
     }
 
     setSaving(true);
+
+    const emailChanged = email.trim().toLowerCase() !== user?.email;
+
+    // Update non-email fields via Supabase client
     const { error } = await supabase
       .from('users')
       .update({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        email: email.trim(),
         phone: phone.trim() || null,
       })
       .eq('id', userId);
 
-    // Sync email to Supabase Auth so RLS policies stay in sync
-    if (!error && email.trim() !== user?.email) {
-      const { error: authError } = await supabase.auth.updateUser({ email: email.trim() });
-      if (authError) {
-        console.error('Failed to sync auth email:', authError.message);
+    // Email changes go through a server-side endpoint that atomically
+    // updates both auth.users and public.users using the admin client
+    // (bypasses RLS and the broken confirmation-link flow).
+    if (!error && emailChanged) {
+      const baseUrl = process.env.EXPO_PUBLIC_WEB_URL;
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!baseUrl || !currentSession?.access_token) {
+        setSaving(false);
+        Alert.alert('Error', 'Unable to update email. Please try again.');
+        return;
+      }
+      try {
+        const res = await fetch(`${baseUrl}/api/mobile/update-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setSaving(false);
+          Alert.alert('Email Update Failed', data.error || 'Please try again.');
+          return;
+        }
+      } catch (err: any) {
+        setSaving(false);
+        Alert.alert('Email Update Failed', err.message || 'Please try again.');
+        return;
       }
     }
 
@@ -394,6 +423,12 @@ export default function AdminProfile() {
           </Button>
         </Card.Content>
       </Card>
+
+      <Divider style={styles.divider} />
+
+      {/* Change Password */}
+      <Text variant="titleMedium" style={styles.sectionTitle}>Security</Text>
+      <ChangePasswordCard />
 
       <Divider style={styles.divider} />
 

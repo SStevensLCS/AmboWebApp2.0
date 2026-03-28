@@ -1,4 +1,4 @@
-# CLAUDE.md - Ambassador Portal (AmboWebApp2.0)
+# CLAUDE.md - Ambassador Portal (AmboPortal)
 
 ## Git Workflow
 

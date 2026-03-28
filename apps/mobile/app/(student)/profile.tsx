@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import Constants from 'expo-constants';
 import { hapticSuccess, hapticError, hapticWarning } from '@/lib/haptics';
 import { useBiometricLock } from '@/hooks/useBiometricLock';
+import { ChangePasswordCard } from '@/components/ChangePasswordCard';
 
 export default function StudentProfile() {
   const { session, signOut } = useAuth();
@@ -67,21 +68,52 @@ export default function StudentProfile() {
     }
 
     setSaving(true);
+
+    const emailChanged = email.trim().toLowerCase() !== user?.email;
+
+    // Update non-email fields via Supabase client
     const { error } = await supabase
       .from('users')
       .update({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        email: email.trim(),
         phone: phone.trim() || null,
       })
       .eq('id', userId);
 
-    // Sync email to Supabase Auth so RLS policies stay in sync
-    if (!error && email.trim() !== user?.email) {
-      const { error: authError } = await supabase.auth.updateUser({ email: email.trim() });
-      if (authError) {
-        console.error('Failed to sync auth email:', authError.message);
+    // Email changes go through a server-side endpoint that atomically
+    // updates both auth.users and public.users using the admin client
+    // (bypasses RLS and the broken confirmation-link flow).
+    if (!error && emailChanged) {
+      const baseUrl = process.env.EXPO_PUBLIC_WEB_URL;
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!baseUrl || !currentSession?.access_token) {
+        setSaving(false);
+        hapticError();
+        Alert.alert('Error', 'Unable to update email. Please try again.');
+        return;
+      }
+      try {
+        const res = await fetch(`${baseUrl}/api/mobile/update-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentSession.access_token}`,
+          },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setSaving(false);
+          hapticError();
+          Alert.alert('Email Update Failed', data.error || 'Please try again.');
+          return;
+        }
+      } catch (err: any) {
+        setSaving(false);
+        hapticError();
+        Alert.alert('Email Update Failed', err.message || 'Please try again.');
+        return;
       }
     }
 
@@ -405,25 +437,27 @@ export default function StudentProfile() {
         </Card.Content>
       </Card>
 
+      <Divider style={styles.divider} />
+
+      {/* Security */}
+      <Text variant="titleSmall" style={styles.sectionLabel}>SECURITY</Text>
+      <ChangePasswordCard />
+
       {/* Biometric Lock */}
       {biometricAvailable && (
-        <>
-          <Divider style={styles.divider} />
-          <Text variant="titleSmall" style={styles.sectionLabel}>SECURITY</Text>
-          <Card style={styles.card}>
-            <Card.Content>
-              <View style={styles.switchRow}>
-                <View style={{ flex: 1 }}>
-                  <Text variant="bodyMedium" style={{ fontWeight: '600' }}>Biometric Lock</Text>
-                  <Text variant="bodySmall" style={{ color: '#6b7280' }}>
-                    Require Face ID or fingerprint when returning to the app
-                  </Text>
-                </View>
-                <Switch value={biometricEnabled} onValueChange={toggleBiometric} />
+        <Card style={[styles.card, { marginTop: 12 }]}>
+          <Card.Content>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1 }}>
+                <Text variant="bodyMedium" style={{ fontWeight: '600' }}>Biometric Lock</Text>
+                <Text variant="bodySmall" style={{ color: '#6b7280' }}>
+                  Require Face ID or fingerprint when returning to the app
+                </Text>
               </View>
-            </Card.Content>
-          </Card>
-        </>
+              <Switch value={biometricEnabled} onValueChange={toggleBiometric} />
+            </View>
+          </Card.Content>
+        </Card>
       )}
 
       <Divider style={styles.divider} />

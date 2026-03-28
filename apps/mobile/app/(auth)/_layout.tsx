@@ -13,6 +13,14 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="forgot-password"
+        options={{
+          headerShown: true,
+          title: 'Forgot Password',
+          headerBackTitle: 'Back',
+        }}
+      />
+      <Stack.Screen
         name="welcome"
         options={{
           headerShown: false,

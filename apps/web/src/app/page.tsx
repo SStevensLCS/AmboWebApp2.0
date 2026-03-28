@@ -15,25 +15,11 @@ export default async function HomePage({
     );
   }
 
+  // Always render the client component so it can check for implicit-flow
+  // hash fragments (e.g. #access_token=...&type=recovery). Hash fragments
+  // are invisible to the server, so we can't detect recovery links here.
+  // If there are no hash fragments, AuthHashHandler handles the role-based
+  // redirect (or sends unauthenticated users to /login).
   const session = await getSession();
-
-  if (session) {
-    switch (session.role) {
-      case "basic":
-        redirect("/apply");
-      case "applicant":
-        redirect("/status");
-      case "admin":
-      case "superadmin":
-        redirect("/admin");
-      default:
-        redirect("/student");
-    }
-  }
-
-  // No session and no query-param code. The user may have arrived here from a
-  // Supabase password-reset email that used the implicit flow (hash fragment).
-  // Hash fragments are invisible to the server, so we render a client component
-  // that reads window.location.hash and handles it before redirecting.
-  return <AuthHashHandler />;
+  return <AuthHashHandler sessionRole={session?.role ?? null} />;
 }

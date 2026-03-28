@@ -79,8 +79,9 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh]);
 
-  // Only show offline when clearly offline, not when unknown
-  const isOffline = !isConnected || isInternetReachable === false;
+  // Only show offline when clearly disconnected (no network interface at all).
+  // isInternetReachable can be null/false on simulators even with a working connection.
+  const isOffline = !isConnected;
 
   // Drain offline queue when coming back online
   useEffect(() => {

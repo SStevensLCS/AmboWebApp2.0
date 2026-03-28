@@ -124,8 +124,8 @@ export default function TermsOfServicePage() {
           <h2 className="text-xl font-semibold mt-6 mb-2">12. Contact Us</h2>
           <p>
             If you have questions about these terms, contact us at{" "}
-            <a href="mailto:skyler.a.stevens@gmail.com" className="text-blue-600 underline">
-              skyler.a.stevens@gmail.com
+            <a href="mailto:support@127makes.com" className="text-blue-600 underline">
+              support@127makes.com
             </a>
             .
           </p>

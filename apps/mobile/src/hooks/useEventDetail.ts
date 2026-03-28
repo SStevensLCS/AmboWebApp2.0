@@ -50,16 +50,16 @@ export function useEventDetail(eventId: string, userId: string) {
   /** Fire-and-forget Google Calendar sync via the web API */
   const triggerGcalSync = useCallback(async () => {
     if (!WEB_URL) {
-      console.log('[GCal] No WEB_URL configured — skipping sync');
+      if (__DEV__) console.log('[GCal] No WEB_URL configured — skipping sync');
       return;
     }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        console.log('[GCal] No access token — skipping sync');
+        if (__DEV__) console.log('[GCal] No access token — skipping sync');
         return;
       }
-      console.log('[GCal] Triggering sync for event', eventId, '→', `${WEB_URL}/api/events/${eventId}/gcal-sync`);
+      if (__DEV__) console.log('[GCal] Triggering sync for event', eventId, '→', `${WEB_URL}/api/events/${eventId}/gcal-sync`);
       fetch(`${WEB_URL}/api/events/${eventId}/gcal-sync`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -67,12 +67,12 @@ export function useEventDetail(eventId: string, userId: string) {
         .then(async (res) => {
           const body = await res.json().catch(() => ({}));
           if (body.synced) {
-            console.log('[GCal] ✅ Sync succeeded for event', eventId);
+            if (__DEV__) console.log('[GCal] ✅ Sync succeeded for event', eventId);
           } else {
-            console.warn('[GCal] ❌ Sync failed:', body.reason || `HTTP ${res.status}`);
+            if (__DEV__) console.warn('[GCal] ❌ Sync failed:', body.reason || `HTTP ${res.status}`);
           }
         })
-        .catch((err) => console.warn('[GCal] ❌ Sync request error:', err?.message || err));
+        .catch((err) => { if (__DEV__) console.warn('[GCal] ❌ Sync request error:', err?.message || err); });
     } catch {
       // silently ignore — GCal sync is best-effort
     }

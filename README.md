@@ -65,4 +65,4 @@ Open [http://localhost:3000](http://localhost:3000). Go to `/login` to sign in.
 - **Primary:** Navy `#002e56`, White `#fff`  
 - **Secondary:** Sky blue `#79bde9`  
 - Mobile-first, minimal layout with bottom nav for students.
-"# AmboWebApp2.0" 
+"# AmboPortal"

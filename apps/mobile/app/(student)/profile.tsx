@@ -20,7 +20,6 @@ export default function StudentProfile() {
   const { user, loading, refetch } = useProfile(userId);
   const { permissionStatus, loading: pushLoading, requestPermission } = usePushNotifications(userId);
   const { prefs, loading: prefsLoading, updatePref } = useNotificationPreferences(userId);
-  const { connected: gcalConnected, loading: gcalLoading, connect: gcalConnect, disconnect: gcalDisconnect } = useGoogleCalendar(userId);
   const { isAvailable: biometricAvailable, isEnabled: biometricEnabled, toggle: toggleBiometric } = useBiometricLock();
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
@@ -77,6 +76,14 @@ export default function StudentProfile() {
         phone: phone.trim() || null,
       })
       .eq('id', userId);
+
+    // Sync email to Supabase Auth so RLS policies stay in sync
+    if (!error && email.trim() !== user?.email) {
+      const { error: authError } = await supabase.auth.updateUser({ email: email.trim() });
+      if (authError) {
+        console.error('Failed to sync auth email:', authError.message);
+      }
+    }
 
     setSaving(false);
     if (error) {
@@ -425,20 +432,9 @@ export default function StudentProfile() {
       <Text variant="titleSmall" style={styles.sectionLabel}>SUPPORT</Text>
       <Card elevation={0} style={styles.supportCard}>
         <Card.Content style={styles.supportContent}>
-          <Pressable style={styles.supportRow} onPress={() => Linking.openURL('mailto:ambassadors@linfield.edu')}>
+          <Pressable style={styles.supportRow} onPress={() => Linking.openURL('mailto:support@127makes.com')}>
             <MaterialCommunityIcons name="email-outline" size={20} color="#6b7280" />
             <Text variant="bodyMedium">Contact Support</Text>
-          </Pressable>
-          <Pressable
-            style={styles.supportRow}
-            onPress={() => Linking.openURL(
-              'mailto:skyler.a.stevens@gmail.com' +
-              '?subject=Bug%20Report%20%2F%20App%20Idea%20-%20Ambassador%20Portal' +
-              '&body=Type%3A%20%5BBug%20%2F%20Feature%20Request%5D%0A%0ADescription%3A%0A%0A%0ASteps%20to%20Reproduce%20(if%20bug)%3A%0A1.%0A2.%0A3.'
-            )}
-          >
-            <MaterialCommunityIcons name="bug-outline" size={20} color="#6b7280" />
-            <Text variant="bodyMedium">Report Bug / App Idea</Text>
           </Pressable>
           <Pressable
             style={styles.supportRow}
@@ -449,6 +445,16 @@ export default function StudentProfile() {
           >
             <MaterialCommunityIcons name="shield-lock-outline" size={20} color="#6b7280" />
             <Text variant="bodyMedium">Privacy Policy</Text>
+          </Pressable>
+          <Pressable
+            style={styles.supportRow}
+            onPress={() => {
+              const webUrl = process.env.EXPO_PUBLIC_WEB_URL || 'https://ambo-portal.vercel.app';
+              Linking.openURL(`${webUrl}/terms`);
+            }}
+          >
+            <MaterialCommunityIcons name="file-document-outline" size={20} color="#6b7280" />
+            <Text variant="bodyMedium">Terms of Service</Text>
           </Pressable>
         </Card.Content>
       </Card>

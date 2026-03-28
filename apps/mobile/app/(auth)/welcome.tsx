@@ -49,7 +49,9 @@ export default function WelcomeScreen() {
             If you are already a student ambassador, please contact the Student
             Ambassador Program coordinator to have your account set up.
           </Text>
-          <Text style={styles.contactText}>sstevens@linfield.com</Text>
+          <Text style={styles.cardBody}>
+            Contact your program coordinator to have your account set up.
+          </Text>
         </View>
 
         {/* Card 2: Apply or Status */}
@@ -84,7 +86,10 @@ export default function WelcomeScreen() {
         )}
 
         {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
+        <TouchableOpacity style={styles.signOutButton} onPress={async () => {
+          await signOut();
+          router.replace('/(auth)/login');
+        }}>
           <LogOut size={18} color="#6b7280" />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>

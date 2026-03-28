@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
                   ref={emailRef}
                   id="email"
                   type="email"
-                  placeholder="name@student.linfield.com"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

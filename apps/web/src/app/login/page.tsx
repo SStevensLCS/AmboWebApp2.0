@@ -87,7 +87,7 @@ export default function LoginPage() {
                 ref={emailRef}
                 id="emailOrPhone"
                 type="text"
-                placeholder="name@student.linfield.com"
+                placeholder="name@example.com"
                 value={emailOrPhone}
                 onChange={(e) => setEmailOrPhone(e.target.value)}
                 required

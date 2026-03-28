@@ -15,7 +15,6 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || '';
-const ALLOWED_DOMAINS = ['@student.linfield.com', '@linfield.com'];
 
 export default function RegisterScreen() {
   const { signIn } = useAuth();
@@ -34,8 +33,8 @@ export default function RegisterScreen() {
 
     const emailLower = email.trim().toLowerCase();
     if (!emailLower) return 'Email is required.';
-    if (!ALLOWED_DOMAINS.some((d) => emailLower.endsWith(d))) {
-      return 'Email must end in @student.linfield.com or @linfield.com.';
+    if (!emailLower.includes('@') || emailLower.indexOf('@') >= emailLower.length - 1) {
+      return 'Please enter a valid email address.';
     }
 
     const digits = phone.replace(/\D/g, '');
@@ -122,7 +121,7 @@ export default function RegisterScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Email (@linfield.com)"
+          placeholder="Email"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"

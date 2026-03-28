@@ -179,7 +179,11 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - ExpoAppleAuthentication (55.0.9):
+    - ExpoModulesCore
   - ExpoAsset (55.0.8):
+    - ExpoModulesCore
+  - ExpoClipboard (55.0.9):
     - ExpoModulesCore
   - ExpoDevice (55.0.9):
     - ExpoModulesCore
@@ -207,6 +211,8 @@ PODS:
   - ExpoKeepAwake (55.0.4):
     - ExpoModulesCore
   - ExpoLinking (55.0.7):
+    - ExpoModulesCore
+  - ExpoLocalAuthentication (55.0.9):
     - ExpoModulesCore
   - ExpoLogBox (55.0.7):
     - React-Core
@@ -2332,6 +2338,30 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - RNSentry (7.11.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Sentry/HybridSDK (= 8.58.0)
+    - Yoga
   - RNSVG (15.15.3):
     - hermes-engine
     - RCTRequired
@@ -2459,6 +2489,7 @@ PODS:
   - SDWebImageWebPCoder (0.14.6):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
+  - Sentry/HybridSDK (8.58.0)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2471,7 +2502,9 @@ DEPENDENCIES:
   - expo-dev-launcher (from `../../../node_modules/expo-dev-launcher`)
   - expo-dev-menu (from `../../../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../../../node_modules/expo-dev-menu-interface/ios`)
+  - ExpoAppleAuthentication (from `../../../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../../../node_modules/expo-asset/ios`)
+  - ExpoClipboard (from `../../../node_modules/expo-clipboard/ios`)
   - ExpoDevice (from `../../../node_modules/expo-device/ios`)
   - ExpoDocumentPicker (from `../../../node_modules/expo-document-picker/ios`)
   - "ExpoDomWebView (from `../../../node_modules/@expo/dom-webview/ios`)"
@@ -2483,6 +2516,7 @@ DEPENDENCIES:
   - ExpoImagePicker (from `../../../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../../../node_modules/expo-keep-awake/ios`)
   - ExpoLinking (from `../../../node_modules/expo-linking/ios`)
+  - ExpoLocalAuthentication (from `../../../node_modules/expo-local-authentication/ios`)
   - "ExpoLogBox (from `../../../node_modules/@expo/log-box`)"
   - ExpoModulesCore (from `../../../node_modules/expo-modules-core`)
   - ExpoModulesJSI (from `../../../node_modules/expo-modules-core`)
@@ -2572,6 +2606,7 @@ DEPENDENCIES:
   - "RNDateTimePicker (from `../../../node_modules/@react-native-community/datetimepicker`)"
   - RNReanimated (from `../../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../../node_modules/react-native-screens`)
+  - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSVG (from `../../../node_modules/react-native-svg`)
   - RNWorklets (from `../../../node_modules/react-native-worklets`)
   - Yoga (from `../../../node_modules/react-native/ReactCommon/yoga`)
@@ -2585,6 +2620,7 @@ SPEC REPOS:
     - SDWebImageAVIFCoder
     - SDWebImageSVGCoder
     - SDWebImageWebPCoder
+    - Sentry
 
 EXTERNAL SOURCES:
   EXApplication:
@@ -2605,8 +2641,12 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-dev-menu"
   expo-dev-menu-interface:
     :path: "../../../node_modules/expo-dev-menu-interface/ios"
+  ExpoAppleAuthentication:
+    :path: "../../../node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../../../node_modules/expo-asset/ios"
+  ExpoClipboard:
+    :path: "../../../node_modules/expo-clipboard/ios"
   ExpoDevice:
     :path: "../../../node_modules/expo-device/ios"
   ExpoDocumentPicker:
@@ -2629,6 +2669,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-keep-awake/ios"
   ExpoLinking:
     :path: "../../../node_modules/expo-linking/ios"
+  ExpoLocalAuthentication:
+    :path: "../../../node_modules/expo-local-authentication/ios"
   ExpoLogBox:
     :path: "../../../node_modules/@expo/log-box"
   ExpoModulesCore:
@@ -2806,6 +2848,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../../node_modules/react-native-screens"
+  RNSentry:
+    :path: "../node_modules/@sentry/react-native"
   RNSVG:
     :path: "../../../node_modules/react-native-svg"
   RNWorklets:
@@ -2823,7 +2867,9 @@ SPEC CHECKSUMS:
   expo-dev-launcher: 681b320210301de9be0d625f3c399841570e1d3c
   expo-dev-menu: 6eb76803513cd6c6231d680d331861de816fb1db
   expo-dev-menu-interface: bf6f816d29b45bec038080790963c635e8d588c2
+  ExpoAppleAuthentication: 435cdf8a592ce69d769a74c67f241f113d812350
   ExpoAsset: bdc7bc21fe25d197c3aa7547e14c12c42087d9c9
+  ExpoClipboard: fba6501fed478667b1cc888e999f82fb2838c685
   ExpoDevice: 8fb20656b96e38f8928cd069210a1aad0c759ac3
   ExpoDocumentPicker: 9d82b922be941a74ba52f82df7ba123b334fbb5a
   ExpoDomWebView: f101fb3db4b6eec4163fca51f7507189b7e48661
@@ -2835,6 +2881,7 @@ SPEC CHECKSUMS:
   ExpoImagePicker: afea73184bf1cd0c1c42f09b74513d31e4004453
   ExpoKeepAwake: 7f3b28c361c37389b18841bb52a58003b39fcb33
   ExpoLinking: 88ba36a28c83525e564b8229e02d451347accb70
+  ExpoLocalAuthentication: 8c1a3f26f0681133c58a16ac42d4ae8ce256d99a
   ExpoLogBox: 89b634d5a8a64c4a6a7caad8f9985a28463c7002
   ExpoModulesCore: a57a0a1e39caa9ad5f76c8477b831ee32fbeddfc
   ExpoModulesJSI: a554588f3260ee3c44a3e7f4a8151c2b9ffdb024
@@ -2926,12 +2973,14 @@ SPEC CHECKSUMS:
   RNDateTimePicker: 9c0a849bbe1c256f0854fea255734b715f5ea876
   RNReanimated: 55f3c45edaee604ad1f1447cb13e928cb6e21660
   RNScreens: 02e62f995ceb94ea465864b3bf4d4767b87f0362
+  RNSentry: fbdf0705a341b40f9c78cce0cb3adf7fdcc895cf
   RNSVG: 0bd149b873018bc6e0e3321e2f6435bdba294460
   RNWorklets: e39484d2d9f19e04de116784d06841d30b70fb3a
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageAVIFCoder: afe194a084e851f70228e4be35ef651df0fc5c57
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
+  Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
   Yoga: dd994d8c85dca5cc9b10f5df8c01f9ef1d0da191
 
 PODFILE CHECKSUM: 8806c1fe2086da1fbcc6741b9e8fd17a2ee529f9

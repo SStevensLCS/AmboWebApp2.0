@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - Ambassador Portal",
+  title: "Privacy Policy - AmboPortal",
 };
 
 export default function PrivacyPolicyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">1. Introduction</h2>
           <p>
-            Ambassador Portal (&quot;the App&quot;) is operated by Skyler A. Stevens for use by
+            AmboPortal (&quot;the App&quot;) is operated by Skyler A. Stevens for use by
             high school students, school staff, administrators, and applicants. This policy
             describes how we collect, use, and protect your personal information.
           </p>
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-2">3. How We Use Your Information</h2>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Provide and operate the Ambassador Portal services.</li>
+            <li>Provide and operate the AmboPortal services.</li>
             <li>Send push notifications you have opted into (messages, events, posts).</li>
             <li>Track service hours and tour credits for program administration.</li>
             <li>Communicate with you about your account and program activities.</li>
@@ -111,8 +111,8 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-xl font-semibold mt-6 mb-2">10. Contact Us</h2>
           <p>
             If you have questions about this privacy policy or your data, contact us at{" "}
-            <a href="mailto:skyler.a.stevens@gmail.com" className="text-blue-600 underline">
-              skyler.a.stevens@gmail.com
+            <a href="mailto:support@127makes.com" className="text-blue-600 underline">
+              support@127makes.com
             </a>
             .
           </p>
